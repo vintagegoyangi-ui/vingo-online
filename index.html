@@ -8,7 +8,6 @@
     <script src="card_data.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     
-    <!-- Firebase 라이브러리 (호환성 모드) -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
@@ -29,6 +28,7 @@
         let USER_ID = null;
         let myItems = [];
         let energy = { count: 30, last: null };
+        let isGachaRunning = false; // 가챠 중복 실행 방지 변수 추가
 
         // 아이디/비밀번호 커스텀 로그인 및 중복 체크
         async function handleAuth(type) {
@@ -241,7 +241,6 @@
     <div id="vfx-vortex-ex" class="vortex-ex"></div>
     <div id="vfx-flash" class="screen-flash"></div>
 
-    <!-- 로그인 화면 -->
     <div id="login-layer">
         <div class="auth-box">
             <h2 style="color:var(--ssr-color); text-align:center; margin-bottom:20px; font-style:italic;">빈고온라인 로그인</h2>
@@ -253,10 +252,8 @@
         </div>
     </div>
 
-    <!-- 카드 상세 뷰 -->
     <div id="detail-view"><div id="detail-card-target" style="width:85vw; max-width:320px;"></div></div>
     
-    <!-- 메인 가챠 컨테이너 -->
     <div class="container" id="main-container">
         <div id="energy-tag" style="background:#1a1a1a; padding:10px 18px; border-radius:50px; font-weight:bold; margin-bottom:15px; display:inline-block; border:1px solid #333; font-size:0.85rem;">
             ⚡️ 에너지: <span id="energy-display">-- / --</span> <span id="timer-display"></span>
@@ -269,12 +266,9 @@
                         <div class="slot-bg-text">VINGO GACHA!</div>
                         <div class="slot-sub-text">빈고를 수집하세요!</div>
                     </div>
-                    <!-- 카드 뒷면 -->
                     <div class="card-face card-back" id="main-card-back" style="display:none;"><img src="images/card_back.webp"></div>
-                    <!-- 카드 앞면 -->
                     <div class="card-face card-front" id="main-card-front" style="display:none;"><div class="card-clip"></div></div>
                     
-                    <!-- 초록색 스캔 레이어 -->
                     <div id="cut-in-layer">
                         <div class="scan-line"></div>
                         <span id="scan-status" style="font-weight:900; font-size:1.2rem; letter-spacing:2px; color:var(--scan-color); text-shadow: 0 0 10px var(--scan-color);">SCANNING...</span>
