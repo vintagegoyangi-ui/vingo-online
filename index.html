@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-    <title>VINGO EXPEDITION v2.1</title>
+    <title>VINGO EXPEDITION v2.2</title>
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
     <script src="card_data.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     
+    <!-- Firebase 라이브러리 -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
     <script>
-        // Firebase 설정
         const firebaseConfig = {
             apiKey: "AIzaSyBOmMyRoAZ57YQVWaiiLDLVE5Lwu5aU9-4",
             authDomain: "vingo-expedition.firebaseapp.com",
@@ -29,6 +29,7 @@
         let myItems = [];
         let energy = { count: 30, last: null };
         let isGachaRunning = false;
+        let isResultPending = false; // 결과 확인 대기 상태 (확인 전까지 버튼 비활성화)
 
         async function handleAuth(type) {
             const id = document.getElementById('auth-id').value.trim();
@@ -41,14 +42,10 @@
 
             if (type === 'signup') {
                 if (userData) {
-                    alert("이미 사용 중인 아이디입니다. 다른 아이디를 선택해주세요.");
+                    alert("이미 사용 중인 아이디입니다.");
                 } else {
-                    await userRef.set({
-                        password: pw,
-                        inventory: [],
-                        energy: { count: 30, last: Date.now() }
-                    });
-                    alert("🎉 회원가입 성공! 이제 로그인을 진행해주세요.");
+                    await userRef.set({ password: pw, inventory: [], energy: { count: 30, last: Date.now() } });
+                    alert("🎉 회원가입 성공! 로그인을 진행해주세요.");
                 }
             } else {
                 if (userData && userData.password === pw) {
@@ -61,57 +58,45 @@
                     updateUI();
                     setInterval(updateTimer, 1000);
                 } else {
-                    alert("아이디 또는 비밀번호가 일치하지 않습니다.");
+                    alert("정보가 일치하지 않습니다.");
                 }
+            }
+        }
+
+        function handleLogout() {
+            if(confirm("로그아웃 하시겠습니까?")) {
+                location.reload();
             }
         }
     </script>
 
     <style>
         :root { 
-            --ex-color: #ff007f; 
-            --ssr-color: #ffdf00; 
-            --sr-color: #a335ee; 
-            --r-color: #0070dd; 
-            --bg-color: #050505; 
-            --scan-color: #00ff00;
+            --ex-color: #ff007f; --ssr-color: #ffdf00; --sr-color: #a335ee; --r-color: #0070dd; 
+            --bg-color: #050505; --scan-color: #00ff00;
         }
-        * { 
-            box-sizing: border-box; 
-            -webkit-tap-highlight-color: transparent; 
-            margin: 0; padding: 0; 
-            font-family: 'Pretendard', sans-serif !important;
-        }
-        body { 
-            background-color: var(--bg-color); color: white; 
-            display: flex; flex-direction: column; align-items: center; 
-            min-height: 100svh; width: 100%; overflow-x: hidden; 
-            overscroll-behavior-y: contain; 
-        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; font-family: 'Pretendard', sans-serif !important; }
+        body { background-color: var(--bg-color); color: white; display: flex; flex-direction: column; align-items: center; min-height: 100svh; width: 100%; overflow-x: hidden; overscroll-behavior-y: contain; }
         body.lock-scroll { overflow: hidden !important; touch-action: none; }
 
-        /* --- 애니메이션 --- */
+        /* VFX 애니메이션 */
         @keyframes shake { 0%, 100% { transform: translate(0,0); } 10%, 30%, 50%, 70%, 90% { transform: translate(-4px, -2px); } 20%, 40%, 60%, 80% { transform: translate(4px, 2px); } }
         @keyframes vortex { 0% { transform: rotate(0deg) scale(1); opacity: 0; } 50% { opacity: 0.35; transform: rotate(180deg) scale(2.2); } 100% { transform: rotate(360deg) scale(3.5); opacity: 0; } }
-        @keyframes flashEffect { 0% { opacity: 0; } 50% { opacity: 0.7; } 100% { opacity: 0; } }
         @keyframes scanOnce { 0% { top: 0%; opacity: 0; } 10% { opacity: 1; } 50% { top: 100%; } 90% { opacity: 1; } 100% { top: 0%; opacity: 0; } }
-        @keyframes particle-rise { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-100px) scale(0); opacity: 0; } }
-        
+        @keyframes flashEffect { 0% { opacity: 0; } 50% { opacity: 0.7; } 100% { opacity: 0; } }
         .shake-effect { animation: shake 0.4s linear infinite !important; }
         .vortex-ssr, .vortex-ex, .screen-flash { position: fixed; inset: 0; z-index: 8000; pointer-events: none; display: none; mix-blend-mode: screen; }
         .vortex-ssr { background: radial-gradient(circle, var(--ssr-color) 0%, transparent 70%); animation: vortex 1s ease-out forwards; }
         .vortex-ex { background: radial-gradient(circle, var(--ex-color) 0%, transparent 70%); animation: vortex 1.2s ease-in-out forwards; }
         .screen-flash { background: white; animation: flashEffect 0.3s ease-out; z-index: 9000; }
-        .aurora-ex { background: linear-gradient(270deg, #4b0082, #ff007f, #4b0082) !important; background-size: 200% 200% !important; animation: aurora 3s ease infinite !important; }
-        .aurora-ssr { background: linear-gradient(270deg, #4a3b00, #ffdf00, #4a3b00) !important; background-size: 200% 200% !important; animation: aurora 4s ease infinite !important; }
-        @keyframes aurora { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-        .particle { position: absolute; pointer-events: none; border-radius: 50%; animation: particle-rise linear forwards; z-index: 100; }		
+        .particle { position: absolute; pointer-events: none; border-radius: 50%; animation: particle-rise linear forwards; z-index: 100; }
+        @keyframes particle-rise { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-100px) scale(0); opacity: 0; } }
 
-        /* --- 카드 구조 --- */
-        .card-container-wrapper { position: relative; width: 100%; max-width: 280px; aspect-ratio: 3 / 4.4; margin: 0 auto; perspective: 1000px; }
+        /* 카드 구조 */
+        .card-container-wrapper { position: relative; width: 100%; max-width: 280px; aspect-ratio: 3 / 4.4; margin: 0 auto; perspective: 1200px; }
         .card-frame { 
             position: relative; width: 100%; height: 100%; 
-            transform-style: preserve-3d; transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); 
+            transform-style: preserve-3d; transition: transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1); 
             border-radius: 20px; border: 4px solid #222; background: #0a0a0a;
             display: flex; align-items: center; justify-content: center; cursor: pointer;
         }
@@ -121,28 +106,18 @@
         .card-back { z-index: 1; transform: rotateY(180deg); display: flex; align-items: center; justify-content: center; background: #111; }
         .card-back img { width: 100%; height: 100%; object-fit: cover; }
         
-        #cut-in-layer { 
-            position: absolute; inset: -4px; background: rgba(0,0,0,0.2); 
-            z-index: 100; display: none; align-items: center; justify-content: center; 
-            flex-direction: column; border-radius: 20px; border: 4px solid var(--scan-color); 
-            pointer-events: none;
-        }
-        .scan-line { 
-            position: absolute; left: 0; width: 100%; height: 8px; background: var(--scan-color); 
-            box-shadow: 0 0 20px var(--scan-color); z-index: 101; 
-            animation: scanOnce 1.5s ease-in-out infinite; 
-        }
+        #cut-in-layer { position: absolute; inset: -4px; z-index: 100; display: none; align-items: center; justify-content: center; flex-direction: column; border-radius: 20px; pointer-events: none; }
+        .scan-line { position: absolute; left: 0; width: 100%; height: 8px; background: var(--scan-color); box-shadow: 0 0 20px var(--scan-color); animation: scanOnce 1.5s ease-in-out infinite; }
         
-        #slot-placeholder {
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            text-align: center; z-index: 5;
-        }
-        .slot-bg-text { font-size: 2rem; font-weight: 900; background: linear-gradient(to bottom, #444, #111); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        #slot-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        .slot-bg-text { font-size: 2rem; font-weight: 900; font-style: italic; background: linear-gradient(to bottom, #444, #111); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
-        .container { width: 92%; max-width: 400px; text-align: center; background: #111; padding: 20px; border-radius: 30px; border: 1px solid #222; margin: auto; display: none; }
+        /* 메인 레이아웃 */
+        .container { width: 92%; max-width: 400px; text-align: center; background: #111; padding: 20px; border-radius: 30px; border: 1px solid #222; margin: auto; display: none; position: relative; }
+        .logout-btn { position: absolute; top: 20px; right: 20px; font-size: 12px; color: #666; font-weight: bold; cursor: pointer; }
         .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin-top: 20px; }
         button { padding: 16px; font-size: 0.95rem; font-weight: 700; border: none; border-radius: 15px; cursor: pointer; color: white; transition: 0.2s; }
-        button:disabled { opacity: 0.5; filter: grayscale(1); }
+        button:disabled { opacity: 0.3; filter: grayscale(1); pointer-events: none; }
         .btn-draw { background: linear-gradient(135deg, #ff4757, #ff6b81); }
         .btn-draw-10 { background: linear-gradient(135deg, #e67e22, #f39c12); }
         .btn-sub { grid-column: span 2; background: #222; border: 1px solid #333; margin-top: 5px; }
@@ -152,11 +127,15 @@
         .auth-box input { width: 100%; padding: 15px; margin-bottom: 12px; border-radius: 12px; border: 1px solid #333; background: #000; color: white; font-size: 1rem; }
         .auth-box button { width: 100%; padding: 15px; border-radius: 12px; font-weight: bold; margin-bottom: 10px; color: white; }
 
-        #multi-result-display { display:none; flex-wrap:nowrap; overflow-x:auto; gap:25px; width:100%; padding: 30px 25px; }
+        #multi-result-display { display:none; flex-wrap:nowrap; overflow-x:auto; gap:20px; width:100%; padding: 30px 20px; scroll-snap-type: x mandatory; }
         #detail-view { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; display: none; align-items: center; justify-content: center; perspective: 1500px; touch-action: none; }
+        
+        /* 도감 스타일 */
         #collection-modal { position:fixed; inset:0; background:#050505; display:none; flex-direction:column; z-index:1000; }
-        #collection-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 15px; overflow-y: auto; flex:1; }
-        .count-badge { position: absolute; top: -8px; right: -8px; background: #fff; color: #000; font-size: 10px; padding: 2px 6px; border-radius: 6px; font-weight: 900; border: 1.5px solid #000; }
+        #collection-header { padding:20px; display:flex; justify-content:space-between; align-items:flex-start; background:#000; border-bottom:1px solid #222; }
+        #collection-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 15px; overflow-y: auto; flex:1; }
+        .coll-card-wrap { position: relative; width: 100%; aspect-ratio: 3 / 4.4; }
+        .count-badge { position: absolute; top: -5px; right: -5px; background: #fff; color: #000; font-size: 9px; padding: 2px 5px; border-radius: 4px; font-weight: 900; z-index: 10; }
     </style>
 </head>
 <body>
@@ -166,8 +145,8 @@
 
     <div id="login-layer">
         <div class="auth-box">
-            <h2 style="color:var(--ssr-color); text-align:center; margin-bottom:20px; font-style:italic;">빈고온라인 로그인</h2>
-            <input type="text" id="auth-id" placeholder="사용할 아이디">
+            <h2 style="color:var(--ssr-color); text-align:center; margin-bottom:20px; font-style:italic;">VINGO ONLINE</h2>
+            <input type="text" id="auth-id" placeholder="아이디">
             <input type="password" id="auth-pw" placeholder="비밀번호">
             <button onclick="handleAuth('login')" style="background:var(--r-color);">로그인</button>
             <button onclick="handleAuth('signup')" style="background:#333;">회원가입</button>
@@ -177,6 +156,7 @@
     <div id="detail-view"><div id="detail-card-target" style="width:85vw; max-width:320px;"></div></div>
     
     <div class="container" id="main-container">
+        <div class="logout-btn" onclick="handleLogout()">LOGOUT</div>
         <div id="energy-tag" style="background:#1a1a1a; padding:10px 18px; border-radius:50px; font-weight:bold; margin-bottom:15px; display:inline-block; border:1px solid #333; font-size:0.85rem;">
             ⚡️ 에너지: <span id="energy-display">-- / --</span> <span id="timer-display"></span>
         </div>
@@ -185,17 +165,12 @@
             <div class="card-container-wrapper" id="main-card-wrapper">
                 <div class="card-frame" id="main-card-frame">
                     <div id="slot-placeholder">
-                        <div class="slot-bg-text">VINGO GACHA!</div>
-                        <div class="slot-sub-text">빈고를 수집하세요!</div>
+                        <div class="slot-bg-text">VINGO GACHA</div>
+                        <div style="color:#444; font-size:0.8rem; font-weight:700;">카드를 수집하여 원정을 준비하세요!</div>
                     </div>
                     <div class="card-face card-back" id="main-card-back" style="display:none;"><img src="images/card_back.webp"></div>
                     <div class="card-face card-front" id="main-card-front" style="display:none;"><div class="card-clip"></div></div>
-                    
-                    <div id="cut-in-layer">
-                        <div class="scan-line"></div>
-                        <span id="scan-status" style="font-weight:900; font-size:1.2rem; color:var(--scan-color); text-shadow: 0 0 10px var(--scan-color);">SCANNING...</span>
-                        <span id="detect-text" style="display:none; margin-top:10px; font-weight:900; font-size:1.4rem;"></span>
-                    </div>
+                    <div id="cut-in-layer"><div class="scan-line"></div></div>
                 </div>
             </div>
         </div>
@@ -205,9 +180,8 @@
         <div class="btns">
             <button id="btn-1" class="btn-draw" onclick="playGacha(1)">1회 가챠</button>
             <button id="btn-10" class="btn-draw-10" onclick="playGacha(10)">10회 가챠</button>
-            <button id="btn-home" class="btn-sub" style="display:none; background:#444;" onclick="goHome()">메인으로 돌아가기</button>
+            <button id="btn-home" class="btn-sub" style="display:none; background:#444;" onclick="goHome()">가챠 화면으로</button>
             <button id="btn-coll-open" class="btn-sub" onclick="openCollection()">도감 확인</button>
-            <button class="btn-sub" style="background:#4b0082; border-color:#ff007f;" onclick="location.href='game.html'">원정 시작</button>
         </div>
     </div>
 
@@ -216,82 +190,64 @@
     <script>
         const RECHARGE_TIME = 20 * 60 * 1000;
         const MAX_ENERGY = 30;
-        const STORAGE_KEYS = { COLL: 'vingo_game_coll', EN: 'vingo_game_en' };
         const BACK_IMG_URL = "images/card_back.webp"; 
 
         const fileNames = Object.keys(CARD_DATA_DB);
         const SETTINGS = { 
-            "EX": { rate: 0.5, color: "#ff007f", aurora: "aurora-ex" }, 
-            "SSR": { rate: 5.5, color: "#ffdf00", aurora: "aurora-ssr" }, 
-            "SR": { rate: 24, color: "#a335ee", aurora: "" }, 
-            "R": { rate: 70, color: "#0070dd", aurora: "" } 
+            "EX": { rate: 0.5, color: "#ff007f" }, 
+            "SSR": { rate: 5.5, color: "#ffdf00" }, 
+            "SR": { rate: 24, color: "#a335ee" }, 
+            "R": { rate: 70, color: "#0070dd" } 
         };
 
         const pool = fileNames.map(f => {
             const [g] = f.split('_');
-            return { id: f, grade: g, name: CARD_DATA_DB[f].name, img: `images/${f}`, chance: SETTINGS[g].rate / fileNames.filter(x => x.startsWith(g)).length };
+            return { id: f, grade: g, name: CARD_DATA_DB[f].name, chance: SETTINGS[g].rate / fileNames.filter(x => x.startsWith(g)).length };
         });
 
         async function save() {
             if (!USER_ID) return;
-            try {
-                await db.ref('users/' + USER_ID).update({ inventory: myItems, energy: energy, lastSync: Date.now() });
-            } catch (e) { console.error("DB 저장 실패", e); }
+            try { await db.ref('users/' + USER_ID).update({ inventory: myItems, energy: energy, lastSync: Date.now() }); } 
+            catch (e) { console.error(e); }
         }
 
         function renderCard(targetWrapper, item, isDraw, isDetail = false, isColl = false) {
             const set = SETTINGS[item.grade];
             const isHigh = item.grade === 'EX' || item.grade === 'SSR';
             const frame = targetWrapper.querySelector('.card-frame');
-            const ph = frame.querySelector('#slot-placeholder');
-            if(ph) ph.style.display = 'none';
-
-            const info = CARD_DATA_DB[item.id] || { name: "Unknown", attr: "노말", stats: [1,1,1,1], desc: "" };
+            const info = CARD_DATA_DB[item.id] || { name: "???", desc: "데이터 없음" };
             
             frame.style.border = `${isColl ? '3px' : '5px'} solid ${set.color}`;
-            frame.style.boxShadow = isHigh ? `0 0 25px ${set.color}cc` : `0 4px 15px rgba(0,0,0,0.6)`;
+            frame.style.boxShadow = isHigh ? `0 0 25px ${set.color}cc` : `0 4px 12px rgba(0,0,0,0.5)`;
             
             const frontFace = frame.querySelector('.card-front');
             if(frontFace) {
                 frontFace.style.display = 'block';
-                frontFace.style.background = `radial-gradient(circle at center, ${set.color}33 0%, #000 100%)`;
+                frontFace.style.background = `radial-gradient(circle at center, ${set.color}22 0%, #000 100%)`;
             }
 
-            let cardHTML = isColl ? `
-                <div style="height:72%; display:flex; align-items:center; justify-content:center; width:100%;"><img src="images/${item.id}" style="max-width:90%; max-height:90%; object-fit:contain; z-index:10;"></div>
-                <div style="height:28%; background:#000; border-top:1px solid ${set.color}44; display:flex; flex-direction:column; justify-content:center; padding:0 16px; z-index:10;">
-                    <div style="font-size:1rem; font-weight:900; color:${set.color};">${info.name}</div>
+            const cardHTML = isColl ? `
+                <div style="height:70%; display:flex; align-items:center; justify-content:center; width:100%;"><img src="images/${item.id}" style="max-width:85%; max-height:85%; object-fit:contain;"></div>
+                <div style="height:30%; background:#000; border-top:1px solid ${set.color}44; display:flex; flex-direction:column; justify-content:center; padding:0 10px;">
+                    <div style="font-size:0.8rem; font-weight:900; color:${set.color}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${info.name}</div>
                 </div>` : `
-                <div style="height:12%; display:flex; align-items:center; justify-content:space-between; padding:0 15px; z-index:20;"><div style="background:${set.color}; padding:2px 8px; border-radius:4px; font-weight:900;">${item.grade}</div></div>
-                <div style="height:53%; display:flex; align-items:center; justify-content:center; width:100%;"><img src="images/${item.id}" style="max-width:95%; max-height:95%; object-fit:contain; z-index:10;"></div>
-                <div style="height:35%; background:linear-gradient(to bottom, #111, #000); border-top:1px solid ${set.color}33; padding:15px 20px; z-index:10; position:relative;">
-                    <div style="font-size:1.6rem; font-weight:900; color:${set.color}; text-shadow:0 0 10px ${set.color}88;">${info.name}</div>
-                    <p style="font-size:12px; color:#ccc; margin-top:5px;">${info.desc}</p>
+                <div style="height:12%; display:flex; align-items:center; padding:0 15px;"><div style="background:${set.color}; padding:2px 8px; border-radius:4px; font-weight:900; font-size:11px;">${item.grade}</div></div>
+                <div style="height:53%; display:flex; align-items:center; justify-content:center; width:100%;"><img src="images/${item.id}" style="max-width:92%; max-height:92%; object-fit:contain;"></div>
+                <div style="height:35%; background:linear-gradient(to bottom, #111, #000); border-top:1px solid ${set.color}33; padding:15px 20px; text-align:left;">
+                    <div style="font-size:1.5rem; font-weight:900; color:${set.color};">${info.name}</div>
+                    <p style="font-size:11px; color:#888; margin-top:6px; line-height:1.4;">${info.desc}</p>
                 </div>`;
+            
             const clip = frame.querySelector('.card-clip');
-            if(clip) clip.innerHTML = `<div class="card-inner-bg ${isHigh ? set.aurora : ''}" style="opacity:0.4;"></div>${isDetail && isHigh ? '<div class="hologram"></div>' : ''}${cardHTML}`;
-            if (isHigh && !isColl && (isDetail || isDraw)) createParticles(frame, set.color, item.grade);
+            if(clip) clip.innerHTML = cardHTML;
         }
 
-        let particleTimer = null;
-        function createParticles(target, color, grade) {
-            if (particleTimer) clearInterval(particleTimer);
-            particleTimer = setInterval(() => {
-                const p = document.createElement('div'); p.className = 'particle';
-                p.style.width = p.style.height = `${Math.random()*3+2}px`;
-                p.style.background = color; p.style.left = `${Math.random()*80+10}%`; p.style.bottom = '20%';
-                p.style.animationDuration = `${Math.random()*1.5+1.5}s`;
-                target.appendChild(p); p.addEventListener('animationend', () => p.remove());
-            }, grade === 'EX' ? 150 : 300);
-        }
-
-        // --- 가챠 연출 로직 (수정됨) ---
+        // --- 가챠 로직 ---
         async function playGacha(count) {
-            if (isGachaRunning) return;
-            if (!USER_ID) { alert("로그인이 필요합니다."); return; }
+            if (isGachaRunning || isResultPending) return;
             if (energy.count < count) { alert("에너지가 부족합니다!"); return; }
 
-            isGachaRunning = true;
+            isGachaRunning = isResultPending = true;
             document.getElementById('btn-1').disabled = document.getElementById('btn-10').disabled = true;
 
             try {
@@ -304,70 +260,67 @@
                 });
                 updateUI(); await save(); 
 
-                const mainFrame = document.getElementById('main-card-frame'), 
-                      container = document.getElementById('main-container'), 
-                      flash = document.getElementById('vfx-flash'),
+                const mainFrame = document.getElementById('main-card-frame'),
                       cutIn = document.getElementById('cut-in-layer'),
-                      detectText = document.getElementById('detect-text'),
+                      flash = document.getElementById('vfx-flash'),
                       cardBack = document.getElementById('main-card-back'),
                       cardFront = document.getElementById('main-card-front'),
-                      ph = mainFrame.querySelector('#slot-placeholder');
-                
-                // 초기화 (1회 가챠 기준)
+                      ph = document.getElementById('slot-placeholder');
+
+                // 결과 초기 렌더링 준비 (숨김 상태)
+                cardFront.style.display = 'none';
+                cardBack.style.display = 'none';
+                mainFrame.classList.remove('show-back');
+                mainFrame.style.border = "4px solid #222";
+
+                // [Step 1] 스캐닝 시작
+                cutIn.style.display = "flex";
+                await new Promise(r => setTimeout(r, 1500)); 
+
+                // [Step 2] 고등급 판별 및 컷인
+                const highestItem = [...results].sort((a,b) => SETTINGS[a.grade].rate - SETTINGS[b.grade].rate)[0];
+                if (highestItem.grade === 'SSR' || highestItem.grade === 'EX') {
+                    document.getElementById('main-container').classList.add('shake-effect');
+                    const vfxId = highestItem.grade === 'EX' ? 'vfx-vortex-ex' : 'vfx-vortex-ssr';
+                    document.getElementById(vfxId).style.display = "block";
+                    flash.style.display = "block";
+                    await new Promise(r => setTimeout(r, 1200));
+                    document.getElementById(vfxId).style.display = "none";
+                    flash.style.display = "none";
+                    document.getElementById('main-container').classList.remove('shake-effect');
+                }
+
+                // [Step 3] 최종 결과 노출
+                cutIn.style.display = "none";
+                ph.style.display = 'none';
+
                 if (count === 1) {
-                    mainFrame.onclick = null;
-                    if(ph) ph.style.display = 'flex'; // 가챠 윈도우 상태(텍스트)
-                    cardFront.style.display = 'none';
-                    cardBack.style.display = 'none';
-                    mainFrame.classList.remove('show-back');
-                    mainFrame.style.border = "4px solid #222";
-                    mainFrame.style.boxShadow = "none";
-                    document.getElementById('multi-result-display').style.display = "none";
-                    document.getElementById('main-card-wrapper').style.display = "block";
-
-                    // [Step 1] 초록색 스캐닝 시작 (윈도우 상태에서)
-                    cutIn.style.display = "flex";
-                    await new Promise(r => setTimeout(r, 1500)); 
-
-                    // [Step 2] 고등급 컷인 (SSR/EX일 경우)
-                    const highestGrade = results[0].grade;
-                    if (highestGrade === 'SSR' || highestGrade === 'EX') {
-                        container.classList.add('shake-effect');
-                        document.getElementById('vfx-vortex-ssr').style.display = "block";
-                        flash.style.display = "block"; flash.style.background = "rgba(255, 223, 0, 0.3)";
-                        detectText.innerText = highestGrade === 'EX' ? "EX DETECTED!" : "SSR DETECTED!";
-                        detectText.style.display = "block";
-                        detectText.style.color = SETTINGS[highestGrade].color;
-                        await new Promise(r => setTimeout(r, 1200));
-                        document.getElementById('vfx-vortex-ssr').style.display = "none";
-                        flash.style.display = "none";
-                        container.classList.remove('shake-effect');
-                    }
-
-                    // [Step 3] 카드 뒷면 및 테두리 생성 (뒷면 상태로)
-                    cutIn.style.display = "none";
-                    detectText.style.display = "none";
-                    if(ph) ph.style.display = 'none';
+                    // 1회 가챠: 즉시 뒷면으로 변경 후 대기
                     cardBack.style.display = 'flex';
                     renderCard(document.getElementById('main-card-wrapper'), results[0], true);
-                    mainFrame.classList.add('show-back'); // 뒷면 노출
-
-                    // [Step 4] 사용자 터치 시 180도 회전
+                    mainFrame.classList.add('show-back'); 
+                    
+                    // 터치 시 뒤집기
                     mainFrame.onclick = () => {
-                        mainFrame.classList.remove('show-back'); // 앞면으로
-                        // [Step 5] 추가 터치 시 상세보기
+                        mainFrame.classList.remove('show-back');
+                        isResultPending = false; // 이제 다른 가챠 가능
+                        document.getElementById('btn-1').disabled = document.getElementById('btn-10').disabled = false;
                         mainFrame.onclick = () => showDetail(results[0]);
                     };
                 } else {
+                    // 10회 가챠: 즉시 리스트 노출
                     document.getElementById('main-card-wrapper').style.display = "none";
                     renderTen(results);
+                    isResultPending = false;
+                    document.getElementById('btn-1').disabled = document.getElementById('btn-10').disabled = false;
                 }
                 document.getElementById('btn-home').style.display = "block";
-            } catch (error) { console.error(error); } 
-            finally { isGachaRunning = false; document.getElementById('btn-1').disabled = document.getElementById('btn-10').disabled = false; }
+
+            } catch (e) { console.error(e); } 
+            finally { isGachaRunning = false; }
         }
 
-        // --- 상세보기 틸트 최적화 (모바일용) ---
+        // --- 상세보기 틸트 (부드러운 모바일 조작) ---
         function showDetail(item) {
             document.body.classList.add('lock-scroll');
             const target = document.getElementById('detail-card-target');
@@ -377,44 +330,32 @@
             const card = target.querySelector('.card-frame'), view = document.getElementById('detail-view');
             view.style.display = 'flex';
 
-            let rX = 0, rY = 0, tX = 0, tY = 0;
+            let curX = 0, curY = 0, tarX = 0, tarY = 0;
             let rafId = null;
 
-            const updateRotation = () => {
-                rX += (tX - rX) * 0.1; // 부드러운 감쇠 효과
-                rY += (tY - rY) * 0.1;
-                card.style.transform = `rotateY(${rY}deg) rotateX(${rX}deg) scale(1.05)`;
-                
-                const h = card.querySelector('.hologram');
-                if(h && (item.grade === 'EX' || item.grade === 'SSR')) {
-                    const opacity = Math.min(Math.abs(rX) + Math.abs(rY), 20) / 20;
-                    h.style.opacity = opacity;
-                    h.style.background = `linear-gradient(${135 + rY}deg, transparent, rgba(255,255,255,${opacity * 0.4}), transparent)`;
-                }
-                rafId = requestAnimationFrame(updateRotation);
+            const animate = () => {
+                curX += (tarX - curX) * 0.15;
+                curY += (tarY - curY) * 0.15;
+                card.style.transform = `rotateY(${curY}deg) rotateX(${curX}deg) scale(1.05)`;
+                rafId = requestAnimationFrame(animate);
             };
 
-            const handleInput = (e) => {
+            const onMove = (e) => {
                 const rect = card.getBoundingClientRect();
-                const clientX = e.clientX || (e.touches && e.touches[0].clientX);
-                const clientY = e.clientY || (e.touches && e.touches[0].clientY);
-                if (!clientX || !clientY) return;
-
-                const x = clientX - rect.left, y = clientY - rect.top;
-                tY = ((x / rect.width) - 0.5) * 60; // 최대 30도 회전
-                tX = (0.5 - (y / rect.height)) * 60;
+                const x = (e.clientX || e.touches[0].clientX) - rect.left, y = (e.clientY || e.touches[0].clientY) - rect.top;
+                tarY = ((x / rect.width) - 0.5) * 50;
+                tarX = (0.5 - (y / rect.height)) * 50;
             };
 
-            view.addEventListener('mousemove', handleInput);
-            view.addEventListener('touchmove', handleInput, { passive: false });
-            rafId = requestAnimationFrame(updateRotation);
+            view.addEventListener('mousemove', onMove);
+            view.addEventListener('touchmove', onMove, { passive: false });
+            rafId = requestAnimationFrame(animate);
 
             view.onclick = (e) => { 
                 if(e.target === view) { 
                     cancelAnimationFrame(rafId);
                     view.style.display = 'none'; 
                     document.body.classList.remove('lock-scroll'); 
-                    if(particleTimer) clearInterval(particleTimer); 
                 } 
             };
         }
@@ -424,42 +365,71 @@
             display.innerHTML = ""; display.style.display = "flex";
             results.forEach(item => {
                 const wrap = document.createElement('div'); wrap.className = "card-container-wrapper";
-                wrap.style.flex = "0 0 260px";
+                wrap.style.flex = "0 0 250px"; wrap.style.scrollSnapAlign = "center";
                 wrap.innerHTML = `<div class="card-frame"><div class="card-face card-front"><div class="card-clip"></div></div><div class="card-face card-back"><img src="${BACK_IMG_URL}"></div></div>`;
                 renderCard(wrap, item, false);
                 wrap.onclick = () => showDetail(item);
                 display.appendChild(wrap);
             });
-            if(results.some(r => r.grade === 'SSR' || r.grade === 'EX')) confetti({ particleCount: 150, spread: 70 });
+            if(results.some(r => r.grade === 'SSR' || r.grade === 'EX')) confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
         }
 
         function openCollection() {
+            const collectedCount = myItems.length;
+            const totalCount = pool.length;
+            const rate = ((collectedCount / totalCount) * 100).toFixed(1);
+
             const modal = document.getElementById('collection-modal');
-            modal.innerHTML = `<div style="padding:20px; display:flex; justify-content:space-between; align-items:center; background:#000;"><h2 style="color:var(--ssr-color);">정예 도감</h2><button onclick="document.getElementById('collection-modal').style.display='none'; document.body.classList.remove('lock-scroll');" style="background:#222; padding:8px 15px; border-radius:8px;">닫기</button></div><div id="collection-grid"></div>`;
+            modal.innerHTML = `
+                <div id="collection-header">
+                    <div>
+                        <h2 style="font-size:1.2rem; color:var(--ssr-color);">빈고 도감 <span style="font-size:0.9rem; color:#fff; margin-left:5px;">(${rate}%)</span></h2>
+                        <p style="font-size:11px; color:#666; margin-top:3px;">수집 현황: ${collectedCount} / ${totalCount}</p>
+                    </div>
+                    <button onclick="document.getElementById('collection-modal').style.display='none'; document.body.classList.remove('lock-scroll');" style="background:#222; padding:8px 15px; border-radius:8px; font-size:13px;">닫기</button>
+                </div>
+                <div id="collection-grid"></div>
+                <div style="padding:20px; background:#000; display:flex; justify-content:center;">
+                    <button onclick="resetData()" style="background:#a00; font-size:12px; padding:10px 20px;">데이터 초기화</button>
+                </div>`;
+            
             const grid = modal.querySelector('#collection-grid');
-            pool.forEach((item, idx) => {
-                const f = myItems.find(i => i.id === item.id);
-                const wrap = document.createElement('div'); wrap.className = "card-container-wrapper";
-                if (f) {
-                    wrap.innerHTML = `<div class="card-frame"><div class="card-face card-front"><div class="card-clip"></div></div><div class="card-face card-back"><img src="${BACK_IMG_URL}"></div></div><div class="count-badge">x${f.count}</div>`;
+            pool.forEach((item) => {
+                const found = myItems.find(i => i.id === item.id);
+                const wrap = document.createElement('div'); wrap.className = "coll-card-wrap";
+                if (found) {
+                    wrap.innerHTML = `<div class="card-frame"><div class="card-face card-front"><div class="card-clip"></div></div><div class="card-face card-back"><img src="${BACK_IMG_URL}"></div></div><div class="count-badge">x${found.count}</div>`;
                     renderCard(wrap, item, false, false, true); 
                     wrap.onclick = () => showDetail(item);
-                } else { wrap.innerHTML = `<div style="width:100%; height:100%; border:2px dashed #444; border-radius:16px; display:flex; align-items:center; justify-content:center; opacity:0.3;">?</div>`; }
+                } else { 
+                    wrap.innerHTML = `<div style="width:100%; height:100%; border:1px solid #222; border-radius:15px; display:flex; align-items:center; justify-content:center; background:#0a0a0a; color:#222; font-weight:900; font-size:20px;">?</div>`; 
+                }
                 grid.appendChild(wrap);
             });
             modal.style.display = "flex"; document.body.classList.add('lock-scroll');
         }
 
-        function goHome() { location.reload(); }
+        function goHome() { 
+            isResultPending = false;
+            document.getElementById('btn-1').disabled = document.getElementById('btn-10').disabled = false;
+            document.getElementById('multi-result-display').style.display = "none"; 
+            document.getElementById('btn-home').style.display = "none"; 
+            document.getElementById('main-card-wrapper').style.display = "block";
+            const frame = document.getElementById('main-card-frame');
+            frame.style.border = "4px solid #222";
+            frame.style.boxShadow = "none";
+            frame.classList.remove('show-back');
+            frame.querySelector('.card-front').style.display = 'none';
+            frame.querySelector('.card-back').style.display = 'none';
+            document.getElementById('slot-placeholder').style.display = 'flex';
+            frame.onclick = null;
+        }
+
         function updateUI() { document.getElementById('energy-display').innerText = `${energy.count} / ${MAX_ENERGY}`; }
         function updateEnergyOnLoad() { 
             if (!energy.last) return; 
             const gained = Math.floor((Date.now() - energy.last) / RECHARGE_TIME); 
-            if (gained > 0) { 
-                energy.count = Math.min(MAX_ENERGY, energy.count + gained); 
-                energy.last = (energy.count >= MAX_ENERGY) ? null : energy.last + (gained * RECHARGE_TIME); 
-                save(); 
-            } 
+            if (gained > 0) { energy.count = Math.min(MAX_ENERGY, energy.count + gained); energy.last = (energy.count >= MAX_ENERGY) ? null : energy.last + (gained * RECHARGE_TIME); save(); } 
         }
         function updateTimer() { 
             if (energy.count >= MAX_ENERGY) { document.getElementById('timer-display').innerText = "(MAX)"; return; } 
@@ -469,6 +439,7 @@
             const m = Math.floor(rem/60000), s = Math.floor((rem%60000)/1000).toString().padStart(2,'0'); 
             document.getElementById('timer-display').innerText = `(${m}:${s})`; 
         }
+        async function resetData() { if(confirm("정말 초기화하시겠습니까?")) { localStorage.clear(); if(USER_ID) await db.ref('users/' + USER_ID).update({ inventory: [] }); location.reload(); } }
         function draw() { 
             const total = pool.reduce((s, i) => s + i.chance, 0); 
             let r = Math.random() * total, a = 0; 
