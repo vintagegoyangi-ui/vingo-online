@@ -150,18 +150,19 @@
         .auth-box input { width: 100%; padding: 15px; margin-bottom: 12px; border-radius: 12px; border: 1px solid #333; background: #000; color: white; font-size: 1rem; }
         .auth-box button { width: 100%; padding: 15px; border-radius: 12px; font-weight: bold; margin-bottom: 10px; color: white; }
 
-        #multi-result-display { display:none; flex-wrap:nowrap; overflow-x:auto; gap:20px; width:100%; padding: 30px 20px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
+        /* 10연차 결과 컨테이너 */
+        #multi-result-display { display:none; flex-wrap:nowrap; overflow-x:auto; gap:15px; width:100%; padding: 30px 20px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
         #detail-view { position: fixed; inset: 0; background: rgba(0,0,0,0.97); z-index: 2000; display: none; align-items: center; justify-content: center; perspective: 1500px; touch-action: none; }
         
-        /* 도감 스타일: 3열 고정 및 위아래 간격 최적화 */
+        /* 도감 스타일: 3열 고정 및 강제 배치 */
         #collection-modal { position:fixed; inset:0; background:#050505; display:none; flex-direction:column; z-index:1500; }
-        #collection-header { padding:20px; display:flex; justify-content:space-between; align-items:center; background:#000; border-bottom:1px solid #222; }
-        #collection-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 15px; overflow-y: auto; flex:1; align-content: start; }
+        #collection-header { padding:20px; display:flex; justify-content:space-between; align-items:center; background:#000; border-bottom:1px solid #222; flex-shrink: 0; }
+        #collection-grid { display: grid !important; grid-template-columns: repeat(3, 1fr) !important; gap: 10px; padding: 15px; overflow-y: auto; flex:1; align-content: start; }
         
-        .coll-card-wrap { position: relative; width: 100%; aspect-ratio: 1 / 1.5; background: #0a0a0a; border-radius: 10px; border: 1px solid #222; overflow: hidden; display: flex; flex-direction: column; }
-        .coll-img-box { height: 78%; width: 100%; display: flex; align-items: center; justify-content: center; background: #000; position: relative; }
-        .coll-info-box { height: 22%; width: 100%; display: flex; align-items: center; justify-content: center; background: #111; border-top: 1px solid #222; }
-        .coll-info-box .name-mini { font-size: 9px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 4px; }
+        .coll-card-wrap { position: relative; width: 100%; aspect-ratio: 1 / 1.5; background: #0a0a0a; border-radius: 10px; border: 1px solid #222; overflow: hidden; display: flex; flex-direction: column; min-width: 0; }
+        .coll-img-box { height: 75%; width: 100%; display: flex; align-items: center; justify-content: center; background: #000; position: relative; }
+        .coll-info-box { height: 25%; width: 100%; display: flex; align-items: center; justify-content: center; background: #111; border-top: 1px solid #222; flex-shrink: 0; }
+        .coll-info-box .name-mini { font-size: 9px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 4px; text-align: center; }
         .grade-tag { position: absolute; top: 4px; right: 4px; font-size: 8px; font-weight: 900; padding: 1px 4px; border-radius: 3px; z-index: 10; color: #fff; }
 
         #custom-msg { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,0.95); color: #000; padding: 10px 20px; border-radius: 20px; z-index: 20000; font-weight: bold; display: none; font-size: 13px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
@@ -326,6 +327,11 @@
             if (count === 1) {
                 document.getElementById('main-card-wrapper').style.display = "block";
                 document.getElementById('multi-result-display').style.display = "none";
+            } else {
+                // 10연차 시 스크롤 위치 즉시 강제 초기화
+                const display = document.getElementById('multi-result-display');
+                display.scrollLeft = 0; 
+                display.style.display = "none";
             }
 
             try {
@@ -348,7 +354,7 @@
                 ph.style.display = 'none';
                 cardBack.style.display = 'none';
                 cardFront.style.display = 'none';
-                mainFrame.classList.remove('show-back');
+                mainFrame.classList.remove('show-back', 'float-effect');
                 mainFrame.style.border = "4px solid #222";
                 cutIn.style.display = "flex";
 
@@ -391,6 +397,8 @@
                 } else {
                     document.getElementById('main-card-wrapper').style.display = "none";
                     renderTen(results);
+                    // 렌더링 후 다시 한 번 스크롤 위치 보정
+                    setTimeout(() => { document.getElementById('multi-result-display').scrollLeft = 0; }, 10);
                 }
                 
                 isResultPending = false;
@@ -428,7 +436,6 @@
             const display = document.getElementById('multi-result-display');
             display.innerHTML = ""; 
             display.style.display = "flex";
-            display.scrollLeft = 0; // 10연차 결과 스크롤 위치 초기화
             results.forEach(item => {
                 const wrap = document.createElement('div'); wrap.className = "card-container-wrapper";
                 wrap.style.flex = "0 0 255px"; wrap.style.scrollSnapAlign = "center";
