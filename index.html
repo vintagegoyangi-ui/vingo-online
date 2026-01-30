@@ -27,6 +27,8 @@
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
         let USER_ID = null;
+        let myItems = [];
+        let energy = { count: 30, last: null };
 
         // 아이디/비밀번호 커스텀 로그인 및 중복 체크
         async function handleAuth(type) {
@@ -116,7 +118,7 @@
         .aurora-ssr { background: linear-gradient(270deg, #4a3b00, #ffdf00, #4a3b00) !important; background-size: 200% 200% !important; animation: aurora 4s ease infinite !important; }
         .particle { position: absolute; pointer-events: none; border-radius: 50%; animation: particle-rise linear forwards; z-index: 100; }		
 
-        /* --- 카드 슬롯 및 UI 구조 --- */
+        /* --- 카드 슬롯 및 3D 회전 구조 개선 --- */
         .card-container-wrapper { position: relative; width: 100%; max-width: 280px; aspect-ratio: 3 / 4.4; margin: 0 auto; perspective: 1000px; }
         .card-frame { 
             position: relative; 
@@ -131,17 +133,22 @@
             align-items: center;
             justify-content: center;
         }
-        /* 뒷면이 보일 때 회전값 */
-        .card-frame.is-flipped { transform: rotateY(180deg); }
+        /* 뒷면을 보여주기 위한 클래스 (회전) */
+        .card-frame.show-back { transform: rotateY(180deg); }
 
         .card-face { position: absolute; inset: 0; backface-visibility: hidden; border-radius: 16px; overflow: hidden; background: #000; }
-        .card-front { z-index: 2; transform: rotateY(180deg); } /* 앞면은 기본적으로 뒤집혀 있음 */
-        .card-back { z-index: 1; display: flex; align-items: center; justify-content: center; background: #111; }
+        
+        /* 앞면 (캐릭터): 기본 0도 */
+        .card-front { z-index: 2; transform: rotateY(0deg); } 
+        
+        /* 뒷면: 캐릭터와 반대방향인 180도 */
+        .card-back { z-index: 1; transform: rotateY(180deg); display: flex; align-items: center; justify-content: center; background: #111; }
         .card-back img { width: 100%; height: 100%; object-fit: cover; }
+        
         .card-clip { position: absolute; inset: 0; border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; }
         .hologram { position: absolute; inset: 0; z-index: 4; pointer-events: none; opacity: 0; transition: opacity 0.4s ease; mix-blend-mode: color-dodge; }
         
-        #cut-in-layer { position: absolute; inset: -4px; background: #000; z-index: 100; display: none; align-items: center; justify-content: center; flex-direction: column; border-radius: 20px; border: 4px solid #fff; }
+        #cut-in-layer { position: absolute; inset: -4px; background: #000; z-index: 100; display: none; align-items: center; justify-content: center; flex-direction: column; border-radius: 20px; border: 4px solid #fff; backface-visibility: hidden; transform: rotateY(180deg); }
         .scan-line { position: absolute; left: 0; width: 100%; height: 4px; background: rgba(255, 255, 255, 0.8); z-index: 101; pointer-events: none; animation: scanMove 1.5s linear infinite; }
         
         /* 슬롯 내 초기 텍스트 스타일 */
@@ -152,6 +159,7 @@
             justify-content: center;
             text-align: center;
             z-index: 5;
+            backface-visibility: hidden;
         }
         .slot-bg-text {
             font-size: 2rem;
@@ -182,7 +190,7 @@
         .auth-box input { width: 100%; padding: 15px; margin-bottom: 12px; border-radius: 12px; border: 1px solid #333; background: #000; color: white; outline: none; font-size: 1rem; }
         .auth-box button { width: 100%; padding: 15px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; margin-bottom: 10px; color: white; }
 
-        /* 도감 스타일 */
+        /* 도감 및 상세 뷰 */
         .count-badge { position: absolute; top: -8px; right: -8px; background: #fff; color: #000; font-size: 10px; padding: 2px 6px; border-radius: 6px; z-index: 210; font-weight: 900; border: 1.5px solid #000; }
         .number-badge { position: absolute; top: 6px; left: 6px; background: rgba(0,0,0,0.6); color: rgba(255,255,255,0.8); font-size: 8px; padding: 1px 4px; border-radius: 4px; z-index: 210; font-weight: bold; pointer-events: none; }
         #multi-result-display { display:none; flex-wrap:nowrap; overflow-x:auto; gap:25px; width:100%; padding: 30px 25px; scroll-snap-type: x mandatory; }
@@ -227,11 +235,12 @@
                         <div class="slot-bg-text">VINGO GACHA!</div>
                         <div class="slot-sub-text">빈고를 수집하세요!</div>
                     </div>
-                    <!-- 카드 뒷면 (가챠 연출 시 활용) -->
+                    <!-- 카드 뒷면 (가챠 연출 시 180도 회전된 상태로 대기) -->
                     <div class="card-face card-back" id="main-card-back" style="display:none;"><img src="images/card_back.webp"></div>
                     <!-- 카드 앞면 -->
                     <div class="card-face card-front" id="main-card-front" style="display:none;"><div class="card-clip"></div></div>
                     
+                    <!-- 컷인 레이어는 뒷면에 붙어서 보이게 설정 -->
                     <div id="cut-in-layer">
                         <div class="scan-line"></div>
                         <span id="scan-status" style="font-weight:900; font-size:1.5rem; letter-spacing:2px; color:#fff;">SCANNING...</span>
@@ -268,11 +277,6 @@
             "R": { rate: 70, color: "#0070dd", aurora: "" } 
         };
 
-        let myItems = [];
-        let energy = { count: MAX_ENERGY, last: null };
-        let isGachaRunning = false;
-        let particleTimer = null;
-
         const pool = fileNames.map(f => {
             const [g] = f.split('_');
             return { id: f, grade: g, name: CARD_DATA_DB[f].name, img: `images/${f}`, chance: SETTINGS[g].rate / fileNames.filter(x => x.startsWith(g)).length };
@@ -300,7 +304,13 @@
             frame.style.border = `${isColl ? '3px' : '5px'} solid ${set.color}`;
             frame.style.borderRadius = "20px";
             frame.style.boxShadow = isHigh ? `0 0 25px ${set.color}cc, inset 0 0 10px ${set.color}66` : `0 4px 15px rgba(0,0,0,0.6)`;
-            frame.className = `card-frame ${isHigh && !isDetail && !isColl ? 'float-effect' : ''}`;
+            
+            // 앞면 보이기 (show-back 제거)
+            if(!isDraw) {
+                frame.classList.remove('show-back');
+            }
+            
+            frame.className = `card-frame ${!isDraw ? '' : 'show-back'} ${isHigh && !isDetail && !isColl ? 'float-effect' : ''}`;
 
             const frontFace = frame.querySelector('.card-front');
             if(frontFace) {
@@ -332,6 +342,7 @@
             if (isHigh && !isColl && (isDetail || isDraw)) createParticles(frame, set.color, item.grade);
         }
 
+        let particleTimer = null;
         function createParticles(target, color, grade) {
             if (particleTimer) clearInterval(particleTimer);
             const interval = grade === 'EX' ? 150 : 300;
@@ -365,11 +376,11 @@
             const cardBack = document.getElementById('main-card-back'), cardFront = document.getElementById('main-card-front');
             const ph = mainFrame.querySelector('#slot-placeholder');
             
-            // 1. 연출 초기화 (슬롯 숨기고 뒷면 보임)
+            // 1. 연출 초기화 (뒷면으로 시작)
             if(ph) ph.style.display = 'none';
-            cardFront.style.display = 'none';
+            cardFront.style.display = 'block'; // 앞면 데이터 미리 렌더링
             cardBack.style.display = 'flex';
-            mainFrame.classList.remove('is-flipped'); // 뒷면 상태로 시작
+            mainFrame.classList.add('show-back'); // 뒷면(180도) 상태로 시작
             
             detectText.innerText = ""; detectText.style.display = "none";
             document.getElementById('multi-result-display').style.display = "none";
@@ -405,10 +416,10 @@
             container.classList.remove('shake-effect'); 
             cutIn.style.display = "none";
 
-            // 3. 카드 공개 (앞면으로 뒤집기)
+            // 3. 카드 공개 (앞면으로 뒤집기: 180도 -> 0도)
             if (count === 1) { 
                 renderCard(document.getElementById('main-card-wrapper'), results[0], true); 
-                mainFrame.classList.add('is-flipped'); // 3D 회전 애니메이션
+                mainFrame.classList.remove('show-back'); // 0도로 돌아오며 앞면 노출
                 mainFrame.onclick = () => showDetail(results[0]); 
             } else { 
                 document.getElementById('main-card-wrapper').style.display = "none";
@@ -426,7 +437,8 @@
             results.forEach(item => {
                 const wrap = document.createElement('div'); wrap.className = "multi-item-wrap card-container-wrapper";
                 wrap.onclick = () => showDetail(item);
-                wrap.innerHTML = `<div class="card-frame is-flipped"><div class="card-face card-front"><div class="card-clip"></div></div><div class="card-face card-back"><img src="${BACK_IMG_URL}"></div></div>`;
+                // 텐 가챠 결과 리스트는 즉시 앞면 보임 (show-back 없음)
+                wrap.innerHTML = `<div class="card-frame"><div class="card-face card-front"><div class="card-clip"></div></div><div class="card-face card-back"><img src="${BACK_IMG_URL}"></div></div>`;
                 renderCard(wrap, item, true); display.appendChild(wrap);
             });
             display.scrollLeft = 0;
@@ -436,7 +448,8 @@
         function showDetail(item) {
             document.body.classList.add('lock-scroll');
             const target = document.getElementById('detail-card-target');
-            target.innerHTML = `<div class="card-container-wrapper" style="width:100%;"><div class="card-frame is-flipped"><div class="card-face card-front"><div class="card-clip"></div></div><div class="card-face card-back"><img src="${BACK_IMG_URL}"></div></div></div>`;
+            // 상세 보기도 즉시 앞면 보임
+            target.innerHTML = `<div class="card-container-wrapper" style="width:100%;"><div class="card-frame"><div class="card-face card-front"><div class="card-clip"></div></div><div class="card-face card-back"><img src="${BACK_IMG_URL}"></div></div></div>`;
             renderCard(target.querySelector('.card-container-wrapper'), item, false, true); 
             const card = target.querySelector('.card-frame'), view = document.getElementById('detail-view');
             view.style.display = 'flex';
@@ -444,16 +457,16 @@
                 const rect = card.getBoundingClientRect();
                 const cx = e.clientX || (e.touches && e.touches[0].clientX), cy = e.clientY || (e.touches && e.touches[0].clientY);
                 const x = cx - rect.left, y = cy - rect.top;
-                const rY = (x - rect.width/2) / 1.5 + 180, rX = (rect.height/2 - y) / 3; // +180 은 이미 뒤집힌 상태이므로
+                const rY = (x - rect.width/2) / 1.5, rX = (rect.height/2 - y) / 3;
                 card.style.transform = `rotateY(${rY}deg) rotateX(${rX}deg) scale(1.05)`;
                 const h = card.querySelector('.hologram');
                 if(h && (item.grade === 'EX' || item.grade === 'SSR')) {
                     h.style.opacity = "1"; const lp = (x / rect.width) * 100, hue = (x / rect.width) * 360;
-                    h.style.background = `linear-gradient(${135 + (rY-180)*2}deg, rgba(255,255,255,0) 0%, hsla(${hue}, 80%, 80%, 0.3) ${lp-15}%, hsla(${hue+40}, 80%, 90%, 0.5) ${lp}%, hsla(${hue}, 80%, 80%, 0.3) ${lp+15}%, rgba(255,255,255,0) 100%)`;
+                    h.style.background = `linear-gradient(${135 + rY*2}deg, rgba(255,255,255,0) 0%, hsla(${hue}, 80%, 80%, 0.3) ${lp-15}%, hsla(${hue+40}, 80%, 90%, 0.5) ${lp}%, hsla(${hue}, 80%, 80%, 0.3) ${lp+15}%, rgba(255,255,255,0) 100%)`;
                 }
             };
             view.onmousemove = view.ontouchmove = handleMove;
-            view.onmouseleave = view.ontouchend = () => { card.style.transform = "rotateY(180deg) rotateX(0) scale(1)"; if(card.querySelector('.hologram')) card.querySelector('.hologram').style.opacity = "0"; };
+            view.onmouseleave = view.ontouchend = () => { card.style.transform = "rotateY(0deg) rotateX(0) scale(1)"; if(card.querySelector('.hologram')) card.querySelector('.hologram').style.opacity = "0"; };
             view.onclick = (e) => { if(e.target === view) { view.style.display = 'none'; document.body.classList.remove('lock-scroll'); if(particleTimer) clearInterval(particleTimer); } };
         }
 
@@ -466,7 +479,8 @@
                 const wrap = document.createElement('div'); wrap.className = "coll-item-wrapper";
                 const numBadge = `<div class="number-badge">No.${(idx + 1).toString().padStart(2, '0')}</div>`;
                 if (f) {
-                    wrap.innerHTML = `<div class="card-frame is-flipped"><div class="card-face card-front"><div class="card-clip"></div></div><div class="card-face card-back"><img src="${BACK_IMG_URL}"></div></div>${numBadge}<div class="count-badge">x${f.count}</div>`;
+                    // 도감 리스트는 즉시 앞면 보임 (show-back 없음)
+                    wrap.innerHTML = `<div class="card-frame"><div class="card-face card-front"><div class="card-clip"></div></div><div class="card-face card-back"><img src="${BACK_IMG_URL}"></div></div>${numBadge}<div class="count-badge">x${f.count}</div>`;
                     renderCard(wrap, item, false, false, true); wrap.onclick = () => showDetail(item);
                 } else { wrap.innerHTML = `<div class="coll-card locked"><span style="opacity:0.3;">?</span>${numBadge}</div>`; }
                 grid.appendChild(wrap);
@@ -485,7 +499,7 @@
             frame.style.border = '4px solid #222';
             frame.style.boxShadow = 'none';
             frame.className = 'card-frame';
-            frame.classList.remove('is-flipped');
+            frame.classList.remove('show-back');
         }
 
         function updateUI() { document.getElementById('energy-display').innerText = `${energy.count} / ${MAX_ENERGY}`; }
