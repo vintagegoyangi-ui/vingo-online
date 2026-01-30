@@ -110,7 +110,8 @@
         @keyframes shake { 0%, 100% { transform: translate(0,0); } 10%, 30%, 50%, 70%, 90% { transform: translate(-4px, -2px); } 20%, 40%, 60%, 80% { transform: translate(4px, 2px); } }
         @keyframes vortex { 0% { transform: rotate(0deg) scale(1); opacity: 0; } 50% { opacity: 0.35; transform: rotate(180deg) scale(2.2); } 100% { transform: rotate(360deg) scale(3.5); opacity: 0; } }
         @keyframes flashEffect { 0% { opacity: 0; } 50% { opacity: 0.7; } 100% { opacity: 0; } }
-        @keyframes scanMove { 0% { top: 0%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+        /* 상하 왕복 1회 스캔용 애니메이션 */
+        @keyframes scanOnce { 0% { top: 0%; opacity: 0; } 10% { opacity: 1; } 50% { top: 100%; } 90% { opacity: 1; } 100% { top: 0%; opacity: 0; } }
         @keyframes particle-rise { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-100px) scale(0); opacity: 0; } }
         @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
         @keyframes aurora { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
@@ -139,6 +140,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            cursor: pointer;
         }
         /* 뒷면을 보여주기 위한 클래스 (회전) */
         .card-frame.show-back { transform: rotateY(180deg); }
@@ -155,11 +157,11 @@
         .card-clip { position: absolute; inset: 0; border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; }
         .hologram { position: absolute; inset: 0; z-index: 4; pointer-events: none; opacity: 0; transition: opacity 0.4s ease; mix-blend-mode: color-dodge; }
         
-        /* 스캔 레이어: 뒷면에 붙어있어야 스캔할 때 보임 */
+        /* 스캔 레이어: 뒷면(180도 상태) 위에 보임 */
         #cut-in-layer { 
             position: absolute; 
             inset: -4px; 
-            background: rgba(0,0,0,0.7); 
+            background: rgba(0,0,0,0.4); 
             z-index: 100; 
             display: none; 
             align-items: center; 
@@ -168,18 +170,19 @@
             border-radius: 20px; 
             border: 4px solid var(--scan-color); 
             backface-visibility: hidden; 
-            transform: rotateY(180deg); /* 뒷면 상태에서 보이게 설정 */
+            transform: rotateY(180deg); 
+            pointer-events: none;
         }
         .scan-line { 
             position: absolute; 
             left: 0; 
             width: 100%; 
-            height: 6px; 
+            height: 8px; 
             background: var(--scan-color); 
-            box-shadow: 0 0 15px var(--scan-color);
+            box-shadow: 0 0 20px var(--scan-color), 0 0 40px var(--scan-color);
             z-index: 101; 
             pointer-events: none; 
-            animation: scanMove 1.5s linear infinite; 
+            animation: scanOnce 1.5s ease-in-out forwards; 
         }
         
         /* 슬롯 내 초기 텍스트 스타일 */
@@ -323,9 +326,7 @@
                     energy: energy, 
                     lastSync: Date.now() 
                 });
-            } catch (e) {
-                console.error("Firebase 저장 에러:", e);
-            }
+            } catch (e) { console.error("DB 저장 실패", e); }
         }
 
         // --- 카드 렌더링 시스템 ---
@@ -344,12 +345,6 @@
             frame.style.borderRadius = "20px";
             frame.style.boxShadow = isHigh ? `0 0 25px ${set.color}cc, inset 0 0 10px ${set.color}66` : `0 4px 15px rgba(0,0,0,0.6)`;
             
-            if(!isDraw) {
-                frame.classList.remove('show-back');
-            }
-            
-            frame.className = `card-frame ${isDraw ? 'show-back' : ''} ${isHigh && !isDetail && !isColl ? 'float-effect' : ''}`;
-
             const frontFace = frame.querySelector('.card-front');
             if(frontFace) {
                 frontFace.style.display = 'block';
@@ -393,12 +388,11 @@
             }, interval);
         }
 
-        // --- 가챠 연출 시스템 ---
+        // --- 새로운 가챠 연출 시스템 ---
         async function playGacha(count) {
             if (isGachaRunning) return;
             if (!USER_ID) { alert("로그인이 필요합니다."); return; }
             if (energy.count < count) { alert("에너지가 부족합니다!"); return; }
-            if (pool.length === 0) { alert("카드 데이터가 없습니다."); return; }
 
             isGachaRunning = true;
             document.getElementById('btn-1').disabled = document.getElementById('btn-10').disabled = true;
@@ -421,23 +415,19 @@
                 const cardBack = document.getElementById('main-card-back'), cardFront = document.getElementById('main-card-front');
                 const ph = mainFrame.querySelector('#slot-placeholder');
                 
-                // 1. 초기 상태: 뒷면 고정 및 스캔 시작
+                // 이전 이벤트 제거 및 초기화
+                mainFrame.onclick = null;
                 if(ph) ph.style.display = 'none';
                 cardFront.style.display = 'none';
                 cardBack.style.display = 'flex';
-                mainFrame.classList.add('show-back'); 
-                
-                detectText.innerText = ""; detectText.style.display = "none";
+                mainFrame.classList.add('show-back'); // 뒷면으로 소환
                 document.getElementById('multi-result-display').style.display = "none";
                 document.getElementById('main-card-wrapper').style.display = "block";
-                
-                const highestGrade = results.map(r => r.grade).sort((a,b) => SETTINGS[a].rate - SETTINGS[b].rate)[0];
-                
-                // 초록색 스캔 라인 활성화
-                cutIn.style.display = "flex";
-                await new Promise(r => setTimeout(r, 1500)); 
+                detectText.innerText = ""; detectText.style.display = "none";
 
-                // 2. 등급 감지 연출 (SSR / EX일 경우)
+                const highestGrade = results.map(r => r.grade).sort((a,b) => SETTINGS[a].rate - SETTINGS[b].rate)[0];
+
+                // [Step 1] 고등급 컷인 (SSR/EX일 경우 스캐닝 전 발생)
                 if (highestGrade === 'SSR' || highestGrade === 'EX') {
                     container.classList.add('shake-effect');
                     document.getElementById('vfx-vortex-ssr').style.display = "block";
@@ -445,40 +435,45 @@
                     detectText.innerText = highestGrade === 'EX' ? "SSR DETECTED?" : "SSR DETECTED!";
                     detectText.style.display = "block";
                     detectText.style.color = SETTINGS.SSR.color;
-                    
                     await new Promise(r => setTimeout(r, 1000));
                     document.getElementById('vfx-vortex-ssr').style.display = "none"; flash.style.display = "none";
                     
                     if (highestGrade === 'EX') {
-                        await new Promise(r => setTimeout(r, 200));
-                        detectText.innerText = "EX DETECTED!"; 
-                        detectText.style.color = SETTINGS.EX.color;
                         document.getElementById('vfx-vortex-ex').style.display = "block";
                         flash.style.display = "block"; flash.style.background = "rgba(255, 0, 127, 0.3)";
+                        detectText.innerText = "EX DETECTED!"; 
+                        detectText.style.color = SETTINGS.EX.color;
                         await new Promise(r => setTimeout(r, 1200));
                         document.getElementById('vfx-vortex-ex').style.display = "none"; flash.style.display = "none";
                     }
-                } else {
-                    await new Promise(r => setTimeout(r, 500));
+                    container.classList.remove('shake-effect');
                 }
-                
-                container.classList.remove('shake-effect'); 
-                cutIn.style.display = "none";
 
-                // 3. 카드 공개 (앞면으로 뒤집기)
-                if (count === 1) { 
-                    renderCard(document.getElementById('main-card-wrapper'), results[0], true); 
-                    mainFrame.classList.remove('show-back'); 
-                    mainFrame.onclick = () => showDetail(results[0]); 
-                } else { 
+                if (count === 1) {
+                    // [Step 2] 초록색 스캐닝 연출 (상하 1회 왕복)
+                    cutIn.style.display = "flex";
+                    await new Promise(r => setTimeout(r, 1600)); // scanOnce 애니메이션 시간
+                    cutIn.style.display = "none";
+
+                    // [Step 3] 카드 렌더링 (아직 뒤집혀 있음)
+                    renderCard(document.getElementById('main-card-wrapper'), results[0], true);
+
+                    // [Step 4] 첫 번째 터치: 카드 뒤집기
+                    mainFrame.onclick = () => {
+                        mainFrame.classList.remove('show-back'); // 0도로 회전 (앞면 공개)
+                        
+                        // [Step 5] 두 번째 터치: 상세보기
+                        mainFrame.onclick = () => showDetail(results[0]);
+                    };
+                } else {
+                    // 10회 소환은 기존 리스트 방식 유지
                     document.getElementById('main-card-wrapper').style.display = "none";
-                    renderTen(results); 
+                    renderTen(results);
                 }
                 
                 document.getElementById('btn-home').style.display = "block";
             } catch (error) {
                 console.error("가챠 실행 에러:", error);
-                alert("오류가 발생했습니다. 다시 시도해주세요.");
             } finally {
                 isGachaRunning = false;
                 document.getElementById('btn-1').disabled = document.getElementById('btn-10').disabled = false;
@@ -492,7 +487,7 @@
                 const wrap = document.createElement('div'); wrap.className = "multi-item-wrap card-container-wrapper";
                 wrap.onclick = () => showDetail(item);
                 wrap.innerHTML = `<div class="card-frame"><div class="card-face card-front"><div class="card-clip"></div></div><div class="card-face card-back"><img src="${BACK_IMG_URL}"></div></div>`;
-                renderCard(wrap, item, false); 
+                renderCard(wrap, item, false);
                 display.appendChild(wrap);
             });
             display.scrollLeft = 0;
@@ -553,6 +548,7 @@
             frame.style.boxShadow = 'none';
             frame.className = 'card-frame';
             frame.classList.remove('show-back');
+            frame.onclick = null;
         }
 
         function updateUI() { 
