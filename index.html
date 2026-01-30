@@ -57,12 +57,18 @@
                     document.getElementById('login-layer').style.display = 'none';
                     document.getElementById('main-container').style.display = 'block';
                     
-                    myItems = userData.inventory || [];
-                    energy = userData.energy || { count: 30, last: null };
+                    // 데이터 동기화 및 유효성 검사
+                    myItems = Array.isArray(userData.inventory) ? userData.inventory : [];
+                    if (userData.energy) {
+                        energy = userData.energy;
+                    } else {
+                        energy = { count: 30, last: Date.now() };
+                    }
                     
                     updateEnergyOnLoad();
                     updateUI();
                     setInterval(updateTimer, 1000);
+                    console.log("🔓 로그인 성공:", USER_ID);
                 } else {
                     alert("아이디 또는 비밀번호가 일치하지 않습니다.");
                 }
@@ -311,7 +317,15 @@
             if (!USER_ID) return;
             localStorage.setItem(STORAGE_KEYS.COLL, JSON.stringify(myItems));
             localStorage.setItem(STORAGE_KEYS.EN, JSON.stringify(energy));
-            await db.ref('users/' + USER_ID).update({ inventory: myItems, energy: energy, lastSync: Date.now() });
+            try {
+                await db.ref('users/' + USER_ID).update({ 
+                    inventory: myItems, 
+                    energy: energy, 
+                    lastSync: Date.now() 
+                });
+            } catch (e) {
+                console.error("Firebase 저장 에러:", e);
+            }
         }
 
         // --- 카드 렌더링 시스템 ---
@@ -330,7 +344,6 @@
             frame.style.borderRadius = "20px";
             frame.style.boxShadow = isHigh ? `0 0 25px ${set.color}cc, inset 0 0 10px ${set.color}66` : `0 4px 15px rgba(0,0,0,0.6)`;
             
-            // 앞면 보이기 (show-back 상태가 아닐 때)
             if(!isDraw) {
                 frame.classList.remove('show-back');
             }
@@ -380,86 +393,96 @@
             }, interval);
         }
 
-        // --- 가챠 연출 시스템 뜯어고치기 ---
+        // --- 가챠 연출 시스템 ---
         async function playGacha(count) {
             if (isGachaRunning) return;
+            if (!USER_ID) { alert("로그인이 필요합니다."); return; }
             if (energy.count < count) { alert("에너지가 부족합니다!"); return; }
+            if (pool.length === 0) { alert("카드 데이터가 없습니다."); return; }
+
             isGachaRunning = true;
             document.getElementById('btn-1').disabled = document.getElementById('btn-10').disabled = true;
 
-            if (energy.count === MAX_ENERGY) energy.last = Date.now();
-            energy.count -= count;
+            try {
+                if (energy.count === MAX_ENERGY) energy.last = Date.now();
+                energy.count -= count;
 
-            const results = Array.from({length: count}, draw);
-            results.forEach(item => {
-                const f = myItems.find(i => i.id === item.id);
-                if (f) f.count++; else myItems.push({id: item.id, count: 1});
-            });
-            updateUI(); await save(); 
+                const results = Array.from({length: count}, draw);
+                results.forEach(item => {
+                    const f = myItems.find(i => i.id === item.id);
+                    if (f) f.count++; else myItems.push({id: item.id, count: 1});
+                });
 
-            const mainFrame = document.getElementById('main-card-frame'), container = document.getElementById('main-container'), flash = document.getElementById('vfx-flash');
-            const cutIn = document.getElementById('cut-in-layer'), detectText = document.getElementById('detect-text');
-            const cardBack = document.getElementById('main-card-back'), cardFront = document.getElementById('main-card-front');
-            const ph = mainFrame.querySelector('#slot-placeholder');
-            
-            // 1. 초기 상태: 뒷면 고정 및 스캔 시작
-            if(ph) ph.style.display = 'none';
-            cardFront.style.display = 'none';
-            cardBack.style.display = 'flex';
-            mainFrame.classList.add('show-back'); // 뒷면 보여주기
-            
-            detectText.innerText = ""; detectText.style.display = "none";
-            document.getElementById('multi-result-display').style.display = "none";
-            document.getElementById('main-card-wrapper').style.display = "block";
-            
-            const highestGrade = results.map(r => r.grade).sort((a,b) => SETTINGS[a].rate - SETTINGS[b].rate)[0];
-            
-            // 초록색 스캔 라인 활성화
-            cutIn.style.display = "flex";
-            await new Promise(r => setTimeout(r, 1500)); // 스캔 진행 시간 (1.5초)
+                updateUI();
+                await save(); 
 
-            // 2. 등급 감지 연출 (SSR / EX일 경우)
-            if (highestGrade === 'SSR' || highestGrade === 'EX') {
-                container.classList.add('shake-effect');
-                document.getElementById('vfx-vortex-ssr').style.display = "block";
-                flash.style.display = "block"; flash.style.background = "rgba(255, 223, 0, 0.3)";
-                detectText.innerText = highestGrade === 'EX' ? "SSR DETECTED?" : "SSR DETECTED!";
-                detectText.style.display = "block";
-                detectText.style.color = SETTINGS.SSR.color;
+                const mainFrame = document.getElementById('main-card-frame'), container = document.getElementById('main-container'), flash = document.getElementById('vfx-flash');
+                const cutIn = document.getElementById('cut-in-layer'), detectText = document.getElementById('detect-text');
+                const cardBack = document.getElementById('main-card-back'), cardFront = document.getElementById('main-card-front');
+                const ph = mainFrame.querySelector('#slot-placeholder');
                 
-                await new Promise(r => setTimeout(r, 1000));
-                document.getElementById('vfx-vortex-ssr').style.display = "none"; flash.style.display = "none";
+                // 1. 초기 상태: 뒷면 고정 및 스캔 시작
+                if(ph) ph.style.display = 'none';
+                cardFront.style.display = 'none';
+                cardBack.style.display = 'flex';
+                mainFrame.classList.add('show-back'); 
                 
-                if (highestGrade === 'EX') {
-                    // EX 등급이면 컷인 한 번 더 (2중 연출)
-                    await new Promise(r => setTimeout(r, 200));
-                    detectText.innerText = "EX DETECTED!"; 
-                    detectText.style.color = SETTINGS.EX.color;
-                    document.getElementById('vfx-vortex-ex').style.display = "block";
-                    flash.style.display = "block"; flash.style.background = "rgba(255, 0, 127, 0.3)";
-                    await new Promise(r => setTimeout(r, 1200));
-                    document.getElementById('vfx-vortex-ex').style.display = "none"; flash.style.display = "none";
+                detectText.innerText = ""; detectText.style.display = "none";
+                document.getElementById('multi-result-display').style.display = "none";
+                document.getElementById('main-card-wrapper').style.display = "block";
+                
+                const highestGrade = results.map(r => r.grade).sort((a,b) => SETTINGS[a].rate - SETTINGS[b].rate)[0];
+                
+                // 초록색 스캔 라인 활성화
+                cutIn.style.display = "flex";
+                await new Promise(r => setTimeout(r, 1500)); 
+
+                // 2. 등급 감지 연출 (SSR / EX일 경우)
+                if (highestGrade === 'SSR' || highestGrade === 'EX') {
+                    container.classList.add('shake-effect');
+                    document.getElementById('vfx-vortex-ssr').style.display = "block";
+                    flash.style.display = "block"; flash.style.background = "rgba(255, 223, 0, 0.3)";
+                    detectText.innerText = highestGrade === 'EX' ? "SSR DETECTED?" : "SSR DETECTED!";
+                    detectText.style.display = "block";
+                    detectText.style.color = SETTINGS.SSR.color;
+                    
+                    await new Promise(r => setTimeout(r, 1000));
+                    document.getElementById('vfx-vortex-ssr').style.display = "none"; flash.style.display = "none";
+                    
+                    if (highestGrade === 'EX') {
+                        await new Promise(r => setTimeout(r, 200));
+                        detectText.innerText = "EX DETECTED!"; 
+                        detectText.style.color = SETTINGS.EX.color;
+                        document.getElementById('vfx-vortex-ex').style.display = "block";
+                        flash.style.display = "block"; flash.style.background = "rgba(255, 0, 127, 0.3)";
+                        await new Promise(r => setTimeout(r, 1200));
+                        document.getElementById('vfx-vortex-ex').style.display = "none"; flash.style.display = "none";
+                    }
+                } else {
+                    await new Promise(r => setTimeout(r, 500));
                 }
-            } else {
-                await new Promise(r => setTimeout(r, 500));
-            }
-            
-            container.classList.remove('shake-effect'); 
-            cutIn.style.display = "none";
+                
+                container.classList.remove('shake-effect'); 
+                cutIn.style.display = "none";
 
-            // 3. 카드 공개 (앞면으로 화려하게 뒤집기)
-            if (count === 1) { 
-                renderCard(document.getElementById('main-card-wrapper'), results[0], true); 
-                mainFrame.classList.remove('show-back'); // 앞면으로 뒤집기 (0도 복귀)
-                mainFrame.onclick = () => showDetail(results[0]); 
-            } else { 
-                document.getElementById('main-card-wrapper').style.display = "none";
-                renderTen(results); 
+                // 3. 카드 공개 (앞면으로 뒤집기)
+                if (count === 1) { 
+                    renderCard(document.getElementById('main-card-wrapper'), results[0], true); 
+                    mainFrame.classList.remove('show-back'); 
+                    mainFrame.onclick = () => showDetail(results[0]); 
+                } else { 
+                    document.getElementById('main-card-wrapper').style.display = "none";
+                    renderTen(results); 
+                }
+                
+                document.getElementById('btn-home').style.display = "block";
+            } catch (error) {
+                console.error("가챠 실행 에러:", error);
+                alert("오류가 발생했습니다. 다시 시도해주세요.");
+            } finally {
+                isGachaRunning = false;
+                document.getElementById('btn-1').disabled = document.getElementById('btn-10').disabled = false;
             }
-            
-            isGachaRunning = false;
-            document.getElementById('btn-1').disabled = document.getElementById('btn-10').disabled = false;
-            document.getElementById('btn-home').style.display = "block";
         }
 
         function renderTen(results) {
@@ -468,9 +491,8 @@
             results.forEach(item => {
                 const wrap = document.createElement('div'); wrap.className = "multi-item-wrap card-container-wrapper";
                 wrap.onclick = () => showDetail(item);
-                // 텐 가챠 결과 리스트는 즉시 앞면 보임
                 wrap.innerHTML = `<div class="card-frame"><div class="card-face card-front"><div class="card-clip"></div></div><div class="card-face card-back"><img src="${BACK_IMG_URL}"></div></div>`;
-                renderCard(wrap, item, false); // isDraw=false로 앞면 고정
+                renderCard(wrap, item, false); 
                 display.appendChild(wrap);
             });
             display.scrollLeft = 0;
@@ -523,7 +545,8 @@
             document.getElementById('btn-home').style.display = "none"; 
             document.getElementById('main-card-wrapper').style.display = "block";
             const frame = document.getElementById('main-card-frame');
-            frame.querySelector('#slot-placeholder').style.display = 'flex';
+            const ph = frame.querySelector('#slot-placeholder');
+            if(ph) ph.style.display = 'flex';
             frame.querySelector('.card-front').style.display = 'none';
             frame.querySelector('.card-back').style.display = 'none';
             frame.style.border = '4px solid #222';
@@ -532,17 +555,30 @@
             frame.classList.remove('show-back');
         }
 
-        function updateUI() { document.getElementById('energy-display').innerText = `${energy.count} / ${MAX_ENERGY}`; }
+        function updateUI() { 
+            const display = document.getElementById('energy-display');
+            if(display) display.innerText = `${energy.count} / ${MAX_ENERGY}`; 
+        }
+
         function updateEnergyOnLoad() { 
             if (!energy.last) return; 
             const gained = Math.floor((Date.now() - energy.last) / RECHARGE_TIME); 
-            if (gained > 0) { energy.count = Math.min(MAX_ENERGY, energy.count + gained); energy.last = (energy.count >= MAX_ENERGY) ? null : energy.last + (gained * RECHARGE_TIME); save(); } 
+            if (gained > 0) { 
+                energy.count = Math.min(MAX_ENERGY, energy.count + gained); 
+                energy.last = (energy.count >= MAX_ENERGY) ? null : energy.last + (gained * RECHARGE_TIME); 
+                save(); 
+            } 
         }
+
         function updateTimer() { 
             if (energy.count >= MAX_ENERGY) { document.getElementById('timer-display').innerText = "(MAX)"; return; } 
             if (!energy.last) energy.last = Date.now(); 
             const elapsed = Date.now() - energy.last; 
-            if (elapsed >= RECHARGE_TIME) { energy.count++; energy.last = (energy.count >= MAX_ENERGY) ? null : Date.now(); save(); updateUI(); } 
+            if (elapsed >= RECHARGE_TIME) { 
+                energy.count++; 
+                energy.last = (energy.count >= MAX_ENERGY) ? null : Date.now(); 
+                save(); updateUI(); 
+            } 
             if (energy.last) { 
                 const rem = RECHARGE_TIME - (elapsed % RECHARGE_TIME); 
                 const m = Math.floor(rem/60000); 
@@ -550,6 +586,7 @@
                 document.getElementById('timer-display').innerText = `(${m}:${s})`; 
             } 
         }
+
         async function resetData() { 
             if(confirm("정말 모든 데이터를 초기화할까요?")) { 
                 localStorage.clear(); 
@@ -557,7 +594,17 @@
                 location.reload(); 
             } 
         }
-        function draw() { const totalChance = pool.reduce((sum, item) => sum + item.chance, 0); let r = Math.random() * totalChance, acc = 0; for (const item of pool) { acc += item.chance; if (r <= acc) return item; } return pool[pool.length - 1]; }
+
+        function draw() { 
+            if (pool.length === 0) return null;
+            const totalChance = pool.reduce((sum, item) => sum + item.chance, 0); 
+            let r = Math.random() * totalChance, acc = 0; 
+            for (const item of pool) { 
+                acc += item.chance; 
+                if (r <= acc) return item; 
+            } 
+            return pool[pool.length - 1]; 
+        }
     </script>
 </body>
 </html>
