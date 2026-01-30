@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-    <title>VINGO EXPEDITION v2.3</title>
+    <title>VINGO EXPEDITION v2.4</title>
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
     <script src="card_data.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -90,12 +90,20 @@
         @keyframes shake { 0%, 100% { transform: translate(0,0); } 10%, 30%, 50%, 70%, 90% { transform: translate(-4px, -2px); } 20%, 40%, 60%, 80% { transform: translate(4px, 2px); } }
         @keyframes vortex { 0% { transform: rotate(0deg) scale(1); opacity: 0; } 50% { opacity: 0.35; transform: rotate(180deg) scale(2.2); } 100% { transform: rotate(360deg) scale(3.5); opacity: 0; } }
         @keyframes scanOnce { 0% { top: 0%; opacity: 0; } 10% { opacity: 1; } 50% { top: 100%; } 90% { opacity: 1; } 100% { top: 0%; opacity: 0; } }
-        @keyframes flashEffect { 0% { opacity: 0; } 50% { opacity: 0.7; } 100% { opacity: 0; } }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+        @keyframes prism { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
+        @keyframes neon-pulse { 0%, 100% { box-shadow: 0 0 15px var(--glow-color); } 50% { box-shadow: 0 0 30px var(--glow-color), 0 0 10px var(--glow-color) inset; } }
+        @keyframes particle-rise { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-120px) scale(0); opacity: 0; } }
+
+        .float-effect { animation: float 3s ease-in-out infinite; }
         .shake-effect { animation: shake 0.4s linear infinite !important; }
         .vortex-ssr, .vortex-ex, .screen-flash { position: fixed; inset: 0; z-index: 8000; pointer-events: none; display: none; mix-blend-mode: screen; }
         .vortex-ssr { background: radial-gradient(circle, var(--ssr-color) 0%, transparent 70%); animation: vortex 1s ease-out forwards; }
         .vortex-ex { background: radial-gradient(circle, var(--ex-color) 0%, transparent 70%); animation: vortex 1.2s ease-in-out forwards; }
-        .screen-flash { background: white; animation: flashEffect 0.3s ease-out; z-index: 9000; }
+        .screen-flash { background: white; z-index: 9000; animation: flash 0.3s ease-out; display: none; }
+        @keyframes flash { 0% { opacity: 0; } 50% { opacity: 0.8; } 100% { opacity: 0; } }
+
+        .particle { position: absolute; pointer-events: none; border-radius: 50%; animation: particle-rise linear forwards; z-index: 100; }
 
         /* 카드 구조 */
         .card-container-wrapper { position: relative; width: 100%; max-width: 280px; aspect-ratio: 3 / 4.4; margin: 0 auto; perspective: 1200px; }
@@ -112,6 +120,9 @@
         .card-back img { width: 100%; height: 100%; object-fit: cover; }
         
         .card-clip { position: absolute; inset: 0; display: flex; flex-direction: column; border-radius: 16px; overflow: hidden; }
+
+        /* 프리즘 효과 */
+        .prism-effect { position: absolute; inset: 0; z-index: 5; pointer-events: none; mix-blend-mode: overlay; opacity: 0.4; background: linear-gradient(135deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 45%, rgba(255,255,255,0.8) 50%, rgba(255,255,255,0.4) 55%, rgba(255,255,255,0) 100%); background-size: 200% 200%; animation: prism 4s linear infinite; }
 
         #cut-in-layer { position: absolute; inset: -4px; z-index: 100; display: none; align-items: center; justify-content: center; flex-direction: column; border-radius: 20px; pointer-events: none; }
         .scan-line { position: absolute; left: 0; width: 100%; height: 8px; background: var(--scan-color); box-shadow: 0 0 20px var(--scan-color); animation: scanOnce 1.5s ease-in-out infinite; }
@@ -140,11 +151,21 @@
         /* 도감 스타일 */
         #collection-modal { position:fixed; inset:0; background:#050505; display:none; flex-direction:column; z-index:1500; }
         #collection-header { padding:20px; display:flex; justify-content:space-between; align-items:flex-start; background:#000; border-bottom:1px solid #222; }
-        #collection-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 15px; overflow-y: auto; flex:1; align-content: start; }
+        #collection-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; padding: 15px; overflow-y: auto; flex:1; align-content: start; }
         .coll-card-wrap { position: relative; width: 100%; aspect-ratio: 3 / 4.4; }
         .count-badge { position: absolute; top: -5px; right: -5px; background: #fff; color: #000; font-size: 9px; padding: 2px 5px; border-radius: 4px; font-weight: 900; z-index: 10; border: 1px solid #000; }
 
         #custom-msg { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,0.9); color: #000; padding: 10px 20px; border-radius: 20px; z-index: 20000; font-weight: bold; display: none; font-size: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+
+        /* 마름모 스탯 스타일 */
+        .stat-diamond { position: absolute; bottom: 12px; right: 12px; width: 60px; height: 60px; pointer-events: none; }
+        .diamond-inner { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 14px; color: #fff; text-shadow: 0 0 5px #000; }
+        .stat-val { position: absolute; }
+        .stat-top { top: 0; }
+        .stat-right { right: 0; }
+        .stat-bottom { bottom: 0; }
+        .stat-left { left: 0; }
+        .stat-center { width: 6px; height: 6px; border-radius: 50%; box-shadow: 0 0 10px var(--glow-color); background: var(--glow-color); }
     </style>
 </head>
 <body>
@@ -225,31 +246,98 @@
             const set = SETTINGS[item.grade];
             const isHigh = item.grade === 'EX' || item.grade === 'SSR';
             const frame = targetWrapper.querySelector('.card-frame');
-            const info = CARD_DATA_DB[item.id] || { name: "???", desc: "데이터 없음" };
+            const info = CARD_DATA_DB[item.id] || { name: "???", desc: "데이터 없음", attr: "노말", stats: [1,1,1,1] };
             
-            frame.style.border = `${isColl ? '3px' : '5px'} solid ${set.color}`;
-            frame.style.boxShadow = isHigh ? `0 0 25px ${set.color}cc` : `0 4px 12px rgba(0,0,0,0.5)`;
+            // 특수 효과 클래스 적용
+            frame.classList.remove('float-effect');
+            if (isDraw && isHigh) frame.classList.add('float-effect');
+            if (isDetail && isHigh) {
+                frame.style.setProperty('--glow-color', set.color);
+                frame.style.animation = 'neon-pulse 2s infinite alternate';
+            } else {
+                frame.style.animation = '';
+            }
+
+            frame.style.border = `${isColl ? '2px' : '5px'} solid ${set.color}`;
+            frame.style.boxShadow = isHigh ? `0 0 20px ${set.color}88` : `0 4px 10px rgba(0,0,0,0.4)`;
             
             const frontFace = frame.querySelector('.card-front');
             if(frontFace) {
                 frontFace.style.display = 'block';
-                frontFace.style.background = `radial-gradient(circle at center, ${set.color}22 0%, #000 100%)`;
+                frontFace.style.background = isDetail ? `radial-gradient(circle at center, ${set.color}44 0%, #000 100%)` : `radial-gradient(circle at center, ${set.color}22 0%, #000 100%)`;
             }
 
-            const cardHTML = isColl ? `
-                <div style="height:70%; display:flex; align-items:center; justify-content:center; width:100%;"><img src="images/${item.id}" style="max-width:85%; max-height:85%; object-fit:contain;"></div>
-                <div style="height:30%; background:#000; border-top:1px solid ${set.color}44; display:flex; flex-direction:column; justify-content:center; padding:0 10px;">
-                    <div style="font-size:0.75rem; font-weight:900; color:${set.color}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${info.name}</div>
-                </div>` : `
-                <div style="height:12%; display:flex; align-items:center; padding:0 15px;"><div style="background:${set.color}; padding:2px 8px; border-radius:4px; font-weight:900; font-size:11px;">${item.grade}</div></div>
-                <div style="height:53%; display:flex; align-items:center; justify-content:center; width:100%;"><img src="images/${item.id}" style="max-width:92%; max-height:92%; object-fit:contain;"></div>
-                <div style="height:35%; background:linear-gradient(to bottom, #111, #000); border-top:1px solid ${set.color}33; padding:15px 20px; text-align:left;">
-                    <div style="font-size:1.4rem; font-weight:900; color:${set.color};">${info.name}</div>
-                    <p style="font-size:11px; color:#888; margin-top:6px; line-height:1.4;">${info.desc}</p>
+            const statHTML = (s) => `
+                <div class="stat-diamond" style="--glow-color:${set.color}">
+                    <div class="diamond-inner">
+                        <div class="stat-center"></div>
+                        <div class="stat-val stat-top">${s[0]}</div>
+                        <div class="stat-val stat-right">${s[1]}</div>
+                        <div class="stat-val stat-bottom">${s[2]}</div>
+                        <div class="stat-val stat-left">${s[3]}</div>
+                    </div>
+                </div>`;
+
+            // 도감 레이아웃 (텍스트 중심)
+            if (isColl) {
+                const cardHTML = `
+                    <div style="height:65%; display:flex; align-items:center; justify-content:center; width:100%; position:relative;">
+                        <div style="position:absolute; top:8px; right:8px; border:1px solid ${set.color}; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:900; color:${set.color}; background:rgba(0,0,0,0.6);">${info.attr}</div>
+                        <img src="images/${item.id}" style="max-width:85%; max-height:85%; object-fit:contain;">
+                    </div>
+                    <div style="height:35%; background:#050505; border-top:1px solid ${set.color}33; display:flex; flex-direction:column; padding:8px 10px; text-align:left;">
+                        <div style="font-size:0.85rem; font-weight:900; color:${set.color}; margin-bottom:2px;">${info.name}</div>
+                        <div style="font-size:10px; color:#666; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; margin-bottom:4px;">${info.desc}</div>
+                        <div style="display:flex; gap:5px; align-items:center;">
+                            <span style="background:${set.color}; color:#fff; font-size:9px; padding:1px 4px; border-radius:3px; font-weight:900;">${item.grade}</span>
+                            <span style="font-size:9px; color:${set.color}; font-weight:bold;">${info.attr}</span>
+                        </div>
+                    </div>`;
+                const clip = frame.querySelector('.card-clip');
+                if(clip) clip.innerHTML = cardHTML;
+                return;
+            }
+
+            // 일반/상세 레이아웃 (이미지 65%, 설명 35%)
+            const cardHTML = `
+                ${isDetail && isHigh ? '<div class="prism-effect"></div>' : ''}
+                <div style="height:65%; display:flex; align-items:center; justify-content:center; width:100%; position:relative;">
+                    <div style="position:absolute; top:12px; right:12px; border:2px solid ${set.color}; padding:3px 10px; border-radius:6px; font-size:12px; font-weight:900; color:${set.color}; background:rgba(0,0,0,0.7); box-shadow:0 0 10px ${set.color}44;">${info.attr}</div>
+                    <div style="position:absolute; top:12px; left:12px; background:${set.color}; color:#fff; font-size:12px; font-weight:900; padding:2px 10px; border-radius:4px;">${item.grade}</div>
+                    <img src="images/${item.id}" style="max-width:92%; max-height:92%; object-fit:contain; z-index:2;">
+                </div>
+                <div style="height:35%; background:linear-gradient(to bottom, #111, #000); border-top:1px solid ${set.color}33; padding:15px 20px; text-align:left; position:relative;">
+                    <div style="font-size:1.6rem; font-weight:900; color:${set.color}; text-shadow:0 0 10px ${set.color}44;">${info.name}</div>
+                    <p style="font-size:12px; color:#888; margin-top:6px; line-height:1.4; width:75%; height:45px; overflow:hidden;">${info.desc}</p>
+                    ${statHTML(info.stats)}
                 </div>`;
             
             const clip = frame.querySelector('.card-clip');
-            if(clip) clip.innerHTML = cardHTML;
+            if(clip) {
+                clip.innerHTML = cardHTML;
+                // 상세 고등급 파티클 효과
+                if (isDetail && isHigh) createParticles(frame, set.color);
+            }
+        }
+
+        function createParticles(target, color) {
+            const timer = setInterval(() => {
+                if (!document.getElementById('detail-view').style.display || document.getElementById('detail-view').style.display === 'none') {
+                    clearInterval(timer);
+                    return;
+                }
+                const p = document.createElement('div');
+                p.className = 'particle';
+                const size = Math.random() * 4 + 2;
+                p.style.width = p.style.height = `${size}px`;
+                p.style.background = color;
+                p.style.boxShadow = `0 0 8px ${color}`;
+                p.style.left = `${Math.random() * 90 + 5}%`;
+                p.style.bottom = '10%';
+                p.style.animationDuration = `${Math.random() * 1.5 + 1}s`;
+                target.appendChild(p);
+                p.addEventListener('animationend', () => p.remove());
+            }, 100);
         }
 
         async function playGacha(count) {
@@ -285,7 +373,7 @@
                 cutIn.style.display = "flex";
                 await new Promise(r => setTimeout(r, 1500)); 
 
-                // [Step 2] 고등급 판별 및 컷인
+                // [Step 2] 고등급 판별 (통합 컷인)
                 const highestItem = [...results].sort((a,b) => SETTINGS[a.grade].rate - SETTINGS[b.grade].rate)[0];
                 if (highestItem.grade === 'SSR' || highestItem.grade === 'EX') {
                     document.getElementById('main-container').classList.add('shake-effect');
@@ -302,10 +390,12 @@
                 ph.style.display = 'none';
 
                 if (count === 1) {
+                    // [Step 3] 바로 뒷면 노출 및 대기
                     cardBack.style.display = 'flex';
                     renderCard(document.getElementById('main-card-wrapper'), results[0], true);
                     mainFrame.classList.add('show-back'); 
                     
+                    // 터치 시 뒤집기
                     mainFrame.onclick = () => {
                         mainFrame.classList.remove('show-back');
                         isResultPending = false; 
@@ -313,6 +403,7 @@
                         mainFrame.onclick = () => showDetail(results[0]);
                     };
                 } else {
+                    // 10회 가챠: 리스트 노출
                     document.getElementById('main-card-wrapper').style.display = "none";
                     renderTen(results);
                     isResultPending = false;
@@ -380,7 +471,7 @@
                 const wrap = document.createElement('div'); wrap.className = "card-container-wrapper";
                 wrap.style.flex = "0 0 250px"; wrap.style.scrollSnapAlign = "center";
                 wrap.innerHTML = `<div class="card-frame"><div class="card-face card-front"><div class="card-clip"></div></div><div class="card-face card-back"><img src="${BACK_IMG_URL}"></div></div>`;
-                renderCard(wrap, item, false);
+                renderCard(wrap, item, true);
                 wrap.onclick = () => showDetail(item);
                 display.appendChild(wrap);
             });
@@ -433,6 +524,7 @@
             frame.style.border = "4px solid #222";
             frame.style.boxShadow = "none";
             frame.classList.remove('show-back');
+            frame.classList.remove('float-effect');
             frame.querySelector('.card-front').style.display = 'none';
             frame.querySelector('.card-back').style.display = 'none';
             document.getElementById('slot-placeholder').style.display = 'flex';
