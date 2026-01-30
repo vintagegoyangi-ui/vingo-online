@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-    <title>VINGO EXPEDITION v2.4</title>
+    <title>VINGO EXPEDITION v2.5</title>
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
     <script src="card_data.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -90,12 +90,12 @@
         @keyframes shake { 0%, 100% { transform: translate(0,0); } 10%, 30%, 50%, 70%, 90% { transform: translate(-4px, -2px); } 20%, 40%, 60%, 80% { transform: translate(4px, 2px); } }
         @keyframes vortex { 0% { transform: rotate(0deg) scale(1); opacity: 0; } 50% { opacity: 0.35; transform: rotate(180deg) scale(2.2); } 100% { transform: rotate(360deg) scale(3.5); opacity: 0; } }
         @keyframes scanOnce { 0% { top: 0%; opacity: 0; } 10% { opacity: 1; } 50% { top: 100%; } 90% { opacity: 1; } 100% { top: 0%; opacity: 0; } }
-        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
         @keyframes prism { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
         @keyframes neon-pulse { 0%, 100% { box-shadow: 0 0 15px var(--glow-color); } 50% { box-shadow: 0 0 30px var(--glow-color), 0 0 10px var(--glow-color) inset; } }
         @keyframes particle-rise { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-120px) scale(0); opacity: 0; } }
 
-        .float-effect { animation: float 3s ease-in-out infinite; }
+        .float-effect { animation: float 3s ease-in-out infinite !important; }
         .shake-effect { animation: shake 0.4s linear infinite !important; }
         .vortex-ssr, .vortex-ex, .screen-flash { position: fixed; inset: 0; z-index: 8000; pointer-events: none; display: none; mix-blend-mode: screen; }
         .vortex-ssr { background: radial-gradient(circle, var(--ssr-color) 0%, transparent 70%); animation: vortex 1s ease-out forwards; }
@@ -122,17 +122,17 @@
         .card-clip { position: absolute; inset: 0; display: flex; flex-direction: column; border-radius: 16px; overflow: hidden; }
 
         /* 프리즘 효과 */
-        .prism-effect { position: absolute; inset: 0; z-index: 5; pointer-events: none; mix-blend-mode: overlay; opacity: 0.4; background: linear-gradient(135deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 45%, rgba(255,255,255,0.8) 50%, rgba(255,255,255,0.4) 55%, rgba(255,255,255,0) 100%); background-size: 200% 200%; animation: prism 4s linear infinite; }
+        .prism-effect { position: absolute; inset: 0; z-index: 5; pointer-events: none; mix-blend-mode: overlay; opacity: 0.5; background: linear-gradient(135deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 45%, rgba(255,255,255,0.8) 50%, rgba(255,255,255,0.4) 55%, rgba(255,255,255,0) 100%); background-size: 200% 200%; animation: prism 3s linear infinite; }
 
         #cut-in-layer { position: absolute; inset: -4px; z-index: 100; display: none; align-items: center; justify-content: center; flex-direction: column; border-radius: 20px; pointer-events: none; }
         .scan-line { position: absolute; left: 0; width: 100%; height: 8px; background: var(--scan-color); box-shadow: 0 0 20px var(--scan-color); animation: scanOnce 1.5s ease-in-out infinite; }
         
-        #slot-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        #slot-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
         .slot-bg-text { font-size: 2rem; font-weight: 900; font-style: italic; background: linear-gradient(to bottom, #444, #111); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
         /* 메인 레이아웃 */
         .container { width: 92%; max-width: 400px; text-align: center; background: #111; padding: 20px; border-radius: 30px; border: 1px solid #222; margin: auto; display: none; position: relative; min-height: 500px; }
-        .logout-btn { position: absolute; top: 20px; right: 20px; font-size: 12px; color: #666; font-weight: bold; cursor: pointer; padding: 5px; }
+        .logout-btn { position: absolute; top: 20px; right: 20px; font-size: 11px; color: #555; font-weight: bold; cursor: pointer; padding: 5px; border: 1px solid #222; border-radius: 5px; }
         .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin-top: 20px; }
         button { padding: 16px; font-size: 0.95rem; font-weight: 700; border: none; border-radius: 15px; cursor: pointer; color: white; transition: 0.2s; }
         button:disabled { opacity: 0.3; filter: grayscale(1); pointer-events: none; }
@@ -146,26 +146,26 @@
         .auth-box button { width: 100%; padding: 15px; border-radius: 12px; font-weight: bold; margin-bottom: 10px; color: white; }
 
         #multi-result-display { display:none; flex-wrap:nowrap; overflow-x:auto; gap:20px; width:100%; padding: 30px 20px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
-        #detail-view { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; display: none; align-items: center; justify-content: center; perspective: 1500px; touch-action: none; }
+        #detail-view { position: fixed; inset: 0; background: rgba(0,0,0,0.96); z-index: 2000; display: none; align-items: center; justify-content: center; perspective: 1500px; touch-action: none; }
         
         /* 도감 스타일 */
         #collection-modal { position:fixed; inset:0; background:#050505; display:none; flex-direction:column; z-index:1500; }
-        #collection-header { padding:20px; display:flex; justify-content:space-between; align-items:flex-start; background:#000; border-bottom:1px solid #222; }
-        #collection-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; padding: 15px; overflow-y: auto; flex:1; align-content: start; }
+        #collection-header { padding:20px; display:flex; justify-content:space-between; align-items:center; background:#000; border-bottom:1px solid #222; }
+        #collection-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 15px; overflow-y: auto; flex:1; align-content: start; }
         .coll-card-wrap { position: relative; width: 100%; aspect-ratio: 3 / 4.4; }
         .count-badge { position: absolute; top: -5px; right: -5px; background: #fff; color: #000; font-size: 9px; padding: 2px 5px; border-radius: 4px; font-weight: 900; z-index: 10; border: 1px solid #000; }
 
-        #custom-msg { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,0.9); color: #000; padding: 10px 20px; border-radius: 20px; z-index: 20000; font-weight: bold; display: none; font-size: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        #custom-msg { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,0.95); color: #000; padding: 10px 20px; border-radius: 20px; z-index: 20000; font-weight: bold; display: none; font-size: 13px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
 
         /* 마름모 스탯 스타일 */
-        .stat-diamond { position: absolute; bottom: 12px; right: 12px; width: 60px; height: 60px; pointer-events: none; }
-        .diamond-inner { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 14px; color: #fff; text-shadow: 0 0 5px #000; }
+        .stat-diamond { position: absolute; bottom: 10px; right: 10px; width: 54px; height: 54px; pointer-events: none; }
+        .diamond-inner { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 13px; color: #fff; text-shadow: 0 1px 3px #000; }
         .stat-val { position: absolute; }
-        .stat-top { top: 0; }
-        .stat-right { right: 0; }
-        .stat-bottom { bottom: 0; }
-        .stat-left { left: 0; }
-        .stat-center { width: 6px; height: 6px; border-radius: 50%; box-shadow: 0 0 10px var(--glow-color); background: var(--glow-color); }
+        .stat-top { top: -2px; }
+        .stat-right { right: -2px; }
+        .stat-bottom { bottom: -2px; }
+        .stat-left { left: -2px; }
+        .stat-center { width: 7px; height: 7px; border-radius: 50%; background: var(--glow-color); box-shadow: 0 0 10px var(--glow-color); }
     </style>
 </head>
 <body>
@@ -176,7 +176,7 @@
 
     <div id="login-layer">
         <div class="auth-box">
-            <h2 style="color:var(--ssr-color); text-align:center; margin-bottom:20px; font-style:italic;">VINGO ONLINE</h2>
+            <h2 style="color:var(--ssr-color); text-align:center; margin-bottom:20px; font-style:italic; letter-spacing:-1px;">VINGO EXPEDITION</h2>
             <input type="text" id="auth-id" placeholder="아이디">
             <input type="password" id="auth-pw" placeholder="비밀번호">
             <button onclick="handleAuth('login')" style="background:var(--r-color);">로그인</button>
@@ -188,7 +188,7 @@
     
     <div class="container" id="main-container">
         <div class="logout-btn" onclick="handleLogout()">LOGOUT</div>
-        <div id="energy-tag" style="background:#1a1a1a; padding:10px 18px; border-radius:50px; font-weight:bold; margin-bottom:15px; display:inline-block; border:1px solid #333; font-size:0.85rem;">
+        <div id="energy-tag" style="background:#1a1a1a; padding:10px 18px; border-radius:50px; font-weight:bold; margin-bottom:15px; display:inline-block; border:1px solid #333; font-size:0.8rem;">
             ⚡️ 에너지: <span id="energy-display">-- / --</span> <span id="timer-display"></span>
         </div>
         
@@ -197,7 +197,7 @@
                 <div class="card-frame" id="main-card-frame">
                     <div id="slot-placeholder">
                         <div class="slot-bg-text">VINGO GACHA</div>
-                        <div style="color:#444; font-size:0.8rem; font-weight:700;">카드를 수집하여 원정을 준비하세요!</div>
+                        <div style="color:#444; font-size:0.75rem; font-weight:700; margin-top:5px;">원정을 위해 정예 빈고를 모집하세요.</div>
                     </div>
                     <div class="card-face card-back" id="main-card-back" style="display:none;"><img src="images/card_back.webp"></div>
                     <div class="card-face card-front" id="main-card-front" style="display:none;"><div class="card-clip"></div></div>
@@ -211,7 +211,7 @@
         <div class="btns">
             <button id="btn-1" class="btn-draw" onclick="playGacha(1)">1회 가챠</button>
             <button id="btn-10" class="btn-draw-10" onclick="playGacha(10)">10회 가챠</button>
-            <button id="btn-home" class="btn-sub" style="display:none; background:#444;" onclick="goHome()">가챠 화면으로</button>
+            <button id="btn-home" class="btn-sub" style="display:none; background:#444;" onclick="goHome()">가챠 화면 리셋</button>
             <button id="btn-coll-open" class="btn-sub" onclick="openCollection()">도감 확인</button>
         </div>
     </div>
@@ -278,18 +278,18 @@
                     </div>
                 </div>`;
 
-            // 도감 레이아웃 (텍스트 중심)
+            // 도감 레이아웃 (텍스트 왼쪽 정렬 중심)
             if (isColl) {
                 const cardHTML = `
                     <div style="height:65%; display:flex; align-items:center; justify-content:center; width:100%; position:relative;">
-                        <div style="position:absolute; top:8px; right:8px; border:1px solid ${set.color}; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:900; color:${set.color}; background:rgba(0,0,0,0.6);">${info.attr}</div>
+                        <div style="position:absolute; top:8px; right:8px; border:1px solid ${set.color}; padding:2px 6px; border-radius:4px; font-size:9px; font-weight:900; color:${set.color}; background:rgba(0,0,0,0.6);">${info.attr}</div>
                         <img src="images/${item.id}" style="max-width:85%; max-height:85%; object-fit:contain;">
                     </div>
-                    <div style="height:35%; background:#050505; border-top:1px solid ${set.color}33; display:flex; flex-direction:column; padding:8px 10px; text-align:left;">
-                        <div style="font-size:0.85rem; font-weight:900; color:${set.color}; margin-bottom:2px;">${info.name}</div>
-                        <div style="font-size:10px; color:#666; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; margin-bottom:4px;">${info.desc}</div>
-                        <div style="display:flex; gap:5px; align-items:center;">
-                            <span style="background:${set.color}; color:#fff; font-size:9px; padding:1px 4px; border-radius:3px; font-weight:900;">${item.grade}</span>
+                    <div style="height:35%; background:#050505; border-top:1px solid ${set.color}33; display:flex; flex-direction:column; padding:10px; text-align:left;">
+                        <div style="font-size:0.85rem; font-weight:900; color:${set.color}; margin-bottom:1px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">${info.name}</div>
+                        <div style="font-size:9px; color:#555; height:11px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; margin-bottom:6px;">${info.desc}</div>
+                        <div style="display:flex; gap:6px; align-items:center; margin-top:auto;">
+                            <span style="background:${set.color}; color:#fff; font-size:9px; padding:1px 5px; border-radius:3px; font-weight:900;">${item.grade}</span>
                             <span style="font-size:9px; color:${set.color}; font-weight:bold;">${info.attr}</span>
                         </div>
                     </div>`;
@@ -298,46 +298,47 @@
                 return;
             }
 
-            // 일반/상세 레이아웃 (이미지 65%, 설명 35%)
+            // 일반/상세 레이아웃 (이미지 70%, 설명 30%)
             const cardHTML = `
                 ${isDetail && isHigh ? '<div class="prism-effect"></div>' : ''}
-                <div style="height:65%; display:flex; align-items:center; justify-content:center; width:100%; position:relative;">
-                    <div style="position:absolute; top:12px; right:12px; border:2px solid ${set.color}; padding:3px 10px; border-radius:6px; font-size:12px; font-weight:900; color:${set.color}; background:rgba(0,0,0,0.7); box-shadow:0 0 10px ${set.color}44;">${info.attr}</div>
-                    <div style="position:absolute; top:12px; left:12px; background:${set.color}; color:#fff; font-size:12px; font-weight:900; padding:2px 10px; border-radius:4px;">${item.grade}</div>
-                    <img src="images/${item.id}" style="max-width:92%; max-height:92%; object-fit:contain; z-index:2;">
+                <div style="height:70%; display:flex; align-items:center; justify-content:center; width:100%; position:relative;">
+                    <!-- 속성 프레임 우상단 -->
+                    <div style="position:absolute; top:12px; right:12px; border:2px solid ${set.color}; padding:4px 10px; border-radius:8px; font-size:11px; font-weight:900; color:${set.color}; background:rgba(0,0,0,0.75); box-shadow:0 0 10px ${set.color}44; z-index:10;">${info.attr}</div>
+                    <div style="position:absolute; top:12px; left:12px; background:${set.color}; color:#fff; font-size:11px; font-weight:900; padding:3px 9px; border-radius:5px; z-index:10;">${item.grade}</div>
+                    <img src="images/${item.id}" style="max-width:94%; max-height:94%; object-fit:contain; z-index:2;">
                 </div>
-                <div style="height:35%; background:linear-gradient(to bottom, #111, #000); border-top:1px solid ${set.color}33; padding:15px 20px; text-align:left; position:relative;">
-                    <div style="font-size:1.6rem; font-weight:900; color:${set.color}; text-shadow:0 0 10px ${set.color}44;">${info.name}</div>
-                    <p style="font-size:12px; color:#888; margin-top:6px; line-height:1.4; width:75%; height:45px; overflow:hidden;">${info.desc}</p>
+                <div style="height:30%; background:linear-gradient(to bottom, #0f0f0f, #000); border-top:1px solid ${set.color}22; padding:12px 18px; text-align:left; position:relative;">
+                    <div style="font-size:1.5rem; font-weight:900; color:${set.color}; text-shadow:0 0 8px ${set.color}33;">${info.name}</div>
+                    <p style="font-size:11px; color:#777; margin-top:5px; line-height:1.4; width:70%; height:32px; overflow:hidden; font-weight:500;">${info.desc}</p>
                     ${statHTML(info.stats)}
                 </div>`;
             
             const clip = frame.querySelector('.card-clip');
             if(clip) {
                 clip.innerHTML = cardHTML;
-                // 상세 고등급 파티클 효과
                 if (isDetail && isHigh) createParticles(frame, set.color);
             }
         }
 
         function createParticles(target, color) {
             const timer = setInterval(() => {
-                if (!document.getElementById('detail-view').style.display || document.getElementById('detail-view').style.display === 'none') {
+                const detailView = document.getElementById('detail-view');
+                if (!detailView || detailView.style.display === 'none') {
                     clearInterval(timer);
                     return;
                 }
                 const p = document.createElement('div');
                 p.className = 'particle';
-                const size = Math.random() * 4 + 2;
+                const size = Math.random() * 3 + 2;
                 p.style.width = p.style.height = `${size}px`;
                 p.style.background = color;
-                p.style.boxShadow = `0 0 8px ${color}`;
-                p.style.left = `${Math.random() * 90 + 5}%`;
+                p.style.boxShadow = `0 0 6px ${color}`;
+                p.style.left = `${Math.random() * 94 + 3}%`;
                 p.style.bottom = '10%';
-                p.style.animationDuration = `${Math.random() * 1.5 + 1}s`;
+                p.style.animationDuration = `${Math.random() * 1.2 + 0.8}s`;
                 target.appendChild(p);
                 p.addEventListener('animationend', () => p.remove());
-            }, 100);
+            }, 120);
         }
 
         async function playGacha(count) {
@@ -364,6 +365,7 @@
                       cardFront = document.getElementById('main-card-front'),
                       ph = document.getElementById('slot-placeholder');
 
+                // 초기 설정: 아예 보이지 않거나 윈도우 상태
                 cardFront.style.display = 'none';
                 cardBack.style.display = 'none';
                 mainFrame.classList.remove('show-back');
@@ -373,7 +375,7 @@
                 cutIn.style.display = "flex";
                 await new Promise(r => setTimeout(r, 1500)); 
 
-                // [Step 2] 고등급 판별 (통합 컷인)
+                // [Step 2] 고등급 판별 및 통합 컷인
                 const highestItem = [...results].sort((a,b) => SETTINGS[a.grade].rate - SETTINGS[b.grade].rate)[0];
                 if (highestItem.grade === 'SSR' || highestItem.grade === 'EX') {
                     document.getElementById('main-container').classList.add('shake-effect');
@@ -390,20 +392,19 @@
                 ph.style.display = 'none';
 
                 if (count === 1) {
-                    // [Step 3] 바로 뒷면 노출 및 대기
+                    // [Step 3] 즉시 뒷면으로 노출 (회전 과정 없이 바로 뒷면 띄움)
+                    mainFrame.classList.add('show-back'); 
                     cardBack.style.display = 'flex';
                     renderCard(document.getElementById('main-card-wrapper'), results[0], true);
-                    mainFrame.classList.add('show-back'); 
                     
-                    // 터치 시 뒤집기
+                    // 터치 시 앞면으로 회전
                     mainFrame.onclick = () => {
-                        mainFrame.classList.remove('show-back');
+                        mainFrame.classList.remove('show-back'); // 앞면으로 턴
                         isResultPending = false; 
                         toggleMainBtns(false);
                         mainFrame.onclick = () => showDetail(results[0]);
                     };
                 } else {
-                    // 10회 가챠: 리스트 노출
                     document.getElementById('main-card-wrapper').style.display = "none";
                     renderTen(results);
                     isResultPending = false;
@@ -436,9 +437,9 @@
             let rafId = null;
 
             const animate = () => {
-                curX += (tarX - curX) * 0.15;
-                curY += (tarY - curY) * 0.15;
-                card.style.transform = `rotateY(${curY}deg) rotateX(${curX}deg) scale(1.05)`;
+                curX += (tarX - curX) * 0.12;
+                curY += (tarY - curY) * 0.12;
+                card.style.transform = `rotateY(${curY}deg) rotateX(${curX}deg) scale(1.04)`;
                 rafId = requestAnimationFrame(animate);
             };
 
@@ -447,8 +448,8 @@
                 const clientX = (e.clientX || (e.touches && e.touches[0].clientX));
                 const clientY = (e.clientY || (e.touches && e.touches[0].clientY));
                 const x = clientX - rect.left, y = clientY - rect.top;
-                tarY = ((x / rect.width) - 0.5) * 50;
-                tarX = (0.5 - (y / rect.height)) * 50;
+                tarY = ((x / rect.width) - 0.5) * 45;
+                tarX = (0.5 - (y / rect.height)) * 45;
             };
 
             view.addEventListener('mousemove', onMove);
@@ -488,14 +489,14 @@
             modal.innerHTML = `
                 <div id="collection-header">
                     <div>
-                        <h2 style="font-size:1.2rem; color:var(--ssr-color);">빈고 도감 <span style="font-size:0.9rem; color:#fff; margin-left:5px;">(${rate}%)</span></h2>
-                        <p style="font-size:11px; color:#666; margin-top:3px;">수집 현황: ${collectedCount} / ${totalCount}</p>
+                        <h2 style="font-size:1.15rem; color:var(--ssr-color); font-weight:900;">빈고 도감 <span style="font-size:0.9rem; color:#fff; margin-left:5px;">(${rate}%)</span></h2>
+                        <p style="font-size:10px; color:#555; margin-top:3px;">모은 카드: ${collectedCount} / ${totalCount}</p>
                     </div>
-                    <button onclick="document.getElementById('collection-modal').style.display='none'; document.body.classList.remove('lock-scroll');" style="background:#222; padding:8px 15px; border-radius:8px; font-size:13px; color:#fff;">닫기</button>
+                    <button onclick="document.getElementById('collection-modal').style.display='none'; document.body.classList.remove('lock-scroll');" style="background:#222; padding:8px 15px; border-radius:8px; font-size:13px; color:#fff; font-weight:bold;">닫기</button>
                 </div>
                 <div id="collection-grid"></div>
-                <div style="padding:20px; background:#000; border-top:1px solid #222; display:flex; justify-content:center;">
-                    <button onclick="resetData()" style="background:#a00; font-size:12px; padding:12px 25px; color:#fff; font-weight:bold;">데이터 초기화</button>
+                <div style="padding:15px; background:#000; border-top:1px solid #222; display:flex; justify-content:center;">
+                    <button onclick="resetData()" style="background:#800; font-size:12px; padding:12px 25px; color:#fff; font-weight:bold; border-radius:10px;">데이터 전체 초기화</button>
                 </div>`;
             
             const grid = modal.querySelector('#collection-grid');
@@ -507,7 +508,7 @@
                     renderCard(wrap, item, false, false, true); 
                     wrap.onclick = () => showDetail(item);
                 } else { 
-                    wrap.innerHTML = `<div style="width:100%; height:100%; border:1px solid #222; border-radius:15px; display:flex; align-items:center; justify-content:center; background:#0a0a0a; color:#222; font-weight:900; font-size:20px;">?</div>`; 
+                    wrap.innerHTML = `<div style="width:100%; height:100%; border:1px solid #222; border-radius:15px; display:flex; align-items:center; justify-content:center; background:#0a0a0a; color:#222; font-weight:900; font-size:22px;">?</div>`; 
                 }
                 grid.appendChild(wrap);
             });
@@ -571,7 +572,7 @@
                 document.body.classList.remove('lock-scroll');
                 updateUI();
                 goHome();
-                showMessage("모든 데이터가 초기화되었습니다.");
+                showMessage("데이터와 에너지가 초기화되었습니다.");
             } 
         }
 
