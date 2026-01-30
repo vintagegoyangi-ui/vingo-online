@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-    <title>VINGO EXPEDITION v2.5</title>
+    <title>VINGO EXPEDITION v2.6</title>
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
     <script src="card_data.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -106,7 +106,7 @@
         .particle { position: absolute; pointer-events: none; border-radius: 50%; animation: particle-rise linear forwards; z-index: 100; }
 
         /* 카드 구조 */
-        .card-container-wrapper { position: relative; width: 100%; max-width: 280px; aspect-ratio: 3 / 4.4; margin: 0 auto; perspective: 1200px; }
+        .card-container-wrapper { position: relative; width: 100%; max-width: 290px; aspect-ratio: 3 / 4.5; margin: 0 auto; perspective: 1500px; }
         .card-frame { 
             position: relative; width: 100%; height: 100%; 
             transform-style: preserve-3d; transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); 
@@ -131,7 +131,7 @@
         .slot-bg-text { font-size: 2rem; font-weight: 900; font-style: italic; background: linear-gradient(to bottom, #444, #111); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
         /* 메인 레이아웃 */
-        .container { width: 92%; max-width: 400px; text-align: center; background: #111; padding: 20px; border-radius: 30px; border: 1px solid #222; margin: auto; display: none; position: relative; min-height: 500px; }
+        .container { width: 92%; max-width: 400px; text-align: center; background: #111; padding: 20px; border-radius: 30px; border: 1px solid #222; margin: auto; display: none; position: relative; min-height: 520px; }
         .logout-btn { position: absolute; top: 20px; right: 20px; font-size: 11px; color: #555; font-weight: bold; cursor: pointer; padding: 5px; border: 1px solid #222; border-radius: 5px; }
         .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin-top: 20px; }
         button { padding: 16px; font-size: 0.95rem; font-weight: 700; border: none; border-radius: 15px; cursor: pointer; color: white; transition: 0.2s; }
@@ -146,26 +146,28 @@
         .auth-box button { width: 100%; padding: 15px; border-radius: 12px; font-weight: bold; margin-bottom: 10px; color: white; }
 
         #multi-result-display { display:none; flex-wrap:nowrap; overflow-x:auto; gap:20px; width:100%; padding: 30px 20px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
-        #detail-view { position: fixed; inset: 0; background: rgba(0,0,0,0.96); z-index: 2000; display: none; align-items: center; justify-content: center; perspective: 1500px; touch-action: none; }
+        #detail-view { position: fixed; inset: 0; background: rgba(0,0,0,0.97); z-index: 2000; display: none; align-items: center; justify-content: center; perspective: 1500px; touch-action: none; }
         
         /* 도감 스타일 */
         #collection-modal { position:fixed; inset:0; background:#050505; display:none; flex-direction:column; z-index:1500; }
         #collection-header { padding:20px; display:flex; justify-content:space-between; align-items:center; background:#000; border-bottom:1px solid #222; }
-        #collection-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 15px; overflow-y: auto; flex:1; align-content: start; }
-        .coll-card-wrap { position: relative; width: 100%; aspect-ratio: 3 / 4.4; }
-        .count-badge { position: absolute; top: -5px; right: -5px; background: #fff; color: #000; font-size: 9px; padding: 2px 5px; border-radius: 4px; font-weight: 900; z-index: 10; border: 1px solid #000; }
+        #collection-grid { display: grid; grid-template-columns: 1fr; gap: 12px; padding: 15px; overflow-y: auto; flex:1; align-content: start; }
+        .coll-card-wrap { position: relative; width: 100%; max-width: 340px; aspect-ratio: 3 / 1.4; margin: 0 auto; display: flex; background: #0a0a0a; border-radius: 15px; border: 1px solid #222; overflow: hidden; }
+        .coll-img-box { width: 35%; display: flex; align-items: center; justify-content: center; background: #000; position: relative; }
+        .coll-info-box { width: 65%; padding: 15px; display: flex; flex-direction: column; justify-content: center; text-align: left; }
+        .count-badge { position: absolute; top: 5px; left: 5px; background: #fff; color: #000; font-size: 9px; padding: 2px 5px; border-radius: 4px; font-weight: 900; z-index: 10; border: 1px solid #000; }
 
         #custom-msg { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,0.95); color: #000; padding: 10px 20px; border-radius: 20px; z-index: 20000; font-weight: bold; display: none; font-size: 13px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
 
         /* 마름모 스탯 스타일 */
-        .stat-diamond { position: absolute; bottom: 10px; right: 10px; width: 54px; height: 54px; pointer-events: none; }
-        .diamond-inner { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 13px; color: #fff; text-shadow: 0 1px 3px #000; }
+        .stat-diamond { position: absolute; bottom: 8px; right: 8px; width: 50px; height: 50px; pointer-events: none; }
+        .diamond-inner { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 12px; color: #fff; text-shadow: 0 1px 3px #000; }
         .stat-val { position: absolute; }
         .stat-top { top: -2px; }
         .stat-right { right: -2px; }
         .stat-bottom { bottom: -2px; }
         .stat-left { left: -2px; }
-        .stat-center { width: 7px; height: 7px; border-radius: 50%; background: var(--glow-color); box-shadow: 0 0 10px var(--glow-color); }
+        .stat-center { width: 6px; height: 6px; border-radius: 50%; background: var(--glow-color); box-shadow: 0 0 10px var(--glow-color); }
     </style>
 </head>
 <body>
@@ -184,7 +186,7 @@
         </div>
     </div>
 
-    <div id="detail-view"><div id="detail-card-target" style="width:85vw; max-width:320px;"></div></div>
+    <div id="detail-view"><div id="detail-card-target" style="width:88vw; max-width:320px;"></div></div>
     
     <div class="container" id="main-container">
         <div class="logout-btn" onclick="handleLogout()">LOGOUT</div>
@@ -197,7 +199,7 @@
                 <div class="card-frame" id="main-card-frame">
                     <div id="slot-placeholder">
                         <div class="slot-bg-text">VINGO GACHA</div>
-                        <div style="color:#444; font-size:0.75rem; font-weight:700; margin-top:5px;">원정을 위해 정예 빈고를 모집하세요.</div>
+                        <div style="color:#444; font-size:0.75rem; font-weight:700; margin-top:5px;">정예 빈고를 수집하여 원정을 준비하세요.</div>
                     </div>
                     <div class="card-face card-back" id="main-card-back" style="display:none;"><img src="images/card_back.webp"></div>
                     <div class="card-face card-front" id="main-card-front" style="display:none;"><div class="card-clip"></div></div>
@@ -211,7 +213,7 @@
         <div class="btns">
             <button id="btn-1" class="btn-draw" onclick="playGacha(1)">1회 가챠</button>
             <button id="btn-10" class="btn-draw-10" onclick="playGacha(10)">10회 가챠</button>
-            <button id="btn-home" class="btn-sub" style="display:none; background:#444;" onclick="goHome()">가챠 화면 리셋</button>
+            <button id="btn-home" class="btn-sub" style="display:none; background:#444;" onclick="goHome()">초기 화면 리셋</button>
             <button id="btn-coll-open" class="btn-sub" onclick="openCollection()">도감 확인</button>
         </div>
     </div>
@@ -242,15 +244,19 @@
             catch (e) { console.error(e); }
         }
 
-        function renderCard(targetWrapper, item, isDraw, isDetail = false, isColl = false) {
+        function renderCard(targetWrapper, item, isDraw, isDetail = false) {
             const set = SETTINGS[item.grade];
             const isHigh = item.grade === 'EX' || item.grade === 'SSR';
             const frame = targetWrapper.querySelector('.card-frame');
             const info = CARD_DATA_DB[item.id] || { name: "???", desc: "데이터 없음", attr: "노말", stats: [1,1,1,1] };
             
-            // 특수 효과 클래스 적용
+            // 효과 리셋 및 적용
             frame.classList.remove('float-effect');
             if (isDraw && isHigh) frame.classList.add('float-effect');
+            
+            frame.style.border = `5px solid ${set.color}`;
+            frame.style.boxShadow = isHigh ? `0 0 20px ${set.color}88` : `0 4px 10px rgba(0,0,0,0.4)`;
+            
             if (isDetail && isHigh) {
                 frame.style.setProperty('--glow-color', set.color);
                 frame.style.animation = 'neon-pulse 2s infinite alternate';
@@ -258,9 +264,6 @@
                 frame.style.animation = '';
             }
 
-            frame.style.border = `${isColl ? '2px' : '5px'} solid ${set.color}`;
-            frame.style.boxShadow = isHigh ? `0 0 20px ${set.color}88` : `0 4px 10px rgba(0,0,0,0.4)`;
-            
             const frontFace = frame.querySelector('.card-front');
             if(frontFace) {
                 frontFace.style.display = 'block';
@@ -278,38 +281,18 @@
                     </div>
                 </div>`;
 
-            // 도감 레이아웃 (텍스트 왼쪽 정렬 중심)
-            if (isColl) {
-                const cardHTML = `
-                    <div style="height:65%; display:flex; align-items:center; justify-content:center; width:100%; position:relative;">
-                        <div style="position:absolute; top:8px; right:8px; border:1px solid ${set.color}; padding:2px 6px; border-radius:4px; font-size:9px; font-weight:900; color:${set.color}; background:rgba(0,0,0,0.6);">${info.attr}</div>
-                        <img src="images/${item.id}" style="max-width:85%; max-height:85%; object-fit:contain;">
-                    </div>
-                    <div style="height:35%; background:#050505; border-top:1px solid ${set.color}33; display:flex; flex-direction:column; padding:10px; text-align:left;">
-                        <div style="font-size:0.85rem; font-weight:900; color:${set.color}; margin-bottom:1px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">${info.name}</div>
-                        <div style="font-size:9px; color:#555; height:11px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; margin-bottom:6px;">${info.desc}</div>
-                        <div style="display:flex; gap:6px; align-items:center; margin-top:auto;">
-                            <span style="background:${set.color}; color:#fff; font-size:9px; padding:1px 5px; border-radius:3px; font-weight:900;">${item.grade}</span>
-                            <span style="font-size:9px; color:${set.color}; font-weight:bold;">${info.attr}</span>
-                        </div>
-                    </div>`;
-                const clip = frame.querySelector('.card-clip');
-                if(clip) clip.innerHTML = cardHTML;
-                return;
-            }
-
             // 일반/상세 레이아웃 (이미지 70%, 설명 30%)
             const cardHTML = `
                 ${isDetail && isHigh ? '<div class="prism-effect"></div>' : ''}
                 <div style="height:70%; display:flex; align-items:center; justify-content:center; width:100%; position:relative;">
                     <!-- 속성 프레임 우상단 -->
-                    <div style="position:absolute; top:12px; right:12px; border:2px solid ${set.color}; padding:4px 10px; border-radius:8px; font-size:11px; font-weight:900; color:${set.color}; background:rgba(0,0,0,0.75); box-shadow:0 0 10px ${set.color}44; z-index:10;">${info.attr}</div>
-                    <div style="position:absolute; top:12px; left:12px; background:${set.color}; color:#fff; font-size:11px; font-weight:900; padding:3px 9px; border-radius:5px; z-index:10;">${item.grade}</div>
-                    <img src="images/${item.id}" style="max-width:94%; max-height:94%; object-fit:contain; z-index:2;">
+                    <div style="position:absolute; top:12px; right:12px; border:2.5px solid ${set.color}; padding:4px 11px; border-radius:9px; font-size:11px; font-weight:900; color:${set.color}; background:rgba(0,0,0,0.8); box-shadow:0 0 10px ${set.color}55; z-index:10;">${info.attr}</div>
+                    <div style="position:absolute; top:12px; left:12px; background:${set.color}; color:#fff; font-size:11px; font-weight:900; padding:3px 10px; border-radius:6px; z-index:10;">${item.grade}</div>
+                    <img src="images/${item.id}" style="max-width:95%; max-height:95%; object-fit:contain; z-index:2;">
                 </div>
-                <div style="height:30%; background:linear-gradient(to bottom, #0f0f0f, #000); border-top:1px solid ${set.color}22; padding:12px 18px; text-align:left; position:relative;">
-                    <div style="font-size:1.5rem; font-weight:900; color:${set.color}; text-shadow:0 0 8px ${set.color}33;">${info.name}</div>
-                    <p style="font-size:11px; color:#777; margin-top:5px; line-height:1.4; width:70%; height:32px; overflow:hidden; font-weight:500;">${info.desc}</p>
+                <div style="height:30%; background:linear-gradient(to bottom, #0f0f0f, #000); border-top:1px solid ${set.color}33; padding:12px 18px; text-align:left; position:relative;">
+                    <div style="font-size:1.6rem; font-weight:900; color:${set.color}; text-shadow:0 0 8px ${set.color}44; line-height:1;">${info.name}</div>
+                    <p style="font-size:11px; color:#777; margin-top:8px; line-height:1.4; width:72%; height:34px; overflow:hidden; font-weight:500;">${info.desc}</p>
                     ${statHTML(info.stats)}
                 </div>`;
             
@@ -338,7 +321,7 @@
                 p.style.animationDuration = `${Math.random() * 1.2 + 0.8}s`;
                 target.appendChild(p);
                 p.addEventListener('animationend', () => p.remove());
-            }, 120);
+            }, 100);
         }
 
         async function playGacha(count) {
@@ -347,6 +330,12 @@
 
             isGachaRunning = isResultPending = true;
             toggleMainBtns(true);
+
+            // 1회 가챠 모드일 경우 결과 영역 가시성 확보 (버그 수정 포인트)
+            if (count === 1) {
+                document.getElementById('main-card-wrapper').style.display = "block";
+                document.getElementById('multi-result-display').style.display = "none";
+            }
 
             try {
                 if (energy.count === MAX_ENERGY) energy.last = Date.now();
@@ -365,11 +354,12 @@
                       cardFront = document.getElementById('main-card-front'),
                       ph = document.getElementById('slot-placeholder');
 
-                // 초기 설정: 아예 보이지 않거나 윈도우 상태
+                // 초기 설정: 윈도우 상태(placeholder 보임)
                 cardFront.style.display = 'none';
                 cardBack.style.display = 'none';
                 mainFrame.classList.remove('show-back');
                 mainFrame.style.border = "4px solid #222";
+                mainFrame.onclick = null; // 이전 이벤트 제거
 
                 // [Step 1] 스캐닝 시작
                 cutIn.style.display = "flex";
@@ -392,19 +382,20 @@
                 ph.style.display = 'none';
 
                 if (count === 1) {
-                    // [Step 3] 즉시 뒷면으로 노출 (회전 과정 없이 바로 뒷면 띄움)
+                    // [Step 3] 즉시 뒷면으로 노출 (전환 과정 없이 바로 뒷면 고정)
                     mainFrame.classList.add('show-back'); 
                     cardBack.style.display = 'flex';
                     renderCard(document.getElementById('main-card-wrapper'), results[0], true);
                     
                     // 터치 시 앞면으로 회전
                     mainFrame.onclick = () => {
-                        mainFrame.classList.remove('show-back'); // 앞면으로 턴
+                        mainFrame.classList.remove('show-back'); // 앞면(0도)으로 회전
                         isResultPending = false; 
-                        toggleMainBtns(false);
-                        mainFrame.onclick = () => showDetail(results[0]);
+                        toggleMainBtns(false); // 버튼 다시 활성화
+                        mainFrame.onclick = () => showDetail(results[0]); // 다음 터치 시 상세보기
                     };
                 } else {
+                    // 10회 가챠: 리스트 노출
                     document.getElementById('main-card-wrapper').style.display = "none";
                     renderTen(results);
                     isResultPending = false;
@@ -412,8 +403,13 @@
                 }
                 document.getElementById('btn-home').style.display = "block";
 
-            } catch (e) { console.error(e); isGachaRunning = isResultPending = false; toggleMainBtns(false); } 
-            finally { isGachaRunning = false; }
+            } catch (e) { 
+                console.error(e); 
+                isGachaRunning = isResultPending = false; 
+                toggleMainBtns(false); 
+            } finally { 
+                isGachaRunning = false; 
+            }
         }
 
         function toggleMainBtns(disabled) {
@@ -447,6 +443,7 @@
                 const rect = card.getBoundingClientRect();
                 const clientX = (e.clientX || (e.touches && e.touches[0].clientX));
                 const clientY = (e.clientY || (e.touches && e.touches[0].clientY));
+                if (clientX === undefined || clientY === undefined) return;
                 const x = clientX - rect.left, y = clientY - rect.top;
                 tarY = ((x / rect.width) - 0.5) * 45;
                 tarX = (0.5 - (y / rect.height)) * 45;
@@ -470,7 +467,7 @@
             display.innerHTML = ""; display.style.display = "flex";
             results.forEach(item => {
                 const wrap = document.createElement('div'); wrap.className = "card-container-wrapper";
-                wrap.style.flex = "0 0 250px"; wrap.style.scrollSnapAlign = "center";
+                wrap.style.flex = "0 0 255px"; wrap.style.scrollSnapAlign = "center";
                 wrap.innerHTML = `<div class="card-frame"><div class="card-face card-front"><div class="card-clip"></div></div><div class="card-face card-back"><img src="${BACK_IMG_URL}"></div></div>`;
                 renderCard(wrap, item, true);
                 wrap.onclick = () => showDetail(item);
@@ -490,7 +487,7 @@
                 <div id="collection-header">
                     <div>
                         <h2 style="font-size:1.15rem; color:var(--ssr-color); font-weight:900;">빈고 도감 <span style="font-size:0.9rem; color:#fff; margin-left:5px;">(${rate}%)</span></h2>
-                        <p style="font-size:10px; color:#555; margin-top:3px;">모은 카드: ${collectedCount} / ${totalCount}</p>
+                        <p style="font-size:10px; color:#555; margin-top:3px;">보유 정예: ${collectedCount} / ${totalCount}</p>
                     </div>
                     <button onclick="document.getElementById('collection-modal').style.display='none'; document.body.classList.remove('lock-scroll');" style="background:#222; padding:8px 15px; border-radius:8px; font-size:13px; color:#fff; font-weight:bold;">닫기</button>
                 </div>
@@ -503,12 +500,27 @@
             pool.forEach((item) => {
                 const found = myItems.find(i => i.id === item.id);
                 const wrap = document.createElement('div'); wrap.className = "coll-card-wrap";
+                const info = CARD_DATA_DB[item.id] || { name: "???", desc: "데이터 없음", attr: "노말" };
+                const set = SETTINGS[item.grade];
+
                 if (found) {
-                    wrap.innerHTML = `<div class="card-frame"><div class="card-face card-front"><div class="card-clip"></div></div><div class="card-face card-back"><img src="${BACK_IMG_URL}"></div></div><div class="count-badge">x${found.count}</div>`;
-                    renderCard(wrap, item, false, false, true); 
+                    wrap.style.borderColor = set.color;
+                    wrap.innerHTML = `
+                        <div class="coll-img-box">
+                            <div class="count-badge">x${found.count}</div>
+                            <img src="images/${item.id}" style="max-width:85%; max-height:85%; object-fit:contain;">
+                        </div>
+                        <div class="coll-info-box">
+                            <div style="font-size:1rem; font-weight:900; color:${set.color}; margin-bottom:4px;">${info.name}</div>
+                            <div style="font-size:10px; color:#666; margin-bottom:10px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">${info.desc}</div>
+                            <div style="display:flex; gap:6px;">
+                                <span style="background:${set.color}; color:#fff; font-size:9px; padding:1px 6px; border-radius:3px; font-weight:900;">${item.grade}</span>
+                                <span style="font-size:9px; color:${set.color}; font-weight:bold; border:1px solid ${set.color}44; padding:0 5px; border-radius:3px;">${info.attr}</span>
+                            </div>
+                        </div>`;
                     wrap.onclick = () => showDetail(item);
                 } else { 
-                    wrap.innerHTML = `<div style="width:100%; height:100%; border:1px solid #222; border-radius:15px; display:flex; align-items:center; justify-content:center; background:#0a0a0a; color:#222; font-weight:900; font-size:22px;">?</div>`; 
+                    wrap.innerHTML = `<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#0a0a0a; color:#222; font-weight:900; font-size:24px;">?</div>`; 
                 }
                 grid.appendChild(wrap);
             });
@@ -524,8 +536,7 @@
             const frame = document.getElementById('main-card-frame');
             frame.style.border = "4px solid #222";
             frame.style.boxShadow = "none";
-            frame.classList.remove('show-back');
-            frame.classList.remove('float-effect');
+            frame.classList.remove('show-back', 'float-effect');
             frame.querySelector('.card-front').style.display = 'none';
             frame.querySelector('.card-back').style.display = 'none';
             document.getElementById('slot-placeholder').style.display = 'flex';
@@ -533,7 +544,8 @@
         }
 
         function updateUI() { 
-            document.getElementById('energy-display').innerText = `${energy.count} / ${MAX_ENERGY}`; 
+            const ed = document.getElementById('energy-display');
+            if(ed) ed.innerText = `${energy.count} / ${MAX_ENERGY}`; 
         }
 
         function updateEnergyOnLoad() { 
@@ -547,19 +559,20 @@
         }
 
         function updateTimer() { 
-            if (energy.count >= MAX_ENERGY) { document.getElementById('timer-display').innerText = "(MAX)"; return; } 
+            const td = document.getElementById('timer-display');
+            if (!td) return;
+            if (energy.count >= MAX_ENERGY) { td.innerText = "(MAX)"; return; } 
             if (!energy.last) energy.last = Date.now();
             const elapsed = Date.now() - energy.last; 
             if (elapsed >= RECHARGE_TIME) { 
                 energy.count++; 
                 energy.last = (energy.count >= MAX_ENERGY) ? null : Date.now(); 
-                save(); 
-                updateUI(); 
+                save(); updateUI(); 
             } 
             if (energy.last) {
                 const rem = RECHARGE_TIME - (elapsed % RECHARGE_TIME); 
                 const m = Math.floor(rem/60000), s = Math.floor((rem%60000)/1000).toString().padStart(2,'0'); 
-                document.getElementById('timer-display').innerText = `(${m}:${s})`; 
+                td.innerText = `(${m}:${s})`; 
             }
         }
 
