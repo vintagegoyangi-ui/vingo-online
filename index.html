@@ -8,7 +8,6 @@
     <script src="card_data.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     
-    <!-- Firebase 라이브러리 -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
@@ -250,7 +249,6 @@
             const frame = targetWrapper.querySelector('.card-frame');
             const info = CARD_DATA_DB[item.id] || { name: "???", desc: "데이터 없음", attr: "노말", stats: [1,1,1,1] };
             
-            // 효과 리셋 및 적용
             frame.classList.remove('float-effect');
             if (isDraw && isHigh) frame.classList.add('float-effect');
             
@@ -281,11 +279,9 @@
                     </div>
                 </div>`;
 
-            // 일반/상세 레이아웃 (이미지 70%, 설명 30%)
             const cardHTML = `
                 ${isDetail && isHigh ? '<div class="prism-effect"></div>' : ''}
                 <div style="height:70%; display:flex; align-items:center; justify-content:center; width:100%; position:relative;">
-                    <!-- 속성 프레임 우상단 -->
                     <div style="position:absolute; top:12px; right:12px; border:2.5px solid ${set.color}; padding:4px 11px; border-radius:9px; font-size:11px; font-weight:900; color:${set.color}; background:rgba(0,0,0,0.8); box-shadow:0 0 10px ${set.color}55; z-index:10;">${info.attr}</div>
                     <div style="position:absolute; top:12px; left:12px; background:${set.color}; color:#fff; font-size:11px; font-weight:900; padding:3px 10px; border-radius:6px; z-index:10;">${item.grade}</div>
                     <img src="images/${item.id}" style="max-width:95%; max-height:95%; object-fit:contain; z-index:2;">
@@ -331,7 +327,6 @@
             isGachaRunning = isResultPending = true;
             toggleMainBtns(true);
 
-            // 1회 가챠 모드일 경우 결과 영역 가시성 확보 (버그 수정 포인트)
             if (count === 1) {
                 document.getElementById('main-card-wrapper').style.display = "block";
                 document.getElementById('multi-result-display').style.display = "none";
@@ -354,58 +349,68 @@
                       cardFront = document.getElementById('main-card-front'),
                       ph = document.getElementById('slot-placeholder');
 
-                // 초기 설정: 윈도우 상태(placeholder 보임)
-                cardFront.style.display = 'none';
+                // 리셋 및 스캐닝 레이어 표시
+                ph.style.display = 'none';
                 cardBack.style.display = 'none';
+                cardFront.style.display = 'none';
                 mainFrame.classList.remove('show-back');
                 mainFrame.style.border = "4px solid #222";
-                mainFrame.onclick = null; // 이전 이벤트 제거
-
-                // [Step 1] 스캐닝 시작
                 cutIn.style.display = "flex";
+
                 await new Promise(r => setTimeout(r, 1500)); 
 
-                // [Step 2] 고등급 판별 및 통합 컷인
-                const highestItem = [...results].sort((a,b) => SETTINGS[a.grade].rate - SETTINGS[b.grade].rate)[0];
-                if (highestItem.grade === 'SSR' || highestItem.grade === 'EX') {
+                // 최고 등급 판별 (EX > SSR > SR > R)
+                const gradeOrder = { "EX": 4, "SSR": 3, "SR": 2, "R": 1 };
+                const highestItem = results.reduce((prev, curr) => (gradeOrder[curr.grade] > gradeOrder[prev.grade]) ? curr : prev);
+
+                // 컷인 연출 시퀀스
+                if (highestItem.grade === 'SSR') {
                     document.getElementById('main-container').classList.add('shake-effect');
-                    const vfxId = highestItem.grade === 'EX' ? 'vfx-vortex-ex' : 'vfx-vortex-ssr';
-                    document.getElementById(vfxId).style.display = "block";
-                    flash.style.display = "block";
+                    document.getElementById('vfx-vortex-ssr').style.display = "block";
+                    showMessage("⚠️ SSR DETECTED! ⚠️");
                     await new Promise(r => setTimeout(r, 1200));
-                    document.getElementById(vfxId).style.display = "none";
-                    flash.style.display = "none";
+                    document.getElementById('vfx-vortex-ssr').style.display = "none";
                     document.getElementById('main-container').classList.remove('shake-effect');
+                    confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#ffdf00', '#ffffff'] });
+                } 
+                else if (highestItem.grade === 'EX') {
+                    // EX 1단계 연출
+                    document.getElementById('main-container').classList.add('shake-effect');
+                    document.getElementById('vfx-vortex-ssr').style.display = "block";
+                    showMessage("⚠️ SSR DETECTED? ⚠️");
+                    await new Promise(r => setTimeout(r, 1000));
+                    document.getElementById('vfx-vortex-ssr').style.display = "none";
+                    
+                    // EX 2단계 연출
+                    flash.style.display = "block";
+                    setTimeout(() => flash.style.display = "none", 300);
+                    document.getElementById('vfx-vortex-ex').style.display = "block";
+                    showMessage("🔥 EX DETECTED! 🔥");
+                    await new Promise(r => setTimeout(r, 1200));
+                    document.getElementById('vfx-vortex-ex').style.display = "none";
+                    document.getElementById('main-container').classList.remove('shake-effect');
+                    confetti({ particleCount: 200, spread: 80, origin: { y: 0.6 }, colors: ['#ff007f', '#ffffff', '#ffdf00'] });
                 }
 
                 cutIn.style.display = "none";
-                ph.style.display = 'none';
 
                 if (count === 1) {
-                    // [Step 3] 즉시 뒷면으로 노출 (전환 과정 없이 바로 뒷면 고정)
-                    mainFrame.classList.add('show-back'); 
-                    cardBack.style.display = 'flex';
+                    // 뒷면 없이 바로 앞면 표시
+                    cardFront.style.display = 'block';
                     renderCard(document.getElementById('main-card-wrapper'), results[0], true);
-                    
-                    // 터치 시 앞면으로 회전
-                    mainFrame.onclick = () => {
-                        mainFrame.classList.remove('show-back'); // 앞면(0도)으로 회전
-                        isResultPending = false; 
-                        toggleMainBtns(false); // 버튼 다시 활성화
-                        mainFrame.onclick = () => showDetail(results[0]); // 다음 터치 시 상세보기
-                    };
+                    mainFrame.onclick = () => showDetail(results[0]);
                 } else {
-                    // 10회 가챠: 리스트 노출
                     document.getElementById('main-card-wrapper').style.display = "none";
                     renderTen(results);
-                    isResultPending = false;
-                    toggleMainBtns(false);
                 }
+                
+                isResultPending = false;
+                toggleMainBtns(false);
                 document.getElementById('btn-home').style.display = "block";
 
             } catch (e) { 
                 console.error(e); 
-                isGachaRunning = isResultPending = false; 
+                isResultPending = false; 
                 toggleMainBtns(false); 
             } finally { 
                 isGachaRunning = false; 
@@ -473,7 +478,6 @@
                 wrap.onclick = () => showDetail(item);
                 display.appendChild(wrap);
             });
-            if(results.some(r => r.grade === 'SSR' || r.grade === 'EX')) confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
         }
 
         function openCollection() {
