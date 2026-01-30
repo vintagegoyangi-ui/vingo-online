@@ -28,9 +28,8 @@
         let USER_ID = null;
         let myItems = [];
         let energy = { count: 30, last: null };
-        let isGachaRunning = false; // 가챠 중복 실행 방지 변수 추가
+        let isGachaRunning = false;
 
-        // 아이디/비밀번호 커스텀 로그인 및 중복 체크
         async function handleAuth(type) {
             const id = document.getElementById('auth-id').value.trim();
             const pw = document.getElementById('auth-pw').value.trim();
@@ -56,19 +55,11 @@
                     USER_ID = id;
                     document.getElementById('login-layer').style.display = 'none';
                     document.getElementById('main-container').style.display = 'block';
-                    
-                    // 데이터 동기화 및 유효성 검사
                     myItems = Array.isArray(userData.inventory) ? userData.inventory : [];
-                    if (userData.energy) {
-                        energy = userData.energy;
-                    } else {
-                        energy = { count: 30, last: Date.now() };
-                    }
-                    
+                    energy = userData.energy || { count: 30, last: Date.now() };
                     updateEnergyOnLoad();
                     updateUI();
                     setInterval(updateTimer, 1000);
-                    console.log("🔓 로그인 성공:", USER_ID);
                 } else {
                     alert("아이디 또는 비밀번호가 일치하지 않습니다.");
                 }
@@ -83,133 +74,70 @@
             --sr-color: #a335ee; 
             --r-color: #0070dd; 
             --bg-color: #050505; 
-            --scan-color: #00ff00; /* 초록색 스캔 라인 */
+            --scan-color: #00ff00;
         }
-        /* 모든 폰트를 프리텐다드로 고정 */
         * { 
             box-sizing: border-box; 
             -webkit-tap-highlight-color: transparent; 
-            margin: 0; 
-            padding: 0; 
-            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif !important;
+            margin: 0; padding: 0; 
+            font-family: 'Pretendard', sans-serif !important;
         }
         body { 
-            background-color: var(--bg-color); 
-            color: white; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            min-height: 100svh; 
-            width: 100%; 
-            overflow-x: hidden; 
+            background-color: var(--bg-color); color: white; 
+            display: flex; flex-direction: column; align-items: center; 
+            min-height: 100svh; width: 100%; overflow-x: hidden; 
             overscroll-behavior-y: contain; 
         }
         body.lock-scroll { overflow: hidden !important; touch-action: none; }
 
-        /* --- 애니메이션 효과 --- */
+        /* --- 애니메이션 --- */
         @keyframes shake { 0%, 100% { transform: translate(0,0); } 10%, 30%, 50%, 70%, 90% { transform: translate(-4px, -2px); } 20%, 40%, 60%, 80% { transform: translate(4px, 2px); } }
         @keyframes vortex { 0% { transform: rotate(0deg) scale(1); opacity: 0; } 50% { opacity: 0.35; transform: rotate(180deg) scale(2.2); } 100% { transform: rotate(360deg) scale(3.5); opacity: 0; } }
         @keyframes flashEffect { 0% { opacity: 0; } 50% { opacity: 0.7; } 100% { opacity: 0; } }
-        /* 상하 왕복 1회 스캔용 애니메이션 */
         @keyframes scanOnce { 0% { top: 0%; opacity: 0; } 10% { opacity: 1; } 50% { top: 100%; } 90% { opacity: 1; } 100% { top: 0%; opacity: 0; } }
         @keyframes particle-rise { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-100px) scale(0); opacity: 0; } }
-        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
-        @keyframes aurora { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-
+        
         .shake-effect { animation: shake 0.4s linear infinite !important; }
         .vortex-ssr, .vortex-ex, .screen-flash { position: fixed; inset: 0; z-index: 8000; pointer-events: none; display: none; mix-blend-mode: screen; }
         .vortex-ssr { background: radial-gradient(circle, var(--ssr-color) 0%, transparent 70%); animation: vortex 1s ease-out forwards; }
         .vortex-ex { background: radial-gradient(circle, var(--ex-color) 0%, transparent 70%); animation: vortex 1.2s ease-in-out forwards; }
         .screen-flash { background: white; animation: flashEffect 0.3s ease-out; z-index: 9000; }
-        .float-effect { animation: float 2.5s ease-in-out infinite !important; }
         .aurora-ex { background: linear-gradient(270deg, #4b0082, #ff007f, #4b0082) !important; background-size: 200% 200% !important; animation: aurora 3s ease infinite !important; }
         .aurora-ssr { background: linear-gradient(270deg, #4a3b00, #ffdf00, #4a3b00) !important; background-size: 200% 200% !important; animation: aurora 4s ease infinite !important; }
+        @keyframes aurora { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
         .particle { position: absolute; pointer-events: none; border-radius: 50%; animation: particle-rise linear forwards; z-index: 100; }		
 
-        /* --- 카드 슬롯 및 3D 회전 구조 --- */
+        /* --- 카드 구조 --- */
         .card-container-wrapper { position: relative; width: 100%; max-width: 280px; aspect-ratio: 3 / 4.4; margin: 0 auto; perspective: 1000px; }
         .card-frame { 
-            position: relative; 
-            width: 100%; 
-            height: 100%; 
-            transform-style: preserve-3d; 
-            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); 
-            border-radius: 20px; 
-            border: 4px solid #222; 
-            background: #0a0a0a;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
+            position: relative; width: 100%; height: 100%; 
+            transform-style: preserve-3d; transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); 
+            border-radius: 20px; border: 4px solid #222; background: #0a0a0a;
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
         }
-        /* 뒷면을 보여주기 위한 클래스 (회전) */
         .card-frame.show-back { transform: rotateY(180deg); }
-
         .card-face { position: absolute; inset: 0; backface-visibility: hidden; border-radius: 16px; overflow: hidden; background: #000; }
-        
-        /* 앞면 (캐릭터): 기본 0도 */
         .card-front { z-index: 2; transform: rotateY(0deg); } 
-        
-        /* 뒷면: 캐릭터와 반대방향인 180도 */
         .card-back { z-index: 1; transform: rotateY(180deg); display: flex; align-items: center; justify-content: center; background: #111; }
         .card-back img { width: 100%; height: 100%; object-fit: cover; }
         
-        .card-clip { position: absolute; inset: 0; border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; }
-        .hologram { position: absolute; inset: 0; z-index: 4; pointer-events: none; opacity: 0; transition: opacity 0.4s ease; mix-blend-mode: color-dodge; }
-        
-        /* 스캔 레이어: 뒷면(180도 상태) 위에 보임 */
         #cut-in-layer { 
-            position: absolute; 
-            inset: -4px; 
-            background: rgba(0,0,0,0.4); 
-            z-index: 100; 
-            display: none; 
-            align-items: center; 
-            justify-content: center; 
-            flex-direction: column; 
-            border-radius: 20px; 
-            border: 4px solid var(--scan-color); 
-            backface-visibility: hidden; 
-            transform: rotateY(180deg); 
+            position: absolute; inset: -4px; background: rgba(0,0,0,0.2); 
+            z-index: 100; display: none; align-items: center; justify-content: center; 
+            flex-direction: column; border-radius: 20px; border: 4px solid var(--scan-color); 
             pointer-events: none;
         }
         .scan-line { 
-            position: absolute; 
-            left: 0; 
-            width: 100%; 
-            height: 8px; 
-            background: var(--scan-color); 
-            box-shadow: 0 0 20px var(--scan-color), 0 0 40px var(--scan-color);
-            z-index: 101; 
-            pointer-events: none; 
-            animation: scanOnce 1.5s ease-in-out forwards; 
+            position: absolute; left: 0; width: 100%; height: 8px; background: var(--scan-color); 
+            box-shadow: 0 0 20px var(--scan-color); z-index: 101; 
+            animation: scanOnce 1.5s ease-in-out infinite; 
         }
         
-        /* 슬롯 내 초기 텍스트 스타일 */
         #slot-placeholder {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            z-index: 5;
-            backface-visibility: hidden;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            text-align: center; z-index: 5;
         }
-        .slot-bg-text {
-            font-size: 2rem;
-            font-weight: 900;
-            font-style: italic;
-            background: linear-gradient(to bottom, #444, #111);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            letter-spacing: -1px;
-            margin-bottom: 5px;
-        }
-        .slot-sub-text {
-            color: #444;
-            font-size: 0.8rem;
-            font-weight: 600;
-        }
+        .slot-bg-text { font-size: 2rem; font-weight: 900; background: linear-gradient(to bottom, #444, #111); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
         .container { width: 92%; max-width: 400px; text-align: center; background: #111; padding: 20px; border-radius: 30px; border: 1px solid #222; margin: auto; display: none; }
         .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin-top: 20px; }
@@ -221,19 +149,14 @@
 
         #login-layer { position: fixed; inset: 0; background: #050505; z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; }
         .auth-box { width: 100%; max-width: 320px; background: #111; padding: 25px; border-radius: 20px; border: 1px solid #222; }
-        .auth-box input { width: 100%; padding: 15px; margin-bottom: 12px; border-radius: 12px; border: 1px solid #333; background: #000; color: white; outline: none; font-size: 1rem; }
-        .auth-box button { width: 100%; padding: 15px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; margin-bottom: 10px; color: white; }
+        .auth-box input { width: 100%; padding: 15px; margin-bottom: 12px; border-radius: 12px; border: 1px solid #333; background: #000; color: white; font-size: 1rem; }
+        .auth-box button { width: 100%; padding: 15px; border-radius: 12px; font-weight: bold; margin-bottom: 10px; color: white; }
 
-        /* 도감 및 상세 뷰 */
-        .count-badge { position: absolute; top: -8px; right: -8px; background: #fff; color: #000; font-size: 10px; padding: 2px 6px; border-radius: 6px; z-index: 210; font-weight: 900; border: 1.5px solid #000; }
-        .number-badge { position: absolute; top: 6px; left: 6px; background: rgba(0,0,0,0.6); color: rgba(255,255,255,0.8); font-size: 8px; padding: 1px 4px; border-radius: 4px; z-index: 210; font-weight: bold; pointer-events: none; }
-        #multi-result-display { display:none; flex-wrap:nowrap; overflow-x:auto; gap:25px; width:100%; padding: 30px 25px; scroll-snap-type: x mandatory; }
-        .multi-item-wrap { flex: 0 0 260px; scroll-snap-align: center; cursor: pointer; }
+        #multi-result-display { display:none; flex-wrap:nowrap; overflow-x:auto; gap:25px; width:100%; padding: 30px 25px; }
         #detail-view { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; display: none; align-items: center; justify-content: center; perspective: 1500px; touch-action: none; }
         #collection-modal { position:fixed; inset:0; background:#050505; display:none; flex-direction:column; z-index:1000; }
-        #collection-grid { display: grid; grid-template-columns: repeat(3, 1fr); column-gap: 12px; row-gap: 15px; padding: 15px 15px 100px 15px; overflow-y: auto; flex:1; align-content: start; }
-        .coll-item-wrapper { position: relative; width: 100%; aspect-ratio: 3 / 4.4; }
-        .coll-card.locked { opacity: 0.5; border: 2px dashed #444; background: #0a0a0a; border-radius: 16px; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; color: #333; font-size: 20px; position: relative; }
+        #collection-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 15px; overflow-y: auto; flex:1; }
+        .count-badge { position: absolute; top: -8px; right: -8px; background: #fff; color: #000; font-size: 10px; padding: 2px 6px; border-radius: 6px; font-weight: 900; border: 1.5px solid #000; }
     </style>
 </head>
 <body>
@@ -248,7 +171,6 @@
             <input type="password" id="auth-pw" placeholder="비밀번호">
             <button onclick="handleAuth('login')" style="background:var(--r-color);">로그인</button>
             <button onclick="handleAuth('signup')" style="background:#333;">회원가입</button>
-            <p style="font-size:11px; color:#666; text-align:center; margin-top:10px;">아이디가 없으시면 회원가입을 먼저 진행하세요.</p>
         </div>
     </div>
 
@@ -271,7 +193,7 @@
                     
                     <div id="cut-in-layer">
                         <div class="scan-line"></div>
-                        <span id="scan-status" style="font-weight:900; font-size:1.2rem; letter-spacing:2px; color:var(--scan-color); text-shadow: 0 0 10px var(--scan-color);">SCANNING...</span>
+                        <span id="scan-status" style="font-weight:900; font-size:1.2rem; color:var(--scan-color); text-shadow: 0 0 10px var(--scan-color);">SCANNING...</span>
                         <span id="detect-text" style="display:none; margin-top:10px; font-weight:900; font-size:1.4rem;"></span>
                     </div>
                 </div>
@@ -312,77 +234,58 @@
 
         async function save() {
             if (!USER_ID) return;
-            localStorage.setItem(STORAGE_KEYS.COLL, JSON.stringify(myItems));
-            localStorage.setItem(STORAGE_KEYS.EN, JSON.stringify(energy));
             try {
-                await db.ref('users/' + USER_ID).update({ 
-                    inventory: myItems, 
-                    energy: energy, 
-                    lastSync: Date.now() 
-                });
+                await db.ref('users/' + USER_ID).update({ inventory: myItems, energy: energy, lastSync: Date.now() });
             } catch (e) { console.error("DB 저장 실패", e); }
         }
 
-        // --- 카드 렌더링 시스템 ---
         function renderCard(targetWrapper, item, isDraw, isDetail = false, isColl = false) {
             const set = SETTINGS[item.grade];
             const isHigh = item.grade === 'EX' || item.grade === 'SSR';
             const frame = targetWrapper.querySelector('.card-frame');
-            
             const ph = frame.querySelector('#slot-placeholder');
             if(ph) ph.style.display = 'none';
 
-            const info = CARD_DATA_DB[item.id] || { name: "Unknown", attr: "노말", stats: [1, 1, 1, 1], desc: "데이터 없음" };
-            const formatStat = (v) => v === 10 ? `<span style="color: ${set.color}; text-shadow: 0 0 10px ${set.color}; font-size: 1.1em;">A</span>` : v;
-
+            const info = CARD_DATA_DB[item.id] || { name: "Unknown", attr: "노말", stats: [1,1,1,1], desc: "" };
+            
             frame.style.border = `${isColl ? '3px' : '5px'} solid ${set.color}`;
-            frame.style.borderRadius = "20px";
-            frame.style.boxShadow = isHigh ? `0 0 25px ${set.color}cc, inset 0 0 10px ${set.color}66` : `0 4px 15px rgba(0,0,0,0.6)`;
+            frame.style.boxShadow = isHigh ? `0 0 25px ${set.color}cc` : `0 4px 15px rgba(0,0,0,0.6)`;
             
             const frontFace = frame.querySelector('.card-front');
             if(frontFace) {
                 frontFace.style.display = 'block';
-                frontFace.style.background = (isDetail || isColl) ? `radial-gradient(circle at center, ${set.color}55 0%, rgba(0,0,0,0.9) 75%, #000 100%)` : `radial-gradient(circle at center, ${set.color}33 0%, #000 100%)`;
+                frontFace.style.background = `radial-gradient(circle at center, ${set.color}33 0%, #000 100%)`;
             }
 
             let cardHTML = isColl ? `
-                <div style="height: 72%; display: flex; align-items: center; justify-content: center; width: 100%;"><img src="images/${item.id}" style="max-width: 90%; max-height: 90%; object-fit: contain; z-index: 10;"></div>
-                <div style="height: 28%; background: linear-gradient(to bottom, rgba(15,15,15,0.98), #000); border-top: 1px solid ${set.color}44; display: flex; flex-direction: column; justify-content: center; padding: 0 16px; z-index: 10;">
-                    <div style="font-size: 1rem; font-weight: 900; color: ${set.color}; text-shadow: 0 0 8px ${set.color}66; margin-bottom: 4px;">${info.name}</div>
-                    <div style="display: flex; gap: 6px;"><span style="font-size: 9px; font-weight: 900; color: #fff; background: ${set.color}; padding: 2px 6px; border-radius: 3px;">${item.grade}</span><span style="font-size: 9px; font-weight: 900; color: ${set.color}; border: 1px solid ${set.color}88; padding: 1px 6px; border-radius: 3px;">${info.attr}</span></div>
+                <div style="height:72%; display:flex; align-items:center; justify-content:center; width:100%;"><img src="images/${item.id}" style="max-width:90%; max-height:90%; object-fit:contain; z-index:10;"></div>
+                <div style="height:28%; background:#000; border-top:1px solid ${set.color}44; display:flex; flex-direction:column; justify-content:center; padding:0 16px; z-index:10;">
+                    <div style="font-size:1rem; font-weight:900; color:${set.color};">${info.name}</div>
                 </div>` : `
-                <div style="height: 12%; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; z-index: 20;"><div style="font-size: 11px; font-weight: 900; color: #fff; background: ${set.color}; padding: 2px 8px; border-radius: 4px;">${item.grade}</div><div style="font-size: 10px; font-weight: 900; color: ${set.color}; border: 1px solid ${set.color}; padding: 1px 7px; border-radius: 4px;">${info.attr}</div></div>
-                <div style="height: 53%; display: flex; align-items: center; justify-content: center; width: 100%;"><img src="images/${item.id}" style="max-width: 95%; max-height: 95%; object-fit: contain; z-index: 10;"></div>
-                <div style="height: 35%; background: linear-gradient(to bottom, rgba(15,15,15,0.98), #000); border-top: 1px solid ${set.color}33; display: flex; flex-direction: column; align-items: flex-start; padding: 15px 20px; z-index: 10; position: relative;">
-                    <div style="font-size: 1.6rem; font-weight: 900; color: ${set.color}; text-shadow: 0 0 12px ${set.color}88; margin-bottom: 8px;">${info.name}</div>
-                    <p style="font-size: 12px; color: #ccc; line-height: 1.5; font-weight: 500;">${info.desc}</p>
-                    <div style="position: absolute; right: 10px; bottom: 10px; transform: scale(0.8);">
-                        <div style="position: relative; width: 70px; height: 70px; display: grid; grid-template-areas: '. up .' 'left . right' '. down .'; align-items: center; justify-items: center; font-weight: 900; color: #fff; font-size: 18px;">
-                            <div style="grid-area: up;">${formatStat(info.stats[0])}</div><div style="grid-area: left;">${formatStat(info.stats[3])}</div><div style="grid-area: right;">${formatStat(info.stats[1])}</div><div style="grid-area: down;">${formatStat(info.stats[2])}</div>
-                            <div style="position: absolute; width: 5px; height: 5px; background: ${set.color}; border-radius: 50%; box-shadow: 0 0 12px 2px ${set.color};"></div>
-                        </div>
-                    </div>
+                <div style="height:12%; display:flex; align-items:center; justify-content:space-between; padding:0 15px; z-index:20;"><div style="background:${set.color}; padding:2px 8px; border-radius:4px; font-weight:900;">${item.grade}</div></div>
+                <div style="height:53%; display:flex; align-items:center; justify-content:center; width:100%;"><img src="images/${item.id}" style="max-width:95%; max-height:95%; object-fit:contain; z-index:10;"></div>
+                <div style="height:35%; background:linear-gradient(to bottom, #111, #000); border-top:1px solid ${set.color}33; padding:15px 20px; z-index:10; position:relative;">
+                    <div style="font-size:1.6rem; font-weight:900; color:${set.color}; text-shadow:0 0 10px ${set.color}88;">${info.name}</div>
+                    <p style="font-size:12px; color:#ccc; margin-top:5px;">${info.desc}</p>
                 </div>`;
             const clip = frame.querySelector('.card-clip');
-            if(clip) clip.innerHTML = `<div class="card-inner-bg ${isHigh ? set.aurora : ''}" style="opacity: ${isHigh ? '0.4' : '0.1'};"></div>${isDetail && isHigh ? '<div class="hologram"></div>' : ''}${cardHTML}`;
-            
+            if(clip) clip.innerHTML = `<div class="card-inner-bg ${isHigh ? set.aurora : ''}" style="opacity:0.4;"></div>${isDetail && isHigh ? '<div class="hologram"></div>' : ''}${cardHTML}`;
             if (isHigh && !isColl && (isDetail || isDraw)) createParticles(frame, set.color, item.grade);
         }
 
         let particleTimer = null;
         function createParticles(target, color, grade) {
             if (particleTimer) clearInterval(particleTimer);
-            const interval = grade === 'EX' ? 150 : 300;
             particleTimer = setInterval(() => {
                 const p = document.createElement('div'); p.className = 'particle';
-                const size = Math.random() * 3 + 2; p.style.width = p.style.height = `${size}px`;
-                p.style.background = color; p.style.left = `${Math.random() * 80 + 10}%`; p.style.bottom = '20%';
-                p.style.animationDuration = `${Math.random() * 1.5 + 1.5}s`;
+                p.style.width = p.style.height = `${Math.random()*3+2}px`;
+                p.style.background = color; p.style.left = `${Math.random()*80+10}%`; p.style.bottom = '20%';
+                p.style.animationDuration = `${Math.random()*1.5+1.5}s`;
                 target.appendChild(p); p.addEventListener('animationend', () => p.remove());
-            }, interval);
+            }, grade === 'EX' ? 150 : 300);
         }
 
-        // --- 새로운 가챠 연출 시스템 ---
+        // --- 가챠 연출 로직 (수정됨) ---
         async function playGacha(count) {
             if (isGachaRunning) return;
             if (!USER_ID) { alert("로그인이 필요합니다."); return; }
@@ -394,162 +297,161 @@
             try {
                 if (energy.count === MAX_ENERGY) energy.last = Date.now();
                 energy.count -= count;
-
                 const results = Array.from({length: count}, draw);
                 results.forEach(item => {
                     const f = myItems.find(i => i.id === item.id);
                     if (f) f.count++; else myItems.push({id: item.id, count: 1});
                 });
+                updateUI(); await save(); 
 
-                updateUI();
-                await save(); 
-
-                const mainFrame = document.getElementById('main-card-frame'), container = document.getElementById('main-container'), flash = document.getElementById('vfx-flash');
-                const cutIn = document.getElementById('cut-in-layer'), detectText = document.getElementById('detect-text');
-                const cardBack = document.getElementById('main-card-back'), cardFront = document.getElementById('main-card-front');
-                const ph = mainFrame.querySelector('#slot-placeholder');
+                const mainFrame = document.getElementById('main-card-frame'), 
+                      container = document.getElementById('main-container'), 
+                      flash = document.getElementById('vfx-flash'),
+                      cutIn = document.getElementById('cut-in-layer'),
+                      detectText = document.getElementById('detect-text'),
+                      cardBack = document.getElementById('main-card-back'),
+                      cardFront = document.getElementById('main-card-front'),
+                      ph = mainFrame.querySelector('#slot-placeholder');
                 
-                // 이전 이벤트 제거 및 초기화
-                mainFrame.onclick = null;
-                if(ph) ph.style.display = 'none';
-                cardFront.style.display = 'none';
-                cardBack.style.display = 'flex';
-                mainFrame.classList.add('show-back'); // 뒷면으로 소환
-                document.getElementById('multi-result-display').style.display = "none";
-                document.getElementById('main-card-wrapper').style.display = "block";
-                detectText.innerText = ""; detectText.style.display = "none";
-
-                const highestGrade = results.map(r => r.grade).sort((a,b) => SETTINGS[a].rate - SETTINGS[b].rate)[0];
-
-                // [Step 1] 고등급 컷인 (SSR/EX일 경우 스캐닝 전 발생)
-                if (highestGrade === 'SSR' || highestGrade === 'EX') {
-                    container.classList.add('shake-effect');
-                    document.getElementById('vfx-vortex-ssr').style.display = "block";
-                    flash.style.display = "block"; flash.style.background = "rgba(255, 223, 0, 0.3)";
-                    detectText.innerText = highestGrade === 'EX' ? "SSR DETECTED?" : "SSR DETECTED!";
-                    detectText.style.display = "block";
-                    detectText.style.color = SETTINGS.SSR.color;
-                    await new Promise(r => setTimeout(r, 1000));
-                    document.getElementById('vfx-vortex-ssr').style.display = "none"; flash.style.display = "none";
-                    
-                    if (highestGrade === 'EX') {
-                        document.getElementById('vfx-vortex-ex').style.display = "block";
-                        flash.style.display = "block"; flash.style.background = "rgba(255, 0, 127, 0.3)";
-                        detectText.innerText = "EX DETECTED!"; 
-                        detectText.style.color = SETTINGS.EX.color;
-                        await new Promise(r => setTimeout(r, 1200));
-                        document.getElementById('vfx-vortex-ex').style.display = "none"; flash.style.display = "none";
-                    }
-                    container.classList.remove('shake-effect');
-                }
-
+                // 초기화 (1회 가챠 기준)
                 if (count === 1) {
-                    // [Step 2] 초록색 스캐닝 연출 (상하 1회 왕복)
+                    mainFrame.onclick = null;
+                    if(ph) ph.style.display = 'flex'; // 가챠 윈도우 상태(텍스트)
+                    cardFront.style.display = 'none';
+                    cardBack.style.display = 'none';
+                    mainFrame.classList.remove('show-back');
+                    mainFrame.style.border = "4px solid #222";
+                    mainFrame.style.boxShadow = "none";
+                    document.getElementById('multi-result-display').style.display = "none";
+                    document.getElementById('main-card-wrapper').style.display = "block";
+
+                    // [Step 1] 초록색 스캐닝 시작 (윈도우 상태에서)
                     cutIn.style.display = "flex";
-                    await new Promise(r => setTimeout(r, 1600)); // scanOnce 애니메이션 시간
+                    await new Promise(r => setTimeout(r, 1500)); 
+
+                    // [Step 2] 고등급 컷인 (SSR/EX일 경우)
+                    const highestGrade = results[0].grade;
+                    if (highestGrade === 'SSR' || highestGrade === 'EX') {
+                        container.classList.add('shake-effect');
+                        document.getElementById('vfx-vortex-ssr').style.display = "block";
+                        flash.style.display = "block"; flash.style.background = "rgba(255, 223, 0, 0.3)";
+                        detectText.innerText = highestGrade === 'EX' ? "EX DETECTED!" : "SSR DETECTED!";
+                        detectText.style.display = "block";
+                        detectText.style.color = SETTINGS[highestGrade].color;
+                        await new Promise(r => setTimeout(r, 1200));
+                        document.getElementById('vfx-vortex-ssr').style.display = "none";
+                        flash.style.display = "none";
+                        container.classList.remove('shake-effect');
+                    }
+
+                    // [Step 3] 카드 뒷면 및 테두리 생성 (뒷면 상태로)
                     cutIn.style.display = "none";
-
-                    // [Step 3] 카드 렌더링 (아직 뒤집혀 있음)
+                    detectText.style.display = "none";
+                    if(ph) ph.style.display = 'none';
+                    cardBack.style.display = 'flex';
                     renderCard(document.getElementById('main-card-wrapper'), results[0], true);
+                    mainFrame.classList.add('show-back'); // 뒷면 노출
 
-                    // [Step 4] 첫 번째 터치: 카드 뒤집기
+                    // [Step 4] 사용자 터치 시 180도 회전
                     mainFrame.onclick = () => {
-                        mainFrame.classList.remove('show-back'); // 0도로 회전 (앞면 공개)
-                        
-                        // [Step 5] 두 번째 터치: 상세보기
+                        mainFrame.classList.remove('show-back'); // 앞면으로
+                        // [Step 5] 추가 터치 시 상세보기
                         mainFrame.onclick = () => showDetail(results[0]);
                     };
                 } else {
-                    // 10회 소환은 기존 리스트 방식 유지
                     document.getElementById('main-card-wrapper').style.display = "none";
                     renderTen(results);
                 }
-                
                 document.getElementById('btn-home').style.display = "block";
-            } catch (error) {
-                console.error("가챠 실행 에러:", error);
-            } finally {
-                isGachaRunning = false;
-                document.getElementById('btn-1').disabled = document.getElementById('btn-10').disabled = false;
-            }
+            } catch (error) { console.error(error); } 
+            finally { isGachaRunning = false; document.getElementById('btn-1').disabled = document.getElementById('btn-10').disabled = false; }
+        }
+
+        // --- 상세보기 틸트 최적화 (모바일용) ---
+        function showDetail(item) {
+            document.body.classList.add('lock-scroll');
+            const target = document.getElementById('detail-card-target');
+            target.innerHTML = `<div class="card-container-wrapper" style="width:100%;"><div class="card-frame"><div class="card-face card-front"><div class="card-clip"></div></div><div class="card-face card-back"><img src="${BACK_IMG_URL}"></div></div></div>`;
+            renderCard(target.querySelector('.card-container-wrapper'), item, false, true); 
+            
+            const card = target.querySelector('.card-frame'), view = document.getElementById('detail-view');
+            view.style.display = 'flex';
+
+            let rX = 0, rY = 0, tX = 0, tY = 0;
+            let rafId = null;
+
+            const updateRotation = () => {
+                rX += (tX - rX) * 0.1; // 부드러운 감쇠 효과
+                rY += (tY - rY) * 0.1;
+                card.style.transform = `rotateY(${rY}deg) rotateX(${rX}deg) scale(1.05)`;
+                
+                const h = card.querySelector('.hologram');
+                if(h && (item.grade === 'EX' || item.grade === 'SSR')) {
+                    const opacity = Math.min(Math.abs(rX) + Math.abs(rY), 20) / 20;
+                    h.style.opacity = opacity;
+                    h.style.background = `linear-gradient(${135 + rY}deg, transparent, rgba(255,255,255,${opacity * 0.4}), transparent)`;
+                }
+                rafId = requestAnimationFrame(updateRotation);
+            };
+
+            const handleInput = (e) => {
+                const rect = card.getBoundingClientRect();
+                const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+                const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+                if (!clientX || !clientY) return;
+
+                const x = clientX - rect.left, y = clientY - rect.top;
+                tY = ((x / rect.width) - 0.5) * 60; // 최대 30도 회전
+                tX = (0.5 - (y / rect.height)) * 60;
+            };
+
+            view.addEventListener('mousemove', handleInput);
+            view.addEventListener('touchmove', handleInput, { passive: false });
+            rafId = requestAnimationFrame(updateRotation);
+
+            view.onclick = (e) => { 
+                if(e.target === view) { 
+                    cancelAnimationFrame(rafId);
+                    view.style.display = 'none'; 
+                    document.body.classList.remove('lock-scroll'); 
+                    if(particleTimer) clearInterval(particleTimer); 
+                } 
+            };
         }
 
         function renderTen(results) {
             const display = document.getElementById('multi-result-display');
             display.innerHTML = ""; display.style.display = "flex";
             results.forEach(item => {
-                const wrap = document.createElement('div'); wrap.className = "multi-item-wrap card-container-wrapper";
-                wrap.onclick = () => showDetail(item);
+                const wrap = document.createElement('div'); wrap.className = "card-container-wrapper";
+                wrap.style.flex = "0 0 260px";
                 wrap.innerHTML = `<div class="card-frame"><div class="card-face card-front"><div class="card-clip"></div></div><div class="card-face card-back"><img src="${BACK_IMG_URL}"></div></div>`;
                 renderCard(wrap, item, false);
+                wrap.onclick = () => showDetail(item);
                 display.appendChild(wrap);
             });
-            display.scrollLeft = 0;
-            if(results.some(r => r.grade === 'SSR' || r.grade === 'EX')) confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-        }
-
-        function showDetail(item) {
-            document.body.classList.add('lock-scroll');
-            const target = document.getElementById('detail-card-target');
-            target.innerHTML = `<div class="card-container-wrapper" style="width:100%;"><div class="card-frame"><div class="card-face card-front"><div class="card-clip"></div></div><div class="card-face card-back"><img src="${BACK_IMG_URL}"></div></div></div>`;
-            renderCard(target.querySelector('.card-container-wrapper'), item, false, true); 
-            const card = target.querySelector('.card-frame'), view = document.getElementById('detail-view');
-            view.style.display = 'flex';
-            const handleMove = (e) => {
-                const rect = card.getBoundingClientRect();
-                const cx = e.clientX || (e.touches && e.touches[0].clientX), cy = e.clientY || (e.touches && e.touches[0].clientY);
-                const x = cx - rect.left, y = cy - rect.top;
-                const rY = (x - rect.width/2) / 1.5, rX = (rect.height/2 - y) / 3;
-                card.style.transform = `rotateY(${rY}deg) rotateX(${rX}deg) scale(1.05)`;
-                const h = card.querySelector('.hologram');
-                if(h && (item.grade === 'EX' || item.grade === 'SSR')) {
-                    h.style.opacity = "1"; const lp = (x / rect.width) * 100, hue = (x / rect.width) * 360;
-                    h.style.background = `linear-gradient(${135 + rY*2}deg, rgba(255,255,255,0) 0%, hsla(${hue}, 80%, 80%, 0.3) ${lp-15}%, hsla(${hue+40}, 80%, 90%, 0.5) ${lp}%, hsla(${hue}, 80%, 80%, 0.3) ${lp+15}%, rgba(255,255,255,0) 100%)`;
-                }
-            };
-            view.onmousemove = view.ontouchmove = handleMove;
-            view.onmouseleave = view.ontouchend = () => { card.style.transform = "rotateY(0deg) rotateX(0) scale(1)"; if(card.querySelector('.hologram')) card.querySelector('.hologram').style.opacity = "0"; };
-            view.onclick = (e) => { if(e.target === view) { view.style.display = 'none'; document.body.classList.remove('lock-scroll'); if(particleTimer) clearInterval(particleTimer); } };
+            if(results.some(r => r.grade === 'SSR' || r.grade === 'EX')) confetti({ particleCount: 150, spread: 70 });
         }
 
         function openCollection() {
             const modal = document.getElementById('collection-modal');
-            modal.innerHTML = `<div style="padding:20px; display:flex; justify-content:space-between; align-items:center; background:#000; border-bottom:1px solid #222;"><h2 style="font-size:1rem; color:var(--ssr-color);">정예 도감</h2><button onclick="document.getElementById('collection-modal').style.display='none'; document.body.classList.remove('lock-scroll');" style="background:#222; padding:8px 15px; border-radius:8px; color:white; font-weight:700;">닫기</button></div><div id="collection-grid"></div><button style="background:#a00; color:white; padding:10px; margin:10px; border-radius:8px; font-size:11px; width:fit-content; align-self:center; font-weight:700;" onclick="resetData()">데이터 초기화</button>`;
+            modal.innerHTML = `<div style="padding:20px; display:flex; justify-content:space-between; align-items:center; background:#000;"><h2 style="color:var(--ssr-color);">정예 도감</h2><button onclick="document.getElementById('collection-modal').style.display='none'; document.body.classList.remove('lock-scroll');" style="background:#222; padding:8px 15px; border-radius:8px;">닫기</button></div><div id="collection-grid"></div>`;
             const grid = modal.querySelector('#collection-grid');
             pool.forEach((item, idx) => {
                 const f = myItems.find(i => i.id === item.id);
-                const wrap = document.createElement('div'); wrap.className = "coll-item-wrapper";
-                const numBadge = `<div class="number-badge">No.${(idx + 1).toString().padStart(2, '0')}</div>`;
+                const wrap = document.createElement('div'); wrap.className = "card-container-wrapper";
                 if (f) {
-                    wrap.innerHTML = `<div class="card-frame"><div class="card-face card-front"><div class="card-clip"></div></div><div class="card-face card-back"><img src="${BACK_IMG_URL}"></div></div>${numBadge}<div class="count-badge">x${f.count}</div>`;
-                    renderCard(wrap, item, false, false, true); wrap.onclick = () => showDetail(item);
-                } else { wrap.innerHTML = `<div class="coll-card locked"><span style="opacity:0.3;">?</span>${numBadge}</div>`; }
+                    wrap.innerHTML = `<div class="card-frame"><div class="card-face card-front"><div class="card-clip"></div></div><div class="card-face card-back"><img src="${BACK_IMG_URL}"></div></div><div class="count-badge">x${f.count}</div>`;
+                    renderCard(wrap, item, false, false, true); 
+                    wrap.onclick = () => showDetail(item);
+                } else { wrap.innerHTML = `<div style="width:100%; height:100%; border:2px dashed #444; border-radius:16px; display:flex; align-items:center; justify-content:center; opacity:0.3;">?</div>`; }
                 grid.appendChild(wrap);
             });
             modal.style.display = "flex"; document.body.classList.add('lock-scroll');
         }
 
-        function goHome() { 
-            document.getElementById('multi-result-display').style.display = "none"; 
-            document.getElementById('btn-home').style.display = "none"; 
-            document.getElementById('main-card-wrapper').style.display = "block";
-            const frame = document.getElementById('main-card-frame');
-            const ph = frame.querySelector('#slot-placeholder');
-            if(ph) ph.style.display = 'flex';
-            frame.querySelector('.card-front').style.display = 'none';
-            frame.querySelector('.card-back').style.display = 'none';
-            frame.style.border = '4px solid #222';
-            frame.style.boxShadow = 'none';
-            frame.className = 'card-frame';
-            frame.classList.remove('show-back');
-            frame.onclick = null;
-        }
-
-        function updateUI() { 
-            const display = document.getElementById('energy-display');
-            if(display) display.innerText = `${energy.count} / ${MAX_ENERGY}`; 
-        }
-
+        function goHome() { location.reload(); }
+        function updateUI() { document.getElementById('energy-display').innerText = `${energy.count} / ${MAX_ENERGY}`; }
         function updateEnergyOnLoad() { 
             if (!energy.last) return; 
             const gained = Math.floor((Date.now() - energy.last) / RECHARGE_TIME); 
@@ -559,41 +461,19 @@
                 save(); 
             } 
         }
-
         function updateTimer() { 
             if (energy.count >= MAX_ENERGY) { document.getElementById('timer-display').innerText = "(MAX)"; return; } 
-            if (!energy.last) energy.last = Date.now(); 
             const elapsed = Date.now() - energy.last; 
-            if (elapsed >= RECHARGE_TIME) { 
-                energy.count++; 
-                energy.last = (energy.count >= MAX_ENERGY) ? null : Date.now(); 
-                save(); updateUI(); 
-            } 
-            if (energy.last) { 
-                const rem = RECHARGE_TIME - (elapsed % RECHARGE_TIME); 
-                const m = Math.floor(rem/60000); 
-                const s = Math.floor((rem%60000)/1000).toString().padStart(2,'0'); 
-                document.getElementById('timer-display').innerText = `(${m}:${s})`; 
-            } 
+            if (elapsed >= RECHARGE_TIME) { energy.count++; energy.last = Date.now(); save(); updateUI(); } 
+            const rem = RECHARGE_TIME - (elapsed % RECHARGE_TIME); 
+            const m = Math.floor(rem/60000), s = Math.floor((rem%60000)/1000).toString().padStart(2,'0'); 
+            document.getElementById('timer-display').innerText = `(${m}:${s})`; 
         }
-
-        async function resetData() { 
-            if(confirm("정말 모든 데이터를 초기화할까요?")) { 
-                localStorage.clear(); 
-                if(USER_ID) await db.ref('users/' + USER_ID).update({ inventory: [], energy: { count: MAX_ENERGY, last: Date.now() } });
-                location.reload(); 
-            } 
-        }
-
         function draw() { 
-            if (pool.length === 0) return null;
-            const totalChance = pool.reduce((sum, item) => sum + item.chance, 0); 
-            let r = Math.random() * totalChance, acc = 0; 
-            for (const item of pool) { 
-                acc += item.chance; 
-                if (r <= acc) return item; 
-            } 
-            return pool[pool.length - 1]; 
+            const total = pool.reduce((s, i) => s + i.chance, 0); 
+            let r = Math.random() * total, a = 0; 
+            for (const i of pool) { a += i.chance; if (r <= a) return i; } 
+            return pool[0]; 
         }
     </script>
 </body>
