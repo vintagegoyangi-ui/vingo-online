@@ -74,6 +74,16 @@
             m.style.display = 'block';
             setTimeout(() => { m.style.display = 'none'; }, 2000);
         }
+
+        // 중앙 컷인 메시지 표시 함수
+        function showCutInMessage(msg, color) {
+            const target = document.getElementById('cut-in-msg');
+            target.innerText = msg;
+            target.style.color = color;
+            target.style.textShadow = `0 0 20px ${color}`;
+            target.style.display = 'flex';
+            setTimeout(() => { target.style.display = 'none'; }, 1500);
+        }
     </script>
 
     <style>
@@ -101,6 +111,9 @@
         .vortex-ex { background: radial-gradient(circle, var(--ex-color) 0%, transparent 70%); animation: vortex 1.2s ease-in-out forwards; }
         .screen-flash { background: white; z-index: 9000; animation: flash 0.3s ease-out; display: none; }
         @keyframes flash { 0% { opacity: 0; } 50% { opacity: 0.8; } 100% { opacity: 0; } }
+
+        /* 중앙 컷인 메시지 스타일 */
+        #cut-in-msg { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 9500; font-size: 2.2rem; font-weight: 900; font-style: italic; pointer-events: none; text-align: center; line-height: 1.2; letter-spacing: -1px; }
 
         .particle { position: absolute; pointer-events: none; border-radius: 50%; animation: particle-rise linear forwards; z-index: 100; }
 
@@ -147,14 +160,16 @@
         #multi-result-display { display:none; flex-wrap:nowrap; overflow-x:auto; gap:20px; width:100%; padding: 30px 20px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
         #detail-view { position: fixed; inset: 0; background: rgba(0,0,0,0.97); z-index: 2000; display: none; align-items: center; justify-content: center; perspective: 1500px; touch-action: none; }
         
-        /* 도감 스타일 */
+        /* 도감 스타일 (모바일 3열 최적화) */
         #collection-modal { position:fixed; inset:0; background:#050505; display:none; flex-direction:column; z-index:1500; }
         #collection-header { padding:20px; display:flex; justify-content:space-between; align-items:center; background:#000; border-bottom:1px solid #222; }
-        #collection-grid { display: grid; grid-template-columns: 1fr; gap: 12px; padding: 15px; overflow-y: auto; flex:1; align-content: start; }
-        .coll-card-wrap { position: relative; width: 100%; max-width: 340px; aspect-ratio: 3 / 1.4; margin: 0 auto; display: flex; background: #0a0a0a; border-radius: 15px; border: 1px solid #222; overflow: hidden; }
-        .coll-img-box { width: 35%; display: flex; align-items: center; justify-content: center; background: #000; position: relative; }
-        .coll-info-box { width: 65%; padding: 15px; display: flex; flex-direction: column; justify-content: center; text-align: left; }
-        .count-badge { position: absolute; top: 5px; left: 5px; background: #fff; color: #000; font-size: 9px; padding: 2px 5px; border-radius: 4px; font-weight: 900; z-index: 10; border: 1px solid #000; }
+        #collection-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 12px; overflow-y: auto; flex:1; align-content: start; }
+        
+        .coll-card-wrap { position: relative; width: 100%; aspect-ratio: 1 / 1.5; background: #0a0a0a; border-radius: 12px; border: 1px solid #222; overflow: hidden; display: flex; flex-direction: column; }
+        .coll-img-box { height: 75%; width: 100%; display: flex; align-items: center; justify-content: center; background: #000; position: relative; }
+        .coll-info-box { height: 25%; width: 100%; display: flex; align-items: center; justify-content: center; background: #111; border-top: 1px solid #222; }
+        .coll-info-box .name-mini { font-size: 9px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 4px; }
+        .grade-tag { position: absolute; top: 4px; right: 4px; font-size: 8px; font-weight: 900; padding: 1px 4px; border-radius: 3px; z-index: 10; color: #fff; }
 
         #custom-msg { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,0.95); color: #000; padding: 10px 20px; border-radius: 20px; z-index: 20000; font-weight: bold; display: none; font-size: 13px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
 
@@ -171,7 +186,7 @@
 </head>
 <body>
     <div id="custom-msg"></div>
-    <div id="vfx-vortex-ssr" class="vortex-ssr"></div>
+    <div id="cut-in-msg"></div> <div id="vfx-vortex-ssr" class="vortex-ssr"></div>
     <div id="vfx-vortex-ex" class="vortex-ex"></div>
     <div id="vfx-flash" class="screen-flash"></div>
 
@@ -349,7 +364,6 @@
                       cardFront = document.getElementById('main-card-front'),
                       ph = document.getElementById('slot-placeholder');
 
-                // 리셋 및 스캐닝 레이어 표시
                 ph.style.display = 'none';
                 cardBack.style.display = 'none';
                 cardFront.style.display = 'none';
@@ -359,33 +373,29 @@
 
                 await new Promise(r => setTimeout(r, 1500)); 
 
-                // 최고 등급 판별 (EX > SSR > SR > R)
                 const gradeOrder = { "EX": 4, "SSR": 3, "SR": 2, "R": 1 };
                 const highestItem = results.reduce((prev, curr) => (gradeOrder[curr.grade] > gradeOrder[prev.grade]) ? curr : prev);
 
-                // 컷인 연출 시퀀스
                 if (highestItem.grade === 'SSR') {
                     document.getElementById('main-container').classList.add('shake-effect');
                     document.getElementById('vfx-vortex-ssr').style.display = "block";
-                    showMessage("⚠️ SSR DETECTED! ⚠️");
+                    showCutInMessage("SSR DETECTED!", "var(--ssr-color)"); // 중앙 메시지
                     await new Promise(r => setTimeout(r, 1200));
                     document.getElementById('vfx-vortex-ssr').style.display = "none";
                     document.getElementById('main-container').classList.remove('shake-effect');
                     confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#ffdf00', '#ffffff'] });
                 } 
                 else if (highestItem.grade === 'EX') {
-                    // EX 1단계 연출
                     document.getElementById('main-container').classList.add('shake-effect');
                     document.getElementById('vfx-vortex-ssr').style.display = "block";
-                    showMessage("⚠️ SSR DETECTED? ⚠️");
+                    showCutInMessage("SSR DETECTED?", "var(--ssr-color)"); // 중앙 메시지 1단계
                     await new Promise(r => setTimeout(r, 1000));
                     document.getElementById('vfx-vortex-ssr').style.display = "none";
                     
-                    // EX 2단계 연출
                     flash.style.display = "block";
                     setTimeout(() => flash.style.display = "none", 300);
                     document.getElementById('vfx-vortex-ex').style.display = "block";
-                    showMessage("🔥 EX DETECTED! 🔥");
+                    showCutInMessage("EX DETECTED!", "var(--ex-color)"); // 중앙 메시지 2단계
                     await new Promise(r => setTimeout(r, 1200));
                     document.getElementById('vfx-vortex-ex').style.display = "none";
                     document.getElementById('main-container').classList.remove('shake-effect');
@@ -395,7 +405,6 @@
                 cutIn.style.display = "none";
 
                 if (count === 1) {
-                    // 뒷면 없이 바로 앞면 표시
                     cardFront.style.display = 'block';
                     renderCard(document.getElementById('main-card-wrapper'), results[0], true);
                     mainFrame.onclick = () => showDetail(results[0]);
@@ -511,16 +520,12 @@
                     wrap.style.borderColor = set.color;
                     wrap.innerHTML = `
                         <div class="coll-img-box">
+                            <span class="grade-tag" style="background:${set.color}">${item.grade}</span>
                             <div class="count-badge">x${found.count}</div>
                             <img src="images/${item.id}" style="max-width:85%; max-height:85%; object-fit:contain;">
                         </div>
                         <div class="coll-info-box">
-                            <div style="font-size:1rem; font-weight:900; color:${set.color}; margin-bottom:4px;">${info.name}</div>
-                            <div style="font-size:10px; color:#666; margin-bottom:10px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">${info.desc}</div>
-                            <div style="display:flex; gap:6px;">
-                                <span style="background:${set.color}; color:#fff; font-size:9px; padding:1px 6px; border-radius:3px; font-weight:900;">${item.grade}</span>
-                                <span style="font-size:9px; color:${set.color}; font-weight:bold; border:1px solid ${set.color}44; padding:0 5px; border-radius:3px;">${info.attr}</span>
-                            </div>
+                            <div class="name-mini" style="color:${set.color}">${info.name}</div>
                         </div>`;
                     wrap.onclick = () => showDetail(item);
                 } else { 
