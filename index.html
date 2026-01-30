@@ -75,12 +75,11 @@
             setTimeout(() => { m.style.display = 'none'; }, 2000);
         }
 
-        // 중앙 컷인 메시지 표시 함수
         function showCutInMessage(msg, color) {
             const target = document.getElementById('cut-in-msg');
             target.innerText = msg;
             target.style.color = color;
-            target.style.textShadow = `0 0 20px ${color}`;
+            target.style.textShadow = `0 0 15px ${color}, 0 0 30px ${color}`;
             target.style.display = 'flex';
             setTimeout(() => { target.style.display = 'none'; }, 1500);
         }
@@ -95,7 +94,6 @@
         body { background-color: var(--bg-color); color: white; display: flex; flex-direction: column; align-items: center; min-height: 100svh; width: 100%; overflow-x: hidden; overscroll-behavior-y: contain; }
         body.lock-scroll { overflow: hidden !important; touch-action: none; }
 
-        /* VFX 애니메이션 */
         @keyframes shake { 0%, 100% { transform: translate(0,0); } 10%, 30%, 50%, 70%, 90% { transform: translate(-4px, -2px); } 20%, 40%, 60%, 80% { transform: translate(4px, 2px); } }
         @keyframes vortex { 0% { transform: rotate(0deg) scale(1); opacity: 0; } 50% { opacity: 0.35; transform: rotate(180deg) scale(2.2); } 100% { transform: rotate(360deg) scale(3.5); opacity: 0; } }
         @keyframes scanOnce { 0% { top: 0%; opacity: 0; } 10% { opacity: 1; } 50% { top: 100%; } 90% { opacity: 1; } 100% { top: 0%; opacity: 0; } }
@@ -112,12 +110,10 @@
         .screen-flash { background: white; z-index: 9000; animation: flash 0.3s ease-out; display: none; }
         @keyframes flash { 0% { opacity: 0; } 50% { opacity: 0.8; } 100% { opacity: 0; } }
 
-        /* 중앙 컷인 메시지 스타일 */
-        #cut-in-msg { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 9500; font-size: 2.2rem; font-weight: 900; font-style: italic; pointer-events: none; text-align: center; line-height: 1.2; letter-spacing: -1px; }
+        #cut-in-msg { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 9500; font-size: 2.2rem; font-weight: 900; font-style: italic; pointer-events: none; text-align: center; }
 
         .particle { position: absolute; pointer-events: none; border-radius: 50%; animation: particle-rise linear forwards; z-index: 100; }
 
-        /* 카드 구조 */
         .card-container-wrapper { position: relative; width: 100%; max-width: 290px; aspect-ratio: 3 / 4.5; margin: 0 auto; perspective: 1500px; }
         .card-frame { 
             position: relative; width: 100%; height: 100%; 
@@ -130,10 +126,8 @@
         .card-front { z-index: 2; transform: rotateY(0deg); } 
         .card-back { z-index: 1; transform: rotateY(180deg); display: flex; align-items: center; justify-content: center; background: #111; }
         .card-back img { width: 100%; height: 100%; object-fit: cover; }
-        
         .card-clip { position: absolute; inset: 0; display: flex; flex-direction: column; border-radius: 16px; overflow: hidden; }
 
-        /* 프리즘 효과 */
         .prism-effect { position: absolute; inset: 0; z-index: 5; pointer-events: none; mix-blend-mode: overlay; opacity: 0.5; background: linear-gradient(135deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 45%, rgba(255,255,255,0.8) 50%, rgba(255,255,255,0.4) 55%, rgba(255,255,255,0) 100%); background-size: 200% 200%; animation: prism 3s linear infinite; }
 
         #cut-in-layer { position: absolute; inset: -4px; z-index: 100; display: none; align-items: center; justify-content: center; flex-direction: column; border-radius: 20px; pointer-events: none; }
@@ -142,7 +136,6 @@
         #slot-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
         .slot-bg-text { font-size: 2rem; font-weight: 900; font-style: italic; background: linear-gradient(to bottom, #444, #111); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
-        /* 메인 레이아웃 */
         .container { width: 92%; max-width: 400px; text-align: center; background: #111; padding: 20px; border-radius: 30px; border: 1px solid #222; margin: auto; display: none; position: relative; min-height: 520px; }
         .logout-btn { position: absolute; top: 20px; right: 20px; font-size: 11px; color: #555; font-weight: bold; cursor: pointer; padding: 5px; border: 1px solid #222; border-radius: 5px; }
         .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin-top: 20px; }
@@ -160,20 +153,19 @@
         #multi-result-display { display:none; flex-wrap:nowrap; overflow-x:auto; gap:20px; width:100%; padding: 30px 20px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
         #detail-view { position: fixed; inset: 0; background: rgba(0,0,0,0.97); z-index: 2000; display: none; align-items: center; justify-content: center; perspective: 1500px; touch-action: none; }
         
-        /* 도감 스타일 (모바일 3열 최적화) */
+        /* 도감 스타일: 3열 고정 및 위아래 간격 최적화 */
         #collection-modal { position:fixed; inset:0; background:#050505; display:none; flex-direction:column; z-index:1500; }
         #collection-header { padding:20px; display:flex; justify-content:space-between; align-items:center; background:#000; border-bottom:1px solid #222; }
-        #collection-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 12px; overflow-y: auto; flex:1; align-content: start; }
+        #collection-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 15px; overflow-y: auto; flex:1; align-content: start; }
         
-        .coll-card-wrap { position: relative; width: 100%; aspect-ratio: 1 / 1.5; background: #0a0a0a; border-radius: 12px; border: 1px solid #222; overflow: hidden; display: flex; flex-direction: column; }
-        .coll-img-box { height: 75%; width: 100%; display: flex; align-items: center; justify-content: center; background: #000; position: relative; }
-        .coll-info-box { height: 25%; width: 100%; display: flex; align-items: center; justify-content: center; background: #111; border-top: 1px solid #222; }
+        .coll-card-wrap { position: relative; width: 100%; aspect-ratio: 1 / 1.5; background: #0a0a0a; border-radius: 10px; border: 1px solid #222; overflow: hidden; display: flex; flex-direction: column; }
+        .coll-img-box { height: 78%; width: 100%; display: flex; align-items: center; justify-content: center; background: #000; position: relative; }
+        .coll-info-box { height: 22%; width: 100%; display: flex; align-items: center; justify-content: center; background: #111; border-top: 1px solid #222; }
         .coll-info-box .name-mini { font-size: 9px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 4px; }
         .grade-tag { position: absolute; top: 4px; right: 4px; font-size: 8px; font-weight: 900; padding: 1px 4px; border-radius: 3px; z-index: 10; color: #fff; }
 
         #custom-msg { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,0.95); color: #000; padding: 10px 20px; border-radius: 20px; z-index: 20000; font-weight: bold; display: none; font-size: 13px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
 
-        /* 마름모 스탯 스타일 */
         .stat-diamond { position: absolute; bottom: 8px; right: 8px; width: 50px; height: 50px; pointer-events: none; }
         .diamond-inner { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 12px; color: #fff; text-shadow: 0 1px 3px #000; }
         .stat-val { position: absolute; }
@@ -186,7 +178,8 @@
 </head>
 <body>
     <div id="custom-msg"></div>
-    <div id="cut-in-msg"></div> <div id="vfx-vortex-ssr" class="vortex-ssr"></div>
+    <div id="cut-in-msg"></div>
+    <div id="vfx-vortex-ssr" class="vortex-ssr"></div>
     <div id="vfx-vortex-ex" class="vortex-ex"></div>
     <div id="vfx-flash" class="screen-flash"></div>
 
@@ -283,16 +276,7 @@
                 frontFace.style.background = isDetail ? `radial-gradient(circle at center, ${set.color}44 0%, #000 100%)` : `radial-gradient(circle at center, ${set.color}22 0%, #000 100%)`;
             }
 
-            const statHTML = (s) => `
-                <div class="stat-diamond" style="--glow-color:${set.color}">
-                    <div class="diamond-inner">
-                        <div class="stat-center"></div>
-                        <div class="stat-val stat-top">${s[0]}</div>
-                        <div class="stat-val stat-right">${s[1]}</div>
-                        <div class="stat-val stat-bottom">${s[2]}</div>
-                        <div class="stat-val stat-left">${s[3]}</div>
-                    </div>
-                </div>`;
+            const statHTML = (s) => `<div class="stat-diamond" style="--glow-color:${set.color}"><div class="diamond-inner"><div class="stat-center"></div><div class="stat-val stat-top">${s[0]}</div><div class="stat-val stat-right">${s[1]}</div><div class="stat-val stat-bottom">${s[2]}</div><div class="stat-val stat-left">${s[3]}</div></div></div>`;
 
             const cardHTML = `
                 ${isDetail && isHigh ? '<div class="prism-effect"></div>' : ''}
@@ -317,10 +301,7 @@
         function createParticles(target, color) {
             const timer = setInterval(() => {
                 const detailView = document.getElementById('detail-view');
-                if (!detailView || detailView.style.display === 'none') {
-                    clearInterval(timer);
-                    return;
-                }
+                if (!detailView || detailView.style.display === 'none') { clearInterval(timer); return; }
                 const p = document.createElement('div');
                 p.className = 'particle';
                 const size = Math.random() * 3 + 2;
@@ -379,7 +360,7 @@
                 if (highestItem.grade === 'SSR') {
                     document.getElementById('main-container').classList.add('shake-effect');
                     document.getElementById('vfx-vortex-ssr').style.display = "block";
-                    showCutInMessage("SSR DETECTED!", "var(--ssr-color)"); // 중앙 메시지
+                    showCutInMessage("SSR DETECTED!", "var(--ssr-color)");
                     await new Promise(r => setTimeout(r, 1200));
                     document.getElementById('vfx-vortex-ssr').style.display = "none";
                     document.getElementById('main-container').classList.remove('shake-effect');
@@ -388,14 +369,13 @@
                 else if (highestItem.grade === 'EX') {
                     document.getElementById('main-container').classList.add('shake-effect');
                     document.getElementById('vfx-vortex-ssr').style.display = "block";
-                    showCutInMessage("SSR DETECTED?", "var(--ssr-color)"); // 중앙 메시지 1단계
+                    showCutInMessage("SSR DETECTED?", "var(--ssr-color)");
                     await new Promise(r => setTimeout(r, 1000));
                     document.getElementById('vfx-vortex-ssr').style.display = "none";
-                    
                     flash.style.display = "block";
                     setTimeout(() => flash.style.display = "none", 300);
                     document.getElementById('vfx-vortex-ex').style.display = "block";
-                    showCutInMessage("EX DETECTED!", "var(--ex-color)"); // 중앙 메시지 2단계
+                    showCutInMessage("EX DETECTED!", "var(--ex-color)");
                     await new Promise(r => setTimeout(r, 1200));
                     document.getElementById('vfx-vortex-ex').style.display = "none";
                     document.getElementById('main-container').classList.remove('shake-effect');
@@ -417,13 +397,7 @@
                 toggleMainBtns(false);
                 document.getElementById('btn-home').style.display = "block";
 
-            } catch (e) { 
-                console.error(e); 
-                isResultPending = false; 
-                toggleMainBtns(false); 
-            } finally { 
-                isGachaRunning = false; 
-            }
+            } catch (e) { console.error(e); isResultPending = false; toggleMainBtns(false); } finally { isGachaRunning = false; }
         }
 
         function toggleMainBtns(disabled) {
@@ -439,46 +413,22 @@
             const target = document.getElementById('detail-card-target');
             target.innerHTML = `<div class="card-container-wrapper" style="width:100%;"><div class="card-frame"><div class="card-face card-front"><div class="card-clip"></div></div><div class="card-face card-back"><img src="${BACK_IMG_URL}"></div></div></div>`;
             renderCard(target.querySelector('.card-container-wrapper'), item, false, true); 
-            
             const card = target.querySelector('.card-frame'), view = document.getElementById('detail-view');
             view.style.display = 'flex';
-
-            let curX = 0, curY = 0, tarX = 0, tarY = 0;
-            let rafId = null;
-
-            const animate = () => {
-                curX += (tarX - curX) * 0.12;
-                curY += (tarY - curY) * 0.12;
-                card.style.transform = `rotateY(${curY}deg) rotateX(${curX}deg) scale(1.04)`;
-                rafId = requestAnimationFrame(animate);
-            };
-
-            const onMove = (e) => {
-                const rect = card.getBoundingClientRect();
-                const clientX = (e.clientX || (e.touches && e.touches[0].clientX));
-                const clientY = (e.clientY || (e.touches && e.touches[0].clientY));
-                if (clientX === undefined || clientY === undefined) return;
-                const x = clientX - rect.left, y = clientY - rect.top;
-                tarY = ((x / rect.width) - 0.5) * 45;
-                tarX = (0.5 - (y / rect.height)) * 45;
-            };
-
+            let curX = 0, curY = 0, tarX = 0, tarY = 0, rafId = null;
+            const animate = () => { curX += (tarX - curX) * 0.12; curY += (tarY - curY) * 0.12; card.style.transform = `rotateY(${curY}deg) rotateX(${curX}deg) scale(1.04)`; rafId = requestAnimationFrame(animate); };
+            const onMove = (e) => { const rect = card.getBoundingClientRect(); const clientX = (e.clientX || (e.touches && e.touches[0].clientX)), clientY = (e.clientY || (e.touches && e.touches[0].clientY)); if (clientX === undefined || clientY === undefined) return; const x = clientX - rect.left, y = clientY - rect.top; tarY = ((x / rect.width) - 0.5) * 45; tarX = (0.5 - (y / rect.height)) * 45; };
             view.addEventListener('mousemove', onMove);
             view.addEventListener('touchmove', onMove, { passive: false });
             rafId = requestAnimationFrame(animate);
-
-            view.onclick = (e) => { 
-                if(e.target === view) { 
-                    cancelAnimationFrame(rafId);
-                    view.style.display = 'none'; 
-                    document.body.classList.remove('lock-scroll'); 
-                } 
-            };
+            view.onclick = (e) => { if(e.target === view) { cancelAnimationFrame(rafId); view.style.display = 'none'; document.body.classList.remove('lock-scroll'); } };
         }
 
         function renderTen(results) {
             const display = document.getElementById('multi-result-display');
-            display.innerHTML = ""; display.style.display = "flex";
+            display.innerHTML = ""; 
+            display.style.display = "flex";
+            display.scrollLeft = 0; // 10연차 결과 스크롤 위치 초기화
             results.forEach(item => {
                 const wrap = document.createElement('div'); wrap.className = "card-container-wrapper";
                 wrap.style.flex = "0 0 255px"; wrap.style.scrollSnapAlign = "center";
@@ -491,60 +441,33 @@
 
         function openCollection() {
             if (isResultPending) return;
-            const collectedCount = myItems.length;
-            const totalCount = pool.length;
+            const collectedCount = myItems.length, totalCount = pool.length;
             const rate = totalCount > 0 ? ((collectedCount / totalCount) * 100).toFixed(1) : 0;
-
             const modal = document.getElementById('collection-modal');
-            modal.innerHTML = `
-                <div id="collection-header">
-                    <div>
-                        <h2 style="font-size:1.15rem; color:var(--ssr-color); font-weight:900;">빈고 도감 <span style="font-size:0.9rem; color:#fff; margin-left:5px;">(${rate}%)</span></h2>
-                        <p style="font-size:10px; color:#555; margin-top:3px;">보유 정예: ${collectedCount} / ${totalCount}</p>
-                    </div>
-                    <button onclick="document.getElementById('collection-modal').style.display='none'; document.body.classList.remove('lock-scroll');" style="background:#222; padding:8px 15px; border-radius:8px; font-size:13px; color:#fff; font-weight:bold;">닫기</button>
-                </div>
-                <div id="collection-grid"></div>
-                <div style="padding:15px; background:#000; border-top:1px solid #222; display:flex; justify-content:center;">
-                    <button onclick="resetData()" style="background:#800; font-size:12px; padding:12px 25px; color:#fff; font-weight:bold; border-radius:10px;">데이터 전체 초기화</button>
-                </div>`;
-            
+            modal.innerHTML = `<div id="collection-header"><div><h2 style="font-size:1.15rem; color:var(--ssr-color); font-weight:900;">빈고 도감 <span style="font-size:0.9rem; color:#fff; margin-left:5px;">(${rate}%)</span></h2><p style="font-size:10px; color:#555; margin-top:3px;">보유 정예: ${collectedCount} / ${totalCount}</p></div><button onclick="document.getElementById('collection-modal').style.display='none'; document.body.classList.remove('lock-scroll');" style="background:#222; padding:8px 15px; border-radius:8px; font-size:13px; color:#fff; font-weight:bold;">닫기</button></div><div id="collection-grid"></div><div style="padding:15px; background:#000; border-top:1px solid #222; display:flex; justify-content:center;"><button onclick="resetData()" style="background:#800; font-size:12px; padding:12px 25px; color:#fff; font-weight:bold; border-radius:10px;">데이터 전체 초기화</button></div>`;
             const grid = modal.querySelector('#collection-grid');
             pool.forEach((item) => {
                 const found = myItems.find(i => i.id === item.id);
                 const wrap = document.createElement('div'); wrap.className = "coll-card-wrap";
                 const info = CARD_DATA_DB[item.id] || { name: "???", desc: "데이터 없음", attr: "노말" };
                 const set = SETTINGS[item.grade];
-
                 if (found) {
                     wrap.style.borderColor = set.color;
-                    wrap.innerHTML = `
-                        <div class="coll-img-box">
-                            <span class="grade-tag" style="background:${set.color}">${item.grade}</span>
-                            <div class="count-badge">x${found.count}</div>
-                            <img src="images/${item.id}" style="max-width:85%; max-height:85%; object-fit:contain;">
-                        </div>
-                        <div class="coll-info-box">
-                            <div class="name-mini" style="color:${set.color}">${info.name}</div>
-                        </div>`;
+                    wrap.innerHTML = `<div class="coll-img-box"><span class="grade-tag" style="background:${set.color}">${item.grade}</span><div class="count-badge">x${found.count}</div><img src="images/${item.id}" style="max-width:85%; max-height:85%; object-fit:contain;"></div><div class="coll-info-box"><div class="name-mini" style="color:${set.color}">${info.name}</div></div>`;
                     wrap.onclick = () => showDetail(item);
-                } else { 
-                    wrap.innerHTML = `<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#0a0a0a; color:#222; font-weight:900; font-size:24px;">?</div>`; 
-                }
+                } else { wrap.innerHTML = `<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#0a0a0a; color:#222; font-weight:900; font-size:24px;">?</div>`; }
                 grid.appendChild(wrap);
             });
             modal.style.display = "flex"; document.body.classList.add('lock-scroll');
         }
 
         function goHome() { 
-            isResultPending = false;
-            toggleMainBtns(false);
+            isResultPending = false; toggleMainBtns(false);
             document.getElementById('multi-result-display').style.display = "none"; 
             document.getElementById('btn-home').style.display = "none"; 
             document.getElementById('main-card-wrapper').style.display = "block";
             const frame = document.getElementById('main-card-frame');
-            frame.style.border = "4px solid #222";
-            frame.style.boxShadow = "none";
+            frame.style.border = "4px solid #222"; frame.style.boxShadow = "none";
             frame.classList.remove('show-back', 'float-effect');
             frame.querySelector('.card-front').style.display = 'none';
             frame.querySelector('.card-back').style.display = 'none';
@@ -552,58 +475,11 @@
             frame.onclick = null;
         }
 
-        function updateUI() { 
-            const ed = document.getElementById('energy-display');
-            if(ed) ed.innerText = `${energy.count} / ${MAX_ENERGY}`; 
-        }
-
-        function updateEnergyOnLoad() { 
-            if (!energy.last) return; 
-            const gained = Math.floor((Date.now() - energy.last) / RECHARGE_TIME); 
-            if (gained > 0) { 
-                energy.count = Math.min(MAX_ENERGY, energy.count + gained); 
-                energy.last = (energy.count >= MAX_ENERGY) ? null : energy.last + (gained * RECHARGE_TIME); 
-                save(); 
-            } 
-        }
-
-        function updateTimer() { 
-            const td = document.getElementById('timer-display');
-            if (!td) return;
-            if (energy.count >= MAX_ENERGY) { td.innerText = "(MAX)"; return; } 
-            if (!energy.last) energy.last = Date.now();
-            const elapsed = Date.now() - energy.last; 
-            if (elapsed >= RECHARGE_TIME) { 
-                energy.count++; 
-                energy.last = (energy.count >= MAX_ENERGY) ? null : Date.now(); 
-                save(); updateUI(); 
-            } 
-            if (energy.last) {
-                const rem = RECHARGE_TIME - (elapsed % RECHARGE_TIME); 
-                const m = Math.floor(rem/60000), s = Math.floor((rem%60000)/1000).toString().padStart(2,'0'); 
-                td.innerText = `(${m}:${s})`; 
-            }
-        }
-
-        async function resetData() { 
-            if(confirm("정말 모든 데이터를 초기화하시겠습니까? 에너지가 최대치로 충전됩니다.")) { 
-                myItems = [];
-                energy = { count: MAX_ENERGY, last: null };
-                await save();
-                document.getElementById('collection-modal').style.display = 'none';
-                document.body.classList.remove('lock-scroll');
-                updateUI();
-                goHome();
-                showMessage("데이터와 에너지가 초기화되었습니다.");
-            } 
-        }
-
-        function draw() { 
-            const total = pool.reduce((s, i) => s + i.chance, 0); 
-            let r = Math.random() * total, a = 0; 
-            for (const i of pool) { a += i.chance; if (r <= a) return i; } 
-            return pool[0]; 
-        }
+        function updateUI() { const ed = document.getElementById('energy-display'); if(ed) ed.innerText = `${energy.count} / ${MAX_ENERGY}`; }
+        function updateEnergyOnLoad() { if (!energy.last) return; const gained = Math.floor((Date.now() - energy.last) / RECHARGE_TIME); if (gained > 0) { energy.count = Math.min(MAX_ENERGY, energy.count + gained); energy.last = (energy.count >= MAX_ENERGY) ? null : energy.last + (gained * RECHARGE_TIME); save(); } }
+        function updateTimer() { const td = document.getElementById('timer-display'); if (!td) return; if (energy.count >= MAX_ENERGY) { td.innerText = "(MAX)"; return; } if (!energy.last) energy.last = Date.now(); const elapsed = Date.now() - energy.last; if (elapsed >= RECHARGE_TIME) { energy.count++; energy.last = (energy.count >= MAX_ENERGY) ? null : Date.now(); save(); updateUI(); } if (energy.last) { const rem = RECHARGE_TIME - (elapsed % RECHARGE_TIME); const m = Math.floor(rem/60000), s = Math.floor((rem%60000)/1000).toString().padStart(2,'0'); td.innerText = `(${m}:${s})`; } }
+        async function resetData() { if(confirm("정말 모든 데이터를 초기화하시겠습니까? 에너지가 최대치로 충전됩니다.")) { myItems = []; energy = { count: MAX_ENERGY, last: null }; await save(); document.getElementById('collection-modal').style.display = 'none'; document.body.classList.remove('lock-scroll'); updateUI(); goHome(); showMessage("데이터와 에너지가 초기화되었습니다."); } }
+        function draw() { const total = pool.reduce((s, i) => s + i.chance, 0); let r = Math.random() * total, a = 0; for (const i of pool) { a += i.chance; if (r <= a) return i; } return pool[0]; }
     </script>
 </body>
 </html>
