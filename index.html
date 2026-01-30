@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-    <title>VINGO EXPEDITION v2.1 (Custom Login)</title>
+    <title>VINGO EXPEDITION v2.1 (Full FX & Login)</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
     <script src="card_data.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -12,6 +12,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
     <script>
+        // Firebase 설정
         const firebaseConfig = {
             apiKey: "AIzaSyBOmMyRoAZ57YQVWaiiLDLVE5Lwu5aU9-4",
             authDomain: "vingo-expedition.firebaseapp.com",
@@ -24,13 +25,14 @@
 
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
-        let USER_ID = null; // 로그인 성공 시 사용자의 아이디 저장
+        let USER_ID = null;
+        let myItems = [];
+        let energy = { count: 30, last: null };
 
-        // [커스텀 로그인 로직]
+        // [커스텀 로그인]
         async function handleAuth(type) {
             const id = document.getElementById('auth-id').value.trim();
             const pw = document.getElementById('auth-pw').value.trim();
-
             if (!id || !pw) { alert("아이디와 비밀번호를 입력하세요."); return; }
 
             const userRef = db.ref('users/' + id);
@@ -38,128 +40,228 @@
             const userData = snapshot.val();
 
             if (type === 'signup') {
-                // 회원가입
-                if (userData) {
-                    alert("이미 사용 중인 아이디입니다.");
-                } else {
-                    await userRef.set({
-                        password: pw, // 실제 서비스에선 암호화가 필요하지만, 현재는 평문 저장
-                        inventory: [],
-                        energy: { count: 30, last: Date.now() }
-                    });
+                if (userData) { alert("이미 사용 중인 아이디입니다."); }
+                else {
+                    await userRef.set({ password: pw, inventory: [], energy: { count: 30, last: Date.now() } });
                     alert("🎉 회원가입 성공! 로그인을 해주세요.");
                 }
             } else {
-                // 로그인
                 if (userData && userData.password === pw) {
                     USER_ID = id;
-                    alert(USER_ID + "님 환영합니다!");
                     document.getElementById('login-layer').style.display = 'none';
                     document.getElementById('main-container').style.display = 'block';
-                    loadUserData(userData); // 로그인 성공 시 데이터 적용
-                } else {
-                    alert("아이디 또는 비밀번호가 틀렸습니다.");
-                }
+                    myItems = userData.inventory || [];
+                    energy = userData.energy || { count: 30, last: null };
+                    updateUI();
+                    console.log("🔓 로그인 성공");
+                } else { alert("아이디 또는 비밀번호가 틀렸습니다."); }
             }
         }
-
-        function loadUserData(data) {
-            myItems = data.inventory || [];
-            energy = data.energy || { count: 30, last: null };
-            updateEnergyOnLoad();
-            updateUI();
-            setInterval(updateTimer, 1000);
-            console.log("✅ 데이터 로드 완료:", myItems);
-        }
-
-        // 전역 저장 함수 (이제 USER_ID 경로에 저장)
-        window.cloudSave = function(data) {
-            if (!USER_ID) return;
-            return db.ref('users/' + USER_ID).update(data) // 전체를 덮어쓰지 않게 update 사용
-                .then(() => console.log("✅ 서버 저장 성공"))
-                .catch((e) => console.error("❌ 저장 에러:", e));
-        };
     </script>
 
     <style>
         :root { --ex-color: #ff007f; --ssr-color: #ffdf00; --sr-color: #a335ee; --r-color: #0070dd; --bg-color: #050505; }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
         body { font-family: 'Pretendard', sans-serif; background-color: var(--bg-color); color: white; display: flex; flex-direction: column; align-items: center; min-height: 100svh; width: 100%; overflow-x: hidden; }
         
-        /* 로그인 레이어 스타일 */
-        #login-layer { position: fixed; inset: 0; background: #050505; z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; }
-        .auth-box { width: 100%; max-width: 320px; background: #111; padding: 25px; border-radius: 20px; border: 1px solid #222; }
-        .auth-box input { width: 100%; padding: 15px; margin-bottom: 12px; border-radius: 12px; border: 1px solid #333; background: #000; color: white; outline: none; }
-        .auth-box button { width: 100%; padding: 15px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
+        /* 애니메이션 CSS 복구 */
+        @keyframes vortex { 0% { transform: rotate(0deg) scale(1); opacity: 0; } 50% { opacity: 0.35; transform: rotate(180deg) scale(2.2); } 100% { transform: rotate(360deg) scale(3.5); opacity: 0; } }
+        @keyframes scanMove { 0% { top: 0%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+        .vortex-ssr, .vortex-ex { position: fixed; inset: 0; z-index: 8000; pointer-events: none; display: none; mix-blend-mode: screen; }
+        .vortex-ssr { background: radial-gradient(circle, var(--ssr-color) 0%, transparent 70%); animation: vortex 1s ease-out forwards; }
+        .vortex-ex { background: radial-gradient(circle, var(--ex-color) 0%, transparent 70%); animation: vortex 1.2s ease-in-out forwards; }
         
-        /* 기존 게임 스타일은 그대로 유지... */
+        #cut-in-layer { position: absolute; inset: -4px; background: #000; z-index: 100; display: none; align-items: center; justify-content: center; flex-direction: column; border-radius: 20px; border: 4px solid #fff; }
+        .scan-line { position: absolute; left: 0; width: 100%; height: 4px; background: rgba(255, 255, 255, 0.8); z-index: 101; pointer-events: none; animation: scanMove 1.5s linear infinite; }
+
+        /* UI 레이아웃 */
+        #login-layer { position: fixed; inset: 0; background: #050505; z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; }
         .container { width: 92%; max-width: 400px; text-align: center; background: #111; padding: 20px; border-radius: 30px; border: 1px solid #222; margin: 20px auto; display: none; }
+        .card-container-wrapper { position: relative; width: 100%; max-width: 280px; aspect-ratio: 3 / 4.4; margin: 0 auto; display: none; }
+        .card-frame { position: relative; width: 100%; height: 100%; border-radius: 20px; border: 5px solid #333; background: #000; overflow: hidden; }
         .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
         button { padding: 16px; font-weight: bold; border-radius: 15px; border: none; color: white; cursor: pointer; }
         .btn-draw { background: linear-gradient(135deg, #ff4757, #ff6b81); }
         .btn-draw-10 { background: linear-gradient(135deg, #e67e22, #f39c12); }
         .btn-sub { grid-column: span 2; background: #222; border: 1px solid #333; margin-top: 5px; }
+
+        /* 도감 */
+        #collection-modal { position:fixed; inset:0; background:#050505; display:none; flex-direction:column; z-index:1000; }
+        #collection-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 15px; overflow-y: auto; }
+        .count-badge { position: absolute; top: -5px; right: -5px; background: white; color: black; font-size: 10px; padding: 2px 6px; border-radius: 5px; font-weight: bold; z-index: 10; border: 1px solid black; }
     </style>
 </head>
 <body>
+    <div id="vfx-vortex-ssr" class="vortex-ssr"></div>
+    <div id="vfx-vortex-ex" class="vortex-ex"></div>
+
     <div id="login-layer">
-        <div class="auth-box">
-            <h2 style="color:var(--ssr-color); text-align:center; margin-bottom:20px; font-style:italic;">VINGO LOGIN</h2>
-            <input type="text" id="auth-id" placeholder="아이디">
-            <input type="password" id="auth-pw" placeholder="비밀번호">
-            <button onclick="handleAuth('login')" style="background:var(--r-color);">로그인</button>
-            <button onclick="handleAuth('signup')" style="background:#333;">회원가입</button>
-            <p style="font-size:11px; color:#666; text-align:center;">아이디가 없으면 회원가입을 먼저 해주세요.</p>
+        <div style="width:100%; max-width:320px; background:#111; padding:25px; border-radius:20px;">
+            <h2 style="color:var(--ssr-color); text-align:center; margin-bottom:20px;">VINGO LOGIN</h2>
+            <input type="text" id="auth-id" placeholder="아이디" style="width:100%; padding:15px; margin-bottom:12px; background:#000; color:white; border:1px solid #333; border-radius:10px;">
+            <input type="password" id="auth-pw" placeholder="비밀번호" style="width:100%; padding:15px; margin-bottom:20px; background:#000; color:white; border:1px solid #333; border-radius:10px;">
+            <button onclick="handleAuth('login')" style="width:100%; background:var(--r-color); margin-bottom:10px;">로그인</button>
+            <button onclick="handleAuth('signup')" style="width:100%; background:#333;">회원가입</button>
         </div>
     </div>
 
     <div class="container" id="main-container">
-        <div id="energy-tag" style="background:#1a1a1a; padding:10px 18px; border-radius:50px; font-weight:bold; margin-bottom:15px; border:1px solid #333; font-size:0.85rem;">
-            ⚡️ 에너지: <span id="energy-display">-- / --</span> <span id="timer-display"></span>
+        <div id="energy-tag" style="background:#1a1a1a; padding:10px; border-radius:50px; font-weight:bold; margin-bottom:15px; border:1px solid #333; font-size:0.85rem;">
+            ⚡️ 에너지: <span id="energy-display">-- / --</span>
         </div>
+
         <div id="result-area">
-            <h1 style="font-style: italic; margin-bottom: 20px;">VINGO EXPEDITION</h1>
+            <div id="initial-view">
+                <h1 style="font-style:italic; font-size:2rem; margin:20px 0;">VINGO EXPEDITION</h1>
+            </div>
+            <div class="card-container-wrapper" id="main-card-wrapper">
+                <div class="card-frame" id="main-card-frame">
+                    <div id="card-content" style="width:100%; height:100%;"></div>
+                    <div id="cut-in-layer">
+                        <div class="scan-line"></div>
+                        <span style="font-weight:900; font-size:1.2rem; color:white;">SCANNING...</span>
+                        <span id="detect-text" style="display:none; color:var(--ssr-color); font-weight:900; margin-top:10px;"></span>
+                    </div>
+                </div>
+            </div>
         </div>
+
+        <div id="multi-result-display" style="display:none; flex-wrap:nowrap; overflow-x:auto; gap:15px; padding:20px 0;"></div>
+
         <div class="btns">
             <button class="btn-draw" onclick="playGacha(1)">1회 소환</button>
             <button class="btn-draw-10" onclick="playGacha(10)">10회 소환</button>
-            <button class="btn-sub" onclick="openCollection()">도감 확인</button>
+            <button id="btn-home" class="btn-sub" style="display:none; background:#444;" onclick="goHome()">돌아가기</button>
+            <button class="btn-sub" onclick="openCollection()">정예 도감 확인</button>
             <button class="btn-sub" style="background:#4b0082;" onclick="location.href='game.html'">⚔️ 원정 시작</button>
         </div>
     </div>
 
+    <div id="collection-modal"></div>
+
     <script>
-        // 가챠 및 로직 코드는 기존 v2.1과 동일...
-        const MAX_ENERGY = 30;
-        let myItems = [];
-        let energy = { count: MAX_ENERGY, last: null };
+        const fileNames = Object.keys(CARD_DATA_DB);
+        const SETTINGS = { "EX": { rate: 0.5, color: "#ff007f" }, "SSR": { rate: 5.5, color: "#ffdf00" }, "SR": { rate: 24, color: "#a335ee" }, "R": { rate: 70, color: "#0070dd" } };
 
         async function save() {
             if (!USER_ID) return;
-            localStorage.setItem('vingo_game_coll', JSON.stringify(myItems));
-            localStorage.setItem('vingo_game_en', JSON.stringify(energy));
-            // 클라우드 저장 시 password는 제외하고 inventory와 energy만 업데이트
-            await window.cloudSave({ inventory: myItems, energy: energy, lastSync: Date.now() });
+            await db.ref('users/' + USER_ID).update({ inventory: myItems, energy: energy });
         }
 
         async function playGacha(count) {
             if (energy.count < count) { alert("에너지 부족!"); return; }
             energy.count -= count;
-            const pool = Object.keys(CARD_DATA_DB);
-            for(let i=0; i<count; i++){
-                const resId = pool[Math.floor(Math.random() * pool.length)];
-                const f = myItems.find(item => item.id === resId);
-                if (f) f.count++; else myItems.push({id: resId, count: 1});
-            }
-            updateUI();
+            
+            const results = Array.from({length: count}, () => {
+                const resId = fileNames[Math.floor(Math.random() * fileNames.length)];
+                return { id: resId, grade: resId.split('_')[0] };
+            });
+
+            // 데이터 업데이트
+            results.forEach(res => {
+                const f = myItems.find(i => i.id === res.id);
+                if (f) f.count++; else myItems.push({id: res.id, count: 1});
+            });
             await save();
-            alert(count + "회 소환 완료!");
+            updateUI();
+
+            // 연출 시작
+            document.getElementById('initial-view').style.display = "none";
+            document.getElementById('multi-result-display').style.display = "none";
+            document.getElementById('main-card-wrapper').style.display = "block";
+            const cutIn = document.getElementById('cut-in-layer');
+            const detectText = document.getElementById('detect-text');
+            
+            cutIn.style.display = "flex";
+            detectText.style.display = "none";
+
+            const highest = results.map(r => r.grade).sort((a,b) => (SETTINGS[a].rate - SETTINGS[b].rate))[0];
+            
+            if (highest === 'SSR' || highest === 'EX') {
+                await new Promise(r => setTimeout(r, 800));
+                document.getElementById('vfx-vortex-ssr').style.display = "block";
+                detectText.innerText = highest === 'EX' ? "SSR DETECTED?" : "SSR DETECTED!";
+                detectText.style.display = "block";
+                await new Promise(r => setTimeout(r, 1000));
+                document.getElementById('vfx-vortex-ssr').style.display = "none";
+                
+                if (highest === 'EX') {
+                    document.getElementById('vfx-vortex-ex').style.display = "block";
+                    detectText.innerText = "EX DETECTED!";
+                    await new Promise(r => setTimeout(r, 1000));
+                    document.getElementById('vfx-vortex-ex').style.display = "none";
+                }
+            } else {
+                await new Promise(r => setTimeout(r, 1500));
+            }
+
+            cutIn.style.display = "none";
+            if (count === 1) {
+                showCard(document.getElementById('card-content'), results[0].id);
+            } else {
+                document.getElementById('main-card-wrapper').style.display = "none";
+                renderTen(results);
+            }
+            document.getElementById('btn-home').style.display = "block";
         }
 
-        function updateUI() { document.getElementById('energy-display').innerText = `${energy.count} / ${MAX_ENERGY}`; }
-        function updateEnergyOnLoad() { /* 타이머 관련 로직 */ }
-        function updateTimer() { /* 타이머 관련 로직 */ }
-        function openCollection() { /* 도감 로직 */ }
+        function showCard(target, id) {
+            const color = getGradeColor(id);
+            target.innerHTML = `
+                <div style="border:4px solid ${color}; height:100%; display:flex; flex-direction:column; background:radial-gradient(circle, ${color}33, #000);">
+                    <img src="images/${id}" style="width:100%; flex:1; object-fit:contain; padding:10px;">
+                    <div style="background:#000; padding:10px; border-top:1px solid ${color}66;">
+                        <h3 style="color:${color}; font-size:1rem;">${CARD_DATA_DB[id].name}</h3>
+                    </div>
+                </div>`;
+        }
+
+        function renderTen(results) {
+            const display = document.getElementById('multi-result-display');
+            display.style.display = "flex";
+            display.innerHTML = "";
+            results.forEach(res => {
+                const wrap = document.createElement('div');
+                wrap.style.minWidth = "120px"; wrap.style.height = "180px";
+                showCard(wrap, res.id);
+                display.appendChild(wrap);
+            });
+            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+        }
+
+        function openCollection() {
+            const modal = document.getElementById('collection-modal');
+            modal.style.display = "flex";
+            modal.innerHTML = `<div style="padding:20px; display:flex; justify-content:space-between;"><h2 style="color:var(--ssr-color)">도감</h2><button onclick="this.parentElement.parentElement.style.display='none'">닫기</button></div><div id="collection-grid"></div>`;
+            const grid = modal.querySelector('#collection-grid');
+            fileNames.forEach(id => {
+                const f = myItems.find(i => i.id === id);
+                const item = document.createElement('div');
+                item.className = "coll-item-wrapper";
+                if (f) {
+                    item.innerHTML = `<div class="card-frame" style="border-color:${getGradeColor(id)}"><img src="images/${id}" style="width:100%; height:100%; object-fit:contain;"><div class="count-badge">x${f.count}</div></div>`;
+                } else {
+                    item.innerHTML = `<div class="card-frame" style="opacity:0.2; display:flex; align-items:center; justify-content:center;">?</div>`;
+                }
+                grid.appendChild(item);
+            });
+        }
+
+        function getGradeColor(id) {
+            const g = id.split('_')[0];
+            return SETTINGS[g] ? SETTINGS[g].color : "#fff";
+        }
+
+        function goHome() {
+            document.getElementById('initial-view').style.display = "block";
+            document.getElementById('main-card-wrapper').style.display = "none";
+            document.getElementById('multi-result-display').style.display = "none";
+            document.getElementById('btn-home').style.display = "none";
+        }
+
+        function updateUI() {
+            document.getElementById('energy-display').innerText = `${energy.count} / 30`;
+        }
     </script>
 </body>
 </html>
