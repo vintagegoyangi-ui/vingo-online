@@ -77,6 +77,7 @@
             --sr-color: #a335ee; 
             --r-color: #0070dd; 
             --bg-color: #050505; 
+            --scan-color: #00ff00; /* 초록색 스캔 라인 */
         }
         /* 모든 폰트를 프리텐다드로 고정 */
         * { 
@@ -118,7 +119,7 @@
         .aurora-ssr { background: linear-gradient(270deg, #4a3b00, #ffdf00, #4a3b00) !important; background-size: 200% 200% !important; animation: aurora 4s ease infinite !important; }
         .particle { position: absolute; pointer-events: none; border-radius: 50%; animation: particle-rise linear forwards; z-index: 100; }		
 
-        /* --- 카드 슬롯 및 3D 회전 구조 개선 --- */
+        /* --- 카드 슬롯 및 3D 회전 구조 --- */
         .card-container-wrapper { position: relative; width: 100%; max-width: 280px; aspect-ratio: 3 / 4.4; margin: 0 auto; perspective: 1000px; }
         .card-frame { 
             position: relative; 
@@ -148,8 +149,32 @@
         .card-clip { position: absolute; inset: 0; border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; }
         .hologram { position: absolute; inset: 0; z-index: 4; pointer-events: none; opacity: 0; transition: opacity 0.4s ease; mix-blend-mode: color-dodge; }
         
-        #cut-in-layer { position: absolute; inset: -4px; background: #000; z-index: 100; display: none; align-items: center; justify-content: center; flex-direction: column; border-radius: 20px; border: 4px solid #fff; backface-visibility: hidden; transform: rotateY(180deg); }
-        .scan-line { position: absolute; left: 0; width: 100%; height: 4px; background: rgba(255, 255, 255, 0.8); z-index: 101; pointer-events: none; animation: scanMove 1.5s linear infinite; }
+        /* 스캔 레이어: 뒷면에 붙어있어야 스캔할 때 보임 */
+        #cut-in-layer { 
+            position: absolute; 
+            inset: -4px; 
+            background: rgba(0,0,0,0.7); 
+            z-index: 100; 
+            display: none; 
+            align-items: center; 
+            justify-content: center; 
+            flex-direction: column; 
+            border-radius: 20px; 
+            border: 4px solid var(--scan-color); 
+            backface-visibility: hidden; 
+            transform: rotateY(180deg); /* 뒷면 상태에서 보이게 설정 */
+        }
+        .scan-line { 
+            position: absolute; 
+            left: 0; 
+            width: 100%; 
+            height: 6px; 
+            background: var(--scan-color); 
+            box-shadow: 0 0 15px var(--scan-color);
+            z-index: 101; 
+            pointer-events: none; 
+            animation: scanMove 1.5s linear infinite; 
+        }
         
         /* 슬롯 내 초기 텍스트 스타일 */
         #slot-placeholder {
@@ -235,16 +260,16 @@
                         <div class="slot-bg-text">VINGO GACHA!</div>
                         <div class="slot-sub-text">빈고를 수집하세요!</div>
                     </div>
-                    <!-- 카드 뒷면 (가챠 연출 시 180도 회전된 상태로 대기) -->
+                    <!-- 카드 뒷면 -->
                     <div class="card-face card-back" id="main-card-back" style="display:none;"><img src="images/card_back.webp"></div>
                     <!-- 카드 앞면 -->
                     <div class="card-face card-front" id="main-card-front" style="display:none;"><div class="card-clip"></div></div>
                     
-                    <!-- 컷인 레이어는 뒷면에 붙어서 보이게 설정 -->
+                    <!-- 초록색 스캔 레이어 -->
                     <div id="cut-in-layer">
                         <div class="scan-line"></div>
-                        <span id="scan-status" style="font-weight:900; font-size:1.5rem; letter-spacing:2px; color:#fff;">SCANNING...</span>
-                        <span id="detect-text" style="display:none; margin-top:10px; font-weight:900;"></span>
+                        <span id="scan-status" style="font-weight:900; font-size:1.2rem; letter-spacing:2px; color:var(--scan-color); text-shadow: 0 0 10px var(--scan-color);">SCANNING...</span>
+                        <span id="detect-text" style="display:none; margin-top:10px; font-weight:900; font-size:1.4rem;"></span>
                     </div>
                 </div>
             </div>
@@ -305,12 +330,12 @@
             frame.style.borderRadius = "20px";
             frame.style.boxShadow = isHigh ? `0 0 25px ${set.color}cc, inset 0 0 10px ${set.color}66` : `0 4px 15px rgba(0,0,0,0.6)`;
             
-            // 앞면 보이기 (show-back 제거)
+            // 앞면 보이기 (show-back 상태가 아닐 때)
             if(!isDraw) {
                 frame.classList.remove('show-back');
             }
             
-            frame.className = `card-frame ${!isDraw ? '' : 'show-back'} ${isHigh && !isDetail && !isColl ? 'float-effect' : ''}`;
+            frame.className = `card-frame ${isDraw ? 'show-back' : ''} ${isHigh && !isDetail && !isColl ? 'float-effect' : ''}`;
 
             const frontFace = frame.querySelector('.card-front');
             if(frontFace) {
@@ -355,6 +380,7 @@
             }, interval);
         }
 
+        // --- 가챠 연출 시스템 뜯어고치기 ---
         async function playGacha(count) {
             if (isGachaRunning) return;
             if (energy.count < count) { alert("에너지가 부족합니다!"); return; }
@@ -376,21 +402,23 @@
             const cardBack = document.getElementById('main-card-back'), cardFront = document.getElementById('main-card-front');
             const ph = mainFrame.querySelector('#slot-placeholder');
             
-            // 1. 연출 초기화 (뒷면으로 시작)
+            // 1. 초기 상태: 뒷면 고정 및 스캔 시작
             if(ph) ph.style.display = 'none';
-            cardFront.style.display = 'block'; // 앞면 데이터 미리 렌더링
+            cardFront.style.display = 'none';
             cardBack.style.display = 'flex';
-            mainFrame.classList.add('show-back'); // 뒷면(180도) 상태로 시작
+            mainFrame.classList.add('show-back'); // 뒷면 보여주기
             
             detectText.innerText = ""; detectText.style.display = "none";
             document.getElementById('multi-result-display').style.display = "none";
             document.getElementById('main-card-wrapper').style.display = "block";
             
             const highestGrade = results.map(r => r.grade).sort((a,b) => SETTINGS[a].rate - SETTINGS[b].rate)[0];
+            
+            // 초록색 스캔 라인 활성화
             cutIn.style.display = "flex";
-            await new Promise(r => setTimeout(r, 800));
+            await new Promise(r => setTimeout(r, 1500)); // 스캔 진행 시간 (1.5초)
 
-            // 2. 등급 감지 연출
+            // 2. 등급 감지 연출 (SSR / EX일 경우)
             if (highestGrade === 'SSR' || highestGrade === 'EX') {
                 container.classList.add('shake-effect');
                 document.getElementById('vfx-vortex-ssr').style.display = "block";
@@ -398,9 +426,12 @@
                 detectText.innerText = highestGrade === 'EX' ? "SSR DETECTED?" : "SSR DETECTED!";
                 detectText.style.display = "block";
                 detectText.style.color = SETTINGS.SSR.color;
+                
                 await new Promise(r => setTimeout(r, 1000));
                 document.getElementById('vfx-vortex-ssr').style.display = "none"; flash.style.display = "none";
+                
                 if (highestGrade === 'EX') {
+                    // EX 등급이면 컷인 한 번 더 (2중 연출)
                     await new Promise(r => setTimeout(r, 200));
                     detectText.innerText = "EX DETECTED!"; 
                     detectText.style.color = SETTINGS.EX.color;
@@ -410,16 +441,16 @@
                     document.getElementById('vfx-vortex-ex').style.display = "none"; flash.style.display = "none";
                 }
             } else {
-                await new Promise(r => setTimeout(r, 1000));
+                await new Promise(r => setTimeout(r, 500));
             }
             
             container.classList.remove('shake-effect'); 
             cutIn.style.display = "none";
 
-            // 3. 카드 공개 (앞면으로 뒤집기: 180도 -> 0도)
+            // 3. 카드 공개 (앞면으로 화려하게 뒤집기)
             if (count === 1) { 
                 renderCard(document.getElementById('main-card-wrapper'), results[0], true); 
-                mainFrame.classList.remove('show-back'); // 0도로 돌아오며 앞면 노출
+                mainFrame.classList.remove('show-back'); // 앞면으로 뒤집기 (0도 복귀)
                 mainFrame.onclick = () => showDetail(results[0]); 
             } else { 
                 document.getElementById('main-card-wrapper').style.display = "none";
@@ -437,9 +468,10 @@
             results.forEach(item => {
                 const wrap = document.createElement('div'); wrap.className = "multi-item-wrap card-container-wrapper";
                 wrap.onclick = () => showDetail(item);
-                // 텐 가챠 결과 리스트는 즉시 앞면 보임 (show-back 없음)
+                // 텐 가챠 결과 리스트는 즉시 앞면 보임
                 wrap.innerHTML = `<div class="card-frame"><div class="card-face card-front"><div class="card-clip"></div></div><div class="card-face card-back"><img src="${BACK_IMG_URL}"></div></div>`;
-                renderCard(wrap, item, true); display.appendChild(wrap);
+                renderCard(wrap, item, false); // isDraw=false로 앞면 고정
+                display.appendChild(wrap);
             });
             display.scrollLeft = 0;
             if(results.some(r => r.grade === 'SSR' || r.grade === 'EX')) confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
@@ -448,7 +480,6 @@
         function showDetail(item) {
             document.body.classList.add('lock-scroll');
             const target = document.getElementById('detail-card-target');
-            // 상세 보기도 즉시 앞면 보임
             target.innerHTML = `<div class="card-container-wrapper" style="width:100%;"><div class="card-frame"><div class="card-face card-front"><div class="card-clip"></div></div><div class="card-face card-back"><img src="${BACK_IMG_URL}"></div></div></div>`;
             renderCard(target.querySelector('.card-container-wrapper'), item, false, true); 
             const card = target.querySelector('.card-frame'), view = document.getElementById('detail-view');
@@ -479,7 +510,6 @@
                 const wrap = document.createElement('div'); wrap.className = "coll-item-wrapper";
                 const numBadge = `<div class="number-badge">No.${(idx + 1).toString().padStart(2, '0')}</div>`;
                 if (f) {
-                    // 도감 리스트는 즉시 앞면 보임 (show-back 없음)
                     wrap.innerHTML = `<div class="card-frame"><div class="card-face card-front"><div class="card-clip"></div></div><div class="card-face card-back"><img src="${BACK_IMG_URL}"></div></div>${numBadge}<div class="count-badge">x${f.count}</div>`;
                     renderCard(wrap, item, false, false, true); wrap.onclick = () => showDetail(item);
                 } else { wrap.innerHTML = `<div class="coll-card locked"><span style="opacity:0.3;">?</span>${numBadge}</div>`; }
