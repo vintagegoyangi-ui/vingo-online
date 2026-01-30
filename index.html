@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-    <title>VINGO EXPEDITION v2.1 (Cloud)</title>
+    <title>VINGO EXPEDITION v2.1 (Cloud Sync)</title>
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
     <script src="card_data.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -12,7 +12,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
     <script>
-        // [2] Firebase 설정 및 초기화
+        // Firebase 설정 (사용자 정보 반영)
         const firebaseConfig = {
             apiKey: "AIzaSyBOmMyRoAZ57YQVWaiiLDLVE5Lwu5aU9-4",
             authDomain: "vingo-expedition.firebaseapp.com",
@@ -26,9 +26,8 @@
         try {
             if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
             const db = firebase.database();
-            const USER_ID = "tester_01"; // 고유 유저 ID (추후 로그인 연동 시 가변값)
+            const USER_ID = "tester_01"; 
 
-            // 전역 클라우드 함수 등록
             window.cloudSave = function(data) {
                 return db.ref('users/' + USER_ID).set(data)
                     .then(() => console.log("✅ 서버 저장 성공"))
@@ -42,7 +41,7 @@
             };
 
             window.isFirebaseReady = true;
-            console.log("🚀 Firebase 시스템 준비 완료!");
+            console.log("🚀 Firebase 온라인 시스템 준비 완료!");
         } catch (e) {
             console.error("🔥 초기화 실패:", e);
         }
@@ -73,7 +72,6 @@
         .aurora-ex { background: linear-gradient(270deg, #4b0082, #ff007f, #4b0082) !important; background-size: 200% 200% !important; animation: aurora 3s ease infinite !important; }
         .aurora-ssr { background: linear-gradient(270deg, #4a3b00, #ffdf00, #4a3b00) !important; background-size: 200% 200% !important; animation: aurora 4s ease infinite !important; }
 
-        /* 카드 레이아웃 */
         .card-container-wrapper { position: relative; width: 100%; max-width: 280px; aspect-ratio: 3 / 4.4; margin: 0 auto; perspective: 1000px; }
         .card-frame { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 0.1s ease-out; border-radius: 20px; }
         .card-face { position: absolute; inset: 0; backface-visibility: hidden; border-radius: 16px; overflow: hidden; background: #000; }
@@ -119,7 +117,7 @@
         <div id="result-area">
             <div id="initial-view">
                 <div class="main-title" style="font-size: 2.2rem; font-weight: 900; font-style: italic; background: linear-gradient(to bottom, #fff, #444); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 20px 0;">VINGO<br>EXPEDITION</div>
-                <p style="color:#666; font-size:0.9rem;">정예 빈고를 온라인 서버에 동기화합니다</p>
+                <p style="color:#666; font-size:0.9rem;">정예 빈고를 수집하고 원정을 준비하세요</p>
             </div>
             <div class="card-container-wrapper" id="main-card-wrapper" style="display:none;">
                 <div class="card-frame" id="main-card-frame">
@@ -153,27 +151,24 @@
         let myItems = [];
         let energy = { count: MAX_ENERGY, last: null };
         let isGachaRunning = false;
+        let particleTimer = null;
 
         const pool = fileNames.map(f => {
             const [g] = f.split('_');
             return { id: f, grade: g, name: CARD_DATA_DB[f].name, img: `images/${f}`, chance: SETTINGS[g].rate / fileNames.filter(x => x.startsWith(g)).length };
         });
 
-        // [3] 페이지 로딩 시 서버 데이터 동기화
         window.onload = function() {
             const checkReady = setInterval(async function() {
                 if (window.isFirebaseReady && window.cloudLoad) {
                     clearInterval(checkReady);
-                    console.log("☁️ 클라우드 동기화 확인 중...");
                     const data = await window.cloudLoad();
                     if (data) {
                         myItems = data.inventory || [];
                         energy = data.energy || { count: MAX_ENERGY, last: null };
-                        console.log("✅ 서버 데이터 동기화 완료!");
                     } else {
                         myItems = JSON.parse(localStorage.getItem(STORAGE_KEYS.COLL)) || [];
                         energy = JSON.parse(localStorage.getItem(STORAGE_KEYS.EN)) || { count: MAX_ENERGY, last: null };
-                        console.log("🏠 서버 데이터 없음, 로컬 기반 시작");
                     }
                     updateEnergyOnLoad(); 
                     updateUI(); 
@@ -182,7 +177,7 @@
             }, 100);
         };
 
-        function renderCard(targetWrapper, item, isDraw, isDetail = false, isColl = false) {
+        function renderCard(targetWrapper, item, isDetail = false, isColl = false) {
             const set = SETTINGS[item.grade];
             const isHigh = item.grade === 'EX' || item.grade === 'SSR';
             const frame = targetWrapper.querySelector('.card-frame');
@@ -215,9 +210,8 @@
                         </div>
                     </div>
                 </div>`;
-
             frame.querySelector('.card-clip').innerHTML = `<div class="card-inner-bg ${isHigh ? set.aurora : ''}" style="opacity: ${isHigh ? '0.4' : '0.1'};"></div>${isDetail && isHigh ? '<div class="hologram"></div>' : ''}${cardHTML}`;
-            if (isHigh && !isColl && (isDetail || isDraw)) createParticles(frame, set.color, item.grade);
+            if (isHigh && !isColl && (isDetail)) createParticles(frame, set.color, item.grade);
         }
 
         function createParticles(target, color, grade) {
@@ -242,9 +236,9 @@
             energy.count -= count;
 
             const results = Array.from({length: count}, draw);
-            results.forEach(item => addItem(item)); // 로컬 데이터에 추가
+            results.forEach(item => addItem(item));
             updateUI(); 
-            await save(); // 로컬+클라우드 동시 저장
+            await save();
 
             const mainFrame = document.getElementById('main-card-frame'), container = document.getElementById('main-container'), flash = document.getElementById('vfx-flash');
             const cutIn = document.getElementById('cut-in-layer'), detectText = document.getElementById('detect-text');
@@ -277,7 +271,7 @@
             
             container.classList.remove('shake-effect'); 
             cutIn.style.display = "none";
-            if (count === 1) { renderCard(document.getElementById('main-card-wrapper'), results[0], false); mainFrame.onclick = () => showDetail(results[0]); }
+            if (count === 1) { renderCard(document.getElementById('main-card-wrapper'), results[0]); mainFrame.onclick = () => showDetail(results[0]); }
             else { renderTen(results); }
             
             isGachaRunning = false;
@@ -293,7 +287,7 @@
                 const wrap = document.createElement('div'); wrap.className = "multi-item-wrap card-container-wrapper";
                 wrap.onclick = () => showDetail(item);
                 wrap.innerHTML = `<div class="card-frame"><div class="card-face card-front"><div class="card-clip"></div></div><div class="card-face card-back"><img src="${BACK_IMG_URL}"></div></div>`;
-                renderCard(wrap, item, false); display.appendChild(wrap);
+                renderCard(wrap, item); display.appendChild(wrap);
             });
             display.scrollLeft = 0;
             if(results.some(r => r.grade === 'SSR' || r.grade === 'EX')) triggerConfetti();
@@ -303,7 +297,7 @@
             document.body.classList.add('lock-scroll');
             const target = document.getElementById('detail-card-target');
             target.innerHTML = `<div class="card-container-wrapper" style="width:100%;"><div class="card-frame"><div class="card-face card-front"><div class="card-clip"></div></div><div class="card-face card-back"><img src="${BACK_IMG_URL}"></div></div></div>`;
-            renderCard(target.querySelector('.card-container-wrapper'), item, false, true); 
+            renderCard(target.querySelector('.card-container-wrapper'), item, true); 
             const card = target.querySelector('.card-frame'), view = document.getElementById('detail-view');
             view.style.display = 'flex';
             const handleMove = (e) => {
@@ -333,7 +327,7 @@
                 const numBadge = `<div class="number-badge">No.${(idx + 1).toString().padStart(2, '0')}</div>`;
                 if (f) {
                     wrap.innerHTML = `<div class="card-frame" style="width:100%; height:100%;"><div class="card-face card-front"><div class="card-clip"></div></div><div class="card-face card-back"><img src="${BACK_IMG_URL}"></div></div>${numBadge}<div class="count-badge">x${f.count}</div>`;
-                    renderCard(wrap, item, false, false, true); wrap.onclick = () => showDetail(item);
+                    renderCard(wrap, item, false, true); wrap.onclick = () => showDetail(item);
                 } else { wrap.innerHTML = `<div class="coll-card locked"><span style="opacity:0.3;">?</span>${numBadge}</div>`; }
                 grid.appendChild(wrap);
             });
@@ -342,26 +336,13 @@
 
         function goHome() { document.getElementById('initial-view').style.display = "block"; document.getElementById('main-card-wrapper').style.display = "none"; document.getElementById('multi-result-display').style.display = "none"; document.getElementById('btn-home').style.display = "none"; }
         function addItem(item) { const f = myItems.find(i => i.id === item.id); if (f) f.count++; else myItems.push({id: item.id, count: 1}); }
-        
-        async function save() { 
-            localStorage.setItem(STORAGE_KEYS.COLL, JSON.stringify(myItems)); 
-            localStorage.setItem(STORAGE_KEYS.EN, JSON.stringify(energy)); 
-            if (window.cloudSave) {
-                await window.cloudSave({ inventory: myItems, energy: energy, lastSync: Date.now() });
-            }
-        }
-
+        async function save() { localStorage.setItem(STORAGE_KEYS.COLL, JSON.stringify(myItems)); localStorage.setItem(STORAGE_KEYS.EN, JSON.stringify(energy)); if (window.cloudSave) await window.cloudSave({ inventory: myItems, energy: energy, lastSync: Date.now() }); }
         function updateUI() { document.getElementById('energy-display').innerText = `${energy.count} / ${MAX_ENERGY}`; }
         function updateEnergyOnLoad() { if (!energy.last) return; const gained = Math.floor((Date.now() - energy.last) / RECHARGE_TIME); if (gained > 0) { energy.count = Math.min(MAX_ENERGY, energy.count + gained); energy.last = (energy.count >= MAX_ENERGY) ? null : energy.last + (gained * RECHARGE_TIME); save(); } }
         function updateTimer() { if (energy.count >= MAX_ENERGY) { document.getElementById('timer-display').innerText = "(MAX)"; return; } if (!energy.last) energy.last = Date.now(); const elapsed = Date.now() - energy.last; if (elapsed >= RECHARGE_TIME) { energy.count++; energy.last = (energy.count >= MAX_ENERGY) ? null : Date.now(); save(); updateUI(); } if (energy.last) { const rem = RECHARGE_TIME - (elapsed % RECHARGE_TIME); const m = Math.floor(rem/60000); const s = Math.floor((rem%60000)/1000).toString().padStart(2,'0'); document.getElementById('timer-display').innerText = `(${m}:${s})`; } }
         function triggerConfetti() { confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } }); }
         function resetData() { if(confirm("모든 데이터를 초기화할까요?")) { localStorage.clear(); if(window.cloudSave) window.cloudSave(null); location.reload(); } }
-        function draw() {
-            const totalChance = pool.reduce((sum, item) => sum + item.chance, 0);
-            let r = Math.random() * totalChance, acc = 0;
-            for (const item of pool) { acc += item.chance; if (r <= acc) return item; }
-            return pool[pool.length - 1];
-        }
+        function draw() { const totalChance = pool.reduce((sum, item) => sum + item.chance, 0); let r = Math.random() * totalChance, acc = 0; for (const item of pool) { acc += item.chance; if (r <= acc) return item; } return pool[pool.length - 1]; }
     </script>
 </body>
 </html>
