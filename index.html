@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-    <title>VINGO EXPEDITION - Online Sync</title>
+    <title>VINGO EXPEDITION v2.1</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
     <script src="card_data.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -12,7 +12,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
     <script>
-        // 1. 본인의 Firebase 설정 (그대로 유지)
+        // 2. Firebase 설정
         const firebaseConfig = {
             apiKey: "AIzaSyBOmMyRoAZ57YQVWaiiLDLVE5Lwu5aU9-4",
             authDomain: "vingo-expedition.firebaseapp.com",
@@ -23,7 +23,7 @@
             appId: "1:593803537592:web:d076b2b34a410d144e584d"
         };
 
-        // 2. 초기화 로직
+        // 3. 초기화 및 전역 함수 등록
         try {
             if (!firebase.apps.length) {
                 firebase.initializeApp(firebaseConfig);
@@ -31,32 +31,32 @@
             const db = firebase.database();
             const USER_ID = "tester_01"; 
 
-            // 전역 함수 등록
             window.cloudSave = function(data) {
-                console.log("☁️ 서버 저장 시도...");
+                console.log("☁️ 클라우드 저장 시도...");
                 return db.ref('users/' + USER_ID).set(data)
-                    .then(() => console.log("✅ 서버 저장 성공!"))
-                    .catch((e) => console.error("❌ 저장 에러:", e));
+                    .then(() => console.log("✅ 클라우드 저장 성공!"))
+                    .catch((e) => console.error("❌ 저장 실패:", e));
             };
 
             window.cloudLoad = function() {
-                console.log("☁️ 서버 로드 시도...");
+                console.log("☁️ 클라우드 로드 시도...");
                 return db.ref('users/' + USER_ID).once('value')
                     .then((snapshot) => snapshot.val())
-                    .catch((e) => { console.error("❌ 로드 에러:", e); return null; });
+                    .catch((e) => { console.error("❌ 로드 실패:", e); return null; });
             };
 
             window.isFirebaseReady = true;
-            console.log("🚀 [배포 확인] Firebase가 준비되었습니다.");
+            console.log("🚀 Firebase 시스템 준비 완료!");
         } catch (e) {
-            console.error("🔥 초기화 실패:", e);
+            console.error("🔥 Firebase 초기화 중 치명적 에러:", e);
         }
     </script>
-    
+
     <style>
-        /* 기존 스타일 그대로 유지 */
         :root { --ex-color: #ff007f; --ssr-color: #ffdf00; --sr-color: #a335ee; --r-color: #0070dd; --bg-color: #050505; }
-        body { font-family: 'Pretendard', sans-serif; background-color: var(--bg-color); color: white; display: flex; flex-direction: column; align-items: center; min-height: 100svh; width: 100%; overflow-x: hidden; margin: 0; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+        body { font-family: 'Pretendard', sans-serif; background-color: var(--bg-color); color: white; display: flex; flex-direction: column; align-items: center; min-height: 100svh; width: 100%; overflow-x: hidden; }
+        /* 애니메이션 등 스타일 코드는 기존과 동일하므로 생략하거나 기존 코드를 유지하세요 */
         .container { width: 92%; max-width: 400px; text-align: center; background: #111; padding: 20px; border-radius: 30px; border: 1px solid #222; margin: 20px auto; }
         .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
         button { padding: 16px; font-weight: bold; border: none; border-radius: 15px; cursor: pointer; color: white; }
@@ -66,12 +66,14 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <div id="energy-tag" style="background:#1a1a1a; padding:10px; border-radius:50px; border:1px solid #333;">
+    <div class="container" id="main-container">
+        <div id="energy-tag" style="background:#1a1a1a; padding:10px 18px; border-radius:50px; font-weight:bold; margin-bottom:15px; display:inline-block; border:1px solid #333; font-size:0.85rem;">
             ⚡️ 에너지: <span id="energy-display">-- / --</span>
         </div>
-        <h1>VINGO ONLINE</h1>
-        <p style="color:#666; font-size:0.8rem;">Vercel 배포 버전</p>
+        <div id="result-area">
+            <h1 style="font-style: italic; margin-bottom: 20px;">VINGO Online</h1>
+            <p style="color:#666; font-size:0.8rem; margin-bottom: 20px;">Vercel 배포 완료: 온라인 동기화 모드</p>
+        </div>
         <div class="btns">
             <button class="btn-draw" onclick="playGacha(1)">1회 소환</button>
             <button class="btn-draw-10" onclick="playGacha(10)">10회 소환</button>
@@ -81,11 +83,14 @@
 
     <script>
         const MAX_ENERGY = 30;
+        const STORAGE_KEYS = { COLL: 'vingo_game_coll', EN: 'vingo_game_en' };
+
         let myItems = [];
         let energy = { count: MAX_ENERGY, last: null };
 
         // 페이지 로드 시 클라우드 동기화
         window.onload = function() {
+            console.log("동기화 확인 중...");
             const checkReady = setInterval(function() {
                 if (window.isFirebaseReady) {
                     clearInterval(checkReady);
@@ -93,11 +98,11 @@
                         if (data) {
                             myItems = data.inventory || [];
                             energy = data.energy || { count: MAX_ENERGY, last: null };
-                            console.log("✅ 서버 동기화 완료");
+                            console.log("✅ 동기화 완료");
                         } else {
-                            console.log("🏠 서버 데이터 없음");
-                            myItems = JSON.parse(localStorage.getItem('vingo_game_coll')) || [];
-                            energy = JSON.parse(localStorage.getItem('vingo_game_en')) || { count: MAX_ENERGY, last: null };
+                            myItems = JSON.parse(localStorage.getItem(STORAGE_KEYS.COLL)) || [];
+                            energy = JSON.parse(localStorage.getItem(STORAGE_KEYS.EN)) || { count: MAX_ENERGY, last: null };
+                            console.log("🏠 서버에 데이터가 없어 로컬 데이터를 사용합니다.");
                         }
                         updateUI();
                     });
@@ -106,8 +111,8 @@
         };
 
         async function save() {
-            localStorage.setItem('vingo_game_coll', JSON.stringify(myItems));
-            localStorage.setItem('vingo_game_en', JSON.stringify(energy));
+            localStorage.setItem(STORAGE_KEYS.COLL, JSON.stringify(myItems));
+            localStorage.setItem(STORAGE_KEYS.EN, JSON.stringify(energy));
             if (window.cloudSave) {
                 await window.cloudSave({ inventory: myItems, energy: energy, lastSync: Date.now() });
             }
@@ -123,7 +128,7 @@
             }
             updateUI();
             await save();
-            alert("소환 성공! 서버에 저장되었습니다.");
+            alert("소환 및 클라우드 저장 완료!");
         }
 
         function updateUI() {
