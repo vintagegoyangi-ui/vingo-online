@@ -3,103 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VINGO ENGINE TEST</title>
+    <title>VINGO ENGINE TEST: EMERGENCY FIX</title>
     <link rel="stylesheet" href="cardeffect.css">
     <style>
         body { background: #050505; color: white; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; margin: 0; font-family: sans-serif; }
         
-        /* [중요] 카드가 안 보일 때를 대비한 강제 레이아웃 */
-        .test-grid { 
-            display: flex; flex-wrap: wrap; gap: 30px; justify-content: center; width: 100%; margin-top: 30px; 
-        }
+        /* [핵심] 모든 방해 요소를 무시하고 크기를 고정 */
+        .test-grid { display: flex; flex-wrap: wrap; gap: 30px; justify-content: center; width: 100%; margin-top: 30px; }
+        
         .card-wrapper { 
-            width: 280px; height: 410px; position: relative; perspective: 1000px;
+            width: 300px !important; 
+            height: 420px !important; 
+            position: relative !important; 
+            perspective: 1500px !important;
+            display: block !important;
         }
 
-        /* cardeffect.css가 망가져도 카드가 보이기 위한 필수 코드 */
+        /* cardeffect.css의 0px 설정을 덮어씌움 */
         .card { 
-            width: 100%; height: 100%; position: relative; transform-style: preserve-3d;
+            width: 300px !important; 
+            height: 420px !important; 
+            position: relative !important; 
+            display: block !important;
+            transform-style: preserve-3d !important;
         }
+
         .card__front, .card__back { 
-            position: absolute !important; inset: 0 !important; 
-            width: 100% !important; height: 100% !important;
-            backface-visibility: hidden !important; border-radius: 15px; overflow: hidden;
-            background: #111; border: 1px solid #333;
+            position: absolute !important; 
+            top: 0 !important; 
+            left: 0 !important;
+            width: 300px !important; 
+            height: 420px !important;
+            backface-visibility: hidden !important; 
+            border-radius: 18px; 
+            overflow: hidden;
+            border: 2px solid #333;
         }
-        .card__front { z-index: 2; display: flex; flex-direction: column; }
-        .card__back { transform: rotateY(180deg) !important; z-index: 1; }
+
+        .card__front { z-index: 2; background: #111; display: flex; flex-direction: column; }
+        .card__back { transform: rotateY(180deg) !important; z-index: 1; background: #050505; }
         
-        img { max-width: 90%; max-height: 90%; object-fit: contain; pointer-events: none; }
+        /* 이미지 영역 강제 확보 */
+        .img-box { flex: 1; display: flex; align-items: center; justify-content: center; background: #000; }
+        img { width: 85%; height: auto; max-height: 85%; object-fit: contain; }
     </style>
 </head>
 <body>
 
-    <h1 style="color:#ffdf00">ENGINE TEST: v4</h1>
-    <p style="font-size:12px; color:#888;">화면이 안 나오면 F12를 눌러 Console의 빨간색 에러를 보세요.</p>
+    <h1 style="color:#ffdf00">EMERGENCY RENDER TEST</h1>
+    <p style="color:#666; font-size:12px;">선으로만 보인다면 CSS의 레이아웃 엔진과 충돌하는 것입니다. 강제로 고정했습니다.</p>
 
     <div class="test-grid" id="test-grid"></div>
 
     <script>
-        // 소문자 a.webp 및 한글 파일명 정확히 반영
         const testCards = [
             { id: "a.webp", rarity: "rare holo vmax", color: "#ff007f" },
             { id: "EX_오리지널.webp", rarity: "rare holo galaxy", color: "#ffdf00" },
             { id: "SR_빈미.webp", rarity: "rare holo", color: "#a335ee" }
         ];
 
-        const BACK_IMG = "images/card_back.webp";
-
         function render(item) {
             const grid = document.getElementById('test-grid');
             const wrapper = document.createElement('div');
             wrapper.className = "card-wrapper";
             
-            // card 클래스가 있어야 cardeffect.css가 작동합니다.
             const card = document.createElement('div');
             card.className = "card";
             card.setAttribute('data-rarity', item.rarity);
             card.style.setProperty('--glow', item.color);
 
-            // 한글 경로 안전 변환
+            // 한글 경로 인코딩
             const safePath = `images/${encodeURIComponent(item.id)}`;
 
             card.innerHTML = `
-                <div class="card__translater">
-                    <div class="card__rotator">
+                <div class="card__translater" style="width:100%; height:100%;">
+                    <div class="card__rotator" style="width:100%; height:100%;">
                         <div class="card__front">
-                            <div style="flex:1; display:flex; align-items:center; justify-content:center; background:radial-gradient(circle, ${item.color}22, #000);">
-                                <img src="${safePath}" onerror="this.src='https://dummyimage.com/280x410/333/fff&text=${item.id}+Error'">
+                            <div class="img-box">
+                                <img src="${safePath}" onerror="this.src='https://dummyimage.com/300x420/ff007f/ffffff&text=Img+NotFound';">
                             </div>
-                            <div style="height:100px; background:#111; padding:15px; border-top:1px solid ${item.color}44;">
+                            <div style="height:100px; background:#181818; padding:15px; border-top:1px solid ${item.color}44;">
                                 <div style="font-weight:900; color:${item.color}">${item.id}</div>
-                                <div style="font-size:10px; color:#555; margin-top:5px;">${item.rarity}</div>
+                                <div style="font-size:10px; color:#444; margin-top:5px;">FIXED SCALE 300x420</div>
                             </div>
                             <div class="card__shine"></div>
                             <div class="card__glare"></div>
                         </div>
                         <div class="card__back">
-                            <img src="${BACK_IMG}" style="width:100%; height:100%; object-fit:cover;" onerror="this.src='https://dummyimage.com/280x410/000/333&text=BackImg+Error'">
+                            <img src="images/card_back.webp" style="width:100%; height:100%; object-fit:cover;" onerror="this.src='https://dummyimage.com/300x420/222/555&text=Back+Missing';">
                         </div>
                     </div>
                 </div>
             `;
 
-            // 마우스/터치 인터랙션
+            // 인터랙션 (기울기 및 빛 반사)
             const move = (e) => {
                 const rect = card.getBoundingClientRect();
-                const clientX = e.clientX || (e.touches && e.touches[0].clientX);
-                const clientY = e.clientY || (e.touches && e.touches[0].clientY);
-                const x = clientX - rect.left, y = clientY - rect.top;
+                const cx = e.clientX || (e.touches && e.touches[0].clientX);
+                const cy = e.clientY || (e.touches && e.touches[0].clientY);
+                const x = cx - rect.left, y = cy - rect.top;
                 
                 card.classList.add('active', 'interacting');
                 card.style.setProperty('--mx', `${(x / rect.width) * 100}%`);
                 card.style.setProperty('--my', `${(y / rect.height) * 100}%`);
-                card.style.setProperty('--posx', `${(x / rect.width) * 100}%`);
-                card.style.setProperty('--posy', `${(y / rect.height) * 100}%`);
                 card.style.setProperty('--o', '1');
                 card.style.setProperty('--rx', `${(x / rect.width - 0.5) * 50}deg`);
                 card.style.setProperty('--ry', `${(y / rect.height - 0.5) * -50}deg`);
-                card.style.setProperty('--hyp', Math.sqrt(Math.pow(x - rect.width/2, 2) + Math.pow(y - rect.height/2, 2)) / (rect.width/2));
             };
 
             const end = () => {
