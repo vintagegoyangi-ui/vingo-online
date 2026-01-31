@@ -193,34 +193,38 @@ function renderCard(targetWrapper, item, isDraw, isDetail = false, isColl = fals
     const frame = targetWrapper.querySelector('.card-frame');
     const info = CARD_DATA_DB[item.id] || { name: "???", desc: "데이터 없음", attr: "노말" };
     
-    // 1. 상태 초기화 및 기본 스타일
+    // 1. 상태 초기화 및 3D 설정
     frame.className = "card-frame";
     frame.style.animation = "";
     frame.style.transform = "rotateX(0deg) rotateY(0deg)";
     frame.style.setProperty('--glow-c', set.color);
-    frame.style.border = `${isColl ? '2px' : '4px'} solid ${set.color}`;
-    frame.style.transformStyle = "preserve-3d"; // 3D 자식 노출 보장
+    frame.style.transformStyle = "preserve-3d";
 
-    // 2. [가챠 결과 화면] 연출: 플로팅 + 후광(Glow)
-    if (isDraw && isHigh) {
+    // 2. [연출 강화] 1회/10회 가챠 및 도감에서도 고등급 카드는 플로팅+후광 적용
+    // 상세보기(isDetail)가 아닐 때만 적용하여 조작 간섭 방지
+    if (!isDetail && isHigh) {
         frame.classList.add('float-effect');
         frame.style.animation = `float 3s ease-in-out infinite, glow-pulse 1.5s ease-in-out infinite alternate`;
-        frame.style.boxShadow = `0 0 25px ${set.color}, 0 0 10px ${set.color} inset`;
+        frame.style.boxShadow = `0 0 20px ${set.color}, 0 0 10px ${set.color} inset`;
+        frame.style.border = `${isColl ? '2px' : '4px'} solid ${set.color}`;
+    } else {
+        frame.style.border = `${isColl ? '2px' : '4px'} solid ${set.color}`;
+        frame.style.boxShadow = "none";
     }
 
     const frontFace = frame.querySelector('.card-front');
     if(frontFace) {
         frontFace.style.display = 'block';
         frontFace.style.background = isColl ? `#000` : `radial-gradient(circle at center, ${set.color}22 0%, #000 100%)`;
-        frontFace.style.backfaceVisibility = "hidden"; // 앞면 뒤집히면 숨김
+        frontFace.style.backfaceVisibility = "hidden";
     }
 
-    // 3. 카드 내부 레이어 (촌스러운 세로줄 제거, 부드러운 광택 추가)
+    // 3. [무지개 프리즘 복구] 세련된 무지개 그라데이션 레이어
     const cardHTML = isColl ? `
         <div style="height:75%; display:flex; align-items:center; justify-content:center;"><img src="images/${item.id}" style="max-width:90%; max-height:90%; object-fit:contain;"></div>
         <div style="height:25%; background:#111; display:flex; align-items:center; justify-content:center; font-size:8px; font-weight:900; color:${set.color}; border-top:1px solid ${set.color}33;">${info.name}</div>
     ` : `
-        ${isHigh ? '<div class="prism-layer" style="position:absolute; inset:0; z-index:5; pointer-events:none; opacity:0.4; mix-blend-mode:screen; background: radial-gradient(circle at var(--p-x, 50%) var(--p-y, 50%), rgba(255,255,255,0.6) 0%, transparent 70%);"></div>' : ''}
+        ${isHigh ? `<div class="prism-layer" style="position:absolute; inset:0; z-index:5; pointer-events:none; opacity:0.3; mix-blend-mode:color-dodge; background: linear-gradient(var(--p-angle, 135deg), rgba(255,0,0,0.3), rgba(255,255,0,0.3), rgba(0,255,0,0.3), rgba(0,255,255,0.3), rgba(0,0,255,0.3), rgba(255,0,255,0.3)); background-size: 300% 300%; background-position: var(--p-x, 50%) var(--p-y, 50%);"></div>` : ''}
         <div style="height:70%; display:flex; align-items:center; justify-content:center; position:relative;">
             <div style="position:absolute; top:10px; right:10px; border:2px solid ${set.color}; padding:3px 8px; border-radius:6px; font-size:10px; font-weight:900; color:${set.color}; background:rgba(0,0,0,0.8); z-index:10;">${info.attr}</div>
             <div style="position:absolute; top:10px; left:10px; background:${set.color}; color:#fff; font-size:10px; font-weight:900; padding:2px 8px; border-radius:4px; z-index:10;">${item.grade}</div>
@@ -233,7 +237,7 @@ function renderCard(targetWrapper, item, isDraw, isDetail = false, isColl = fals
     
     frame.querySelector('.card-clip').innerHTML = cardHTML;
 
-    // 4. [상세보기 전용] 360도 자유 드래그 회전
+    // 4. [상세보기 감도 최적화] 스와이프 한 번에 한 바퀴 회전
     if (isDetail) {
         let isDragging = false, startX, startY, rotY = 0, rotX = 0;
         const prism = frame.querySelector('.prism-layer');
@@ -250,28 +254,24 @@ function renderCard(targetWrapper, item, isDraw, isDetail = false, isColl = fals
             const x = e.clientX || (e.touches ? e.touches[0].clientX : 0);
             const y = e.clientY || (e.touches ? e.touches[0].clientY : 0);
             
-            // 회전량 계산 (민감도 0.8로 상향)
-            rotY += (x - startX) * 0.8;
-            rotX -= (y - startY) * 0.8;
+            // [감도 조절] 화면 너비 기준 약 1회 스와이프 시 360도 회전하도록 수치 조정
+            const sens = 360 / window.innerWidth; 
+            rotY += (x - startX) * sens;
+            rotX -= (y - startY) * sens;
 
             frame.style.transform = `rotateY(${rotY}deg) rotateX(${rotX}deg)`;
 
-            // 프리즘: 회전량에 따라 중앙 광원 위치 이동
             if (prism) {
-                prism.style.setProperty('--p-x', `${(rotY % 100) + 50}%`);
-                prism.style.setProperty('--p-y', `${(rotX % 100) + 50}%`);
+                prism.style.setProperty('--p-angle', `${rotY + rotX + 135}deg`);
+                prism.style.setProperty('--p-x', `${(rotY % 100)}%`);
+                prism.style.setProperty('--p-y', `${(rotX % 100)}%`);
             }
-
             startX = x; startY = y;
         };
 
-        const moveEnd = () => { 
-            isDragging = false; 
-            frame.style.transition = "transform 0.2s ease-out"; 
-        };
+        const moveEnd = () => { isDragging = false; frame.style.transition = "transform 0.4s ease-out"; };
 
         const view = document.getElementById('detail-view');
-        // 이벤트 바인딩
         view.onmousedown = moveStart;
         window.onmousemove = moveUpdate;
         window.onmouseup = moveEnd;
@@ -279,6 +279,42 @@ function renderCard(targetWrapper, item, isDraw, isDetail = false, isColl = fals
         window.ontouchmove = moveUpdate;
         window.ontouchend = moveEnd;
     }
+
+    // 5. [파티클 복구] 상세보기 및 고등급 가챠 시 생성
+    if (isHigh && (isDetail || isDraw)) {
+        createParticles(frame, set.color);
+    }
+}
+
+function showDetail(item) {
+    document.body.classList.add('lock-scroll');
+    const target = document.getElementById('detail-card-target');
+    
+    target.innerHTML = `
+        <div class="card-container-wrapper" style="width:100%; perspective:2000px;">
+            <div class="card-frame" style="transform-style: preserve-3d;">
+                <div class="card-face card-front" style="backface-visibility: hidden; z-index: 2; position:absolute; inset:0;">
+                    <div class="card-clip"></div>
+                </div>
+                <div class="card-face card-back" style="backface-visibility: hidden; transform: rotateY(180deg); z-index: 1; position:absolute; inset:0;">
+                    <img src="${BACK_IMG_URL}" style="width:100%; height:100%; object-fit:cover;">
+                </div>
+            </div>
+        </div>`;
+    
+    renderCard(target.querySelector('.card-container-wrapper'), item, false, true); 
+
+    const view = document.getElementById('detail-view');
+    view.style.display = 'flex';
+
+    view.onclick = (e) => {
+        if(e.target === view) {
+            view.style.display = 'none';
+            document.body.classList.remove('lock-scroll');
+            window.onmousemove = window.onmouseup = window.ontouchmove = window.ontouchend = null;
+            if(pTimer) clearInterval(pTimer);
+        }
+    };
 }
 
 function showDetail(item) {
@@ -494,6 +530,7 @@ function showDetail(item) {
     </script>
 </body>
 </html>
+
 
 
 
