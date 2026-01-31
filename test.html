@@ -3,55 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VINGO ENGINE TEST: EMERGENCY FIX</title>
+    <title>VINGO ENGINE TEST: EFFECT FIX</title>
     <link rel="stylesheet" href="cardeffect.css">
     <style>
         body { background: #050505; color: white; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; margin: 0; font-family: sans-serif; }
         
-        /* [핵심] 모든 방해 요소를 무시하고 크기를 고정 */
+        /* [중요] 홀로그램 효과가 안 보일 때 강제 주입 */
+        :root {
+            /* 만약 images 폴더에 해당 파일이 없다면 효과가 안 나옵니다. */
+            /* cardeffect.css가 사용하는 변수들을 여기서 직접 제어합니다. */
+            --mask: url("images/mask.png");
+            --glitter: url("images/glitter.png");
+            --shine: url("images/shine.png");
+        }
+
         .test-grid { display: flex; flex-wrap: wrap; gap: 30px; justify-content: center; width: 100%; margin-top: 30px; }
-        
-        .card-wrapper { 
-            width: 300px !important; 
-            height: 420px !important; 
-            position: relative !important; 
-            perspective: 1500px !important;
-            display: block !important;
-        }
+        .card-wrapper { width: 300px; height: 420px; position: relative; perspective: 1500px; }
 
-        /* cardeffect.css의 0px 설정을 덮어씌움 */
         .card { 
-            width: 300px !important; 
-            height: 420px !important; 
-            position: relative !important; 
-            display: block !important;
-            transform-style: preserve-3d !important;
+            width: 300px !important; height: 420px !important; position: relative !important; 
+            transform-style: preserve-3d !important; display: block !important;
         }
 
+        /*  - 앞면, 샤인(빛), 글레어(반사) 층 구조 */
         .card__front, .card__back { 
-            position: absolute !important; 
-            top: 0 !important; 
-            left: 0 !important;
-            width: 300px !important; 
-            height: 420px !important;
-            backface-visibility: hidden !important; 
-            border-radius: 18px; 
-            overflow: hidden;
+            position: absolute !important; inset: 0 !important; 
+            width: 100% !important; height: 100% !important;
+            backface-visibility: hidden !important; border-radius: 18px; overflow: hidden;
             border: 2px solid #333;
         }
 
         .card__front { z-index: 2; background: #111; display: flex; flex-direction: column; }
         .card__back { transform: rotateY(180deg) !important; z-index: 1; background: #050505; }
         
-        /* 이미지 영역 강제 확보 */
-        .img-box { flex: 1; display: flex; align-items: center; justify-content: center; background: #000; }
+        /* 빛 반사 효과(Shine/Glare)가 잘 보이도록 강제 가시성 부여 */
+        .card.active .card__shine { opacity: 1 !important; }
+        .card.active .card__glare { opacity: 1 !important; }
+
+        .img-box { flex: 1; display: flex; align-items: center; justify-content: center; background: #000; overflow: hidden; }
         img { width: 85%; height: auto; max-height: 85%; object-fit: contain; }
     </style>
 </head>
 <body>
 
-    <h1 style="color:#ffdf00">EMERGENCY RENDER TEST</h1>
-    <p style="color:#666; font-size:12px;">선으로만 보인다면 CSS의 레이아웃 엔진과 충돌하는 것입니다. 강제로 고정했습니다.</p>
+    <h1 style="color:#ffdf00">EFFECT DEBUG MODE</h1>
+    <p style="color:#888; font-size:12px; text-align:center;">
+        카드를 마우스로 빠르게 흔들어보세요. <br>
+        반짝임이 없다면 <b>images/mask.png</b> 등 이펙트 파일이 있는지 확인이 필요합니다.
+    </p>
 
     <div class="test-grid" id="test-grid"></div>
 
@@ -72,7 +71,6 @@
             card.setAttribute('data-rarity', item.rarity);
             card.style.setProperty('--glow', item.color);
 
-            // 한글 경로 인코딩
             const safePath = `images/${encodeURIComponent(item.id)}`;
 
             card.innerHTML = `
@@ -80,35 +78,45 @@
                     <div class="card__rotator" style="width:100%; height:100%;">
                         <div class="card__front">
                             <div class="img-box">
-                                <img src="${safePath}" onerror="this.src='https://dummyimage.com/300x420/ff007f/ffffff&text=Img+NotFound';">
+                                <img src="${safePath}" onerror="this.src='https://dummyimage.com/300x420/333/fff&text=Not+Found';">
                             </div>
                             <div style="height:100px; background:#181818; padding:15px; border-top:1px solid ${item.color}44;">
                                 <div style="font-weight:900; color:${item.color}">${item.id}</div>
-                                <div style="font-size:10px; color:#444; margin-top:5px;">FIXED SCALE 300x420</div>
+                                <div style="font-size:10px; color:#555; margin-top:5px;">${item.rarity.toUpperCase()}</div>
                             </div>
                             <div class="card__shine"></div>
                             <div class="card__glare"></div>
                         </div>
                         <div class="card__back">
-                            <img src="images/card_back.webp" style="width:100%; height:100%; object-fit:cover;" onerror="this.src='https://dummyimage.com/300x420/222/555&text=Back+Missing';">
+                            <img src="images/card_back.webp" style="width:100%; height:100%; object-fit:cover;" onerror="this.src='https://dummyimage.com/300x420/000/333&text=Back+Missing';">
                         </div>
                     </div>
                 </div>
             `;
 
-            // 인터랙션 (기울기 및 빛 반사)
             const move = (e) => {
                 const rect = card.getBoundingClientRect();
                 const cx = e.clientX || (e.touches && e.touches[0].clientX);
                 const cy = e.clientY || (e.touches && e.touches[0].clientY);
                 const x = cx - rect.left, y = cy - rect.top;
                 
+                const px = (x / rect.width) * 100;
+                const py = (y / rect.height) * 100;
+
                 card.classList.add('active', 'interacting');
-                card.style.setProperty('--mx', `${(x / rect.width) * 100}%`);
-                card.style.setProperty('--my', `${(y / rect.height) * 100}%`);
+                
+                // cardeffect.css의 모든 빛 계산 변수 연동
+                card.style.setProperty('--mx', `${px}%`);
+                card.style.setProperty('--my', `${py}%`);
+                card.style.setProperty('--posx', `${px}%`);
+                card.style.setProperty('--posy', `${py}%`);
                 card.style.setProperty('--o', '1');
-                card.style.setProperty('--rx', `${(x / rect.width - 0.5) * 50}deg`);
-                card.style.setProperty('--ry', `${(y / rect.height - 0.5) * -50}deg`);
+                card.style.setProperty('--rx', `${(x / rect.width - 0.5) * 60}deg`);
+                card.style.setProperty('--ry', `${(y / rect.height - 0.5) * -60}deg`);
+                
+                // 광택 반사(hyp)를 위해 거리 계산
+                const hyp = Math.sqrt(Math.pow(x - rect.width/2, 2) + Math.pow(y - rect.height/2, 2)) / (rect.width/2);
+                card.style.setProperty('--hyp', hyp);
             };
 
             const end = () => {
