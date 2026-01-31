@@ -3,139 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VINGO ENGINE TEST: EFFECT FIX</title>
+    <title>VINGO EFFECT ENGINE TEST</title>
     <link rel="stylesheet" href="cardeffect.css">
     <style>
-        body { background: #050505; color: white; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; margin: 0; font-family: sans-serif; }
+        body { background: #050505; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .container { width: 300px; height: 420px; }
         
-        /* [중요] 홀로그램 효과가 안 보일 때 강제 주입 */
-        :root {
-            /* 만약 images 폴더에 해당 파일이 없다면 효과가 안 나옵니다. */
-            /* cardeffect.css가 사용하는 변수들을 여기서 직접 제어합니다. */
-            --mask: url("images/mask.png");
-            --glitter: url("images/glitter.png");
-            --shine: url("images/shine.png");
-        }
-
-        .test-grid { display: flex; flex-wrap: wrap; gap: 30px; justify-content: center; width: 100%; margin-top: 30px; }
-        .card-wrapper { width: 300px; height: 420px; position: relative; perspective: 1500px; }
-
-        .card { 
-            width: 300px !important; height: 420px !important; position: relative !important; 
-            transform-style: preserve-3d !important; display: block !important;
-        }
-
-        /*  - 앞면, 샤인(빛), 글레어(반사) 층 구조 */
+        /* [중요] 엔진이 요구하는 기본 규격 강제 설정 */
+        .card { width: 100%; height: 100%; }
         .card__front, .card__back { 
-            position: absolute !important; inset: 0 !important; 
-            width: 100% !important; height: 100% !important;
-            backface-visibility: hidden !important; border-radius: 18px; overflow: hidden;
-            border: 2px solid #333;
+            position: absolute; inset: 0; 
+            border-radius: 18px; overflow: hidden; 
+            backface-visibility: hidden; 
         }
-
-        .card__front { z-index: 2; background: #111; display: flex; flex-direction: column; }
-        .card__back { transform: rotateY(180deg) !important; z-index: 1; background: #050505; }
-        
-        /* 빛 반사 효과(Shine/Glare)가 잘 보이도록 강제 가시성 부여 */
-        .card.active .card__shine { opacity: 1 !important; }
-        .card.active .card__glare { opacity: 1 !important; }
-
-        .img-box { flex: 1; display: flex; align-items: center; justify-content: center; background: #000; overflow: hidden; }
-        img { width: 85%; height: auto; max-height: 85%; object-fit: contain; }
+        .card__back { transform: rotateY(180deg); }
     </style>
 </head>
 <body>
 
-    <h1 style="color:#ffdf00">EFFECT DEBUG MODE</h1>
-    <p style="color:#888; font-size:12px; text-align:center;">
-        카드를 마우스로 빠르게 흔들어보세요. <br>
-        반짝임이 없다면 <b>images/mask.png</b> 등 이펙트 파일이 있는지 확인이 필요합니다.
-    </p>
-
-    <div class="test-grid" id="test-grid"></div>
-
-    <script>
-        const testCards = [
-            { id: "a.webp", rarity: "rare holo vmax", color: "#ff007f" },
-            { id: "EX_오리지널.webp", rarity: "rare holo galaxy", color: "#ffdf00" },
-            { id: "SR_빈미.webp", rarity: "rare holo", color: "#a335ee" }
-        ];
-
-        function render(item) {
-            const grid = document.getElementById('test-grid');
-            const wrapper = document.createElement('div');
-            wrapper.className = "card-wrapper";
-            
-            const card = document.createElement('div');
-            card.className = "card";
-            card.setAttribute('data-rarity', item.rarity);
-            card.style.setProperty('--glow', item.color);
-
-            const safePath = `images/${encodeURIComponent(item.id)}`;
-
-            card.innerHTML = `
-                <div class="card__translater" style="width:100%; height:100%;">
-                    <div class="card__rotator" style="width:100%; height:100%;">
-                        <div class="card__front">
-                            <div class="img-box">
-                                <img src="${safePath}" onerror="this.src='https://dummyimage.com/300x420/333/fff&text=Not+Found';">
-                            </div>
-                            <div style="height:100px; background:#181818; padding:15px; border-top:1px solid ${item.color}44;">
-                                <div style="font-weight:900; color:${item.color}">${item.id}</div>
-                                <div style="font-size:10px; color:#555; margin-top:5px;">${item.rarity.toUpperCase()}</div>
-                            </div>
-                            <div class="card__shine"></div>
-                            <div class="card__glare"></div>
+    <div class="container">
+        <div class="card" id="target-card" data-rarity="rare holo vmax">
+            <div class="card__translater">
+                <div class="card__rotator">
+                    <div class="card__front">
+                        <div style="width:100%; height:100%; background:#000; display:flex; align-items:center; justify-content:center;">
+                            <img src="images/a.webp" style="width:90%; height:auto;" onerror="this.src='https://via.placeholder.com/300x420?text=a.webp+Missing'">
                         </div>
-                        <div class="card__back">
-                            <img src="images/card_back.webp" style="width:100%; height:100%; object-fit:cover;" onerror="this.src='https://dummyimage.com/300x420/000/333&text=Back+Missing';">
-                        </div>
+                        <div class="card__shine"></div>
+                        <div class="card__glare"></div>
+                    </div>
+                    <div class="card__back">
+                        <img src="images/card_back.webp" style="width:100%; height:100%; object-fit:cover;">
                     </div>
                 </div>
-            `;
+            </div>
+        </div>
+    </div>
 
-            const move = (e) => {
-                const rect = card.getBoundingClientRect();
-                const cx = e.clientX || (e.touches && e.touches[0].clientX);
-                const cy = e.clientY || (e.touches && e.touches[0].clientY);
-                const x = cx - rect.left, y = cy - rect.top;
-                
-                const px = (x / rect.width) * 100;
-                const py = (y / rect.height) * 100;
+    <script>
+        const card = document.getElementById('target-card');
 
-                card.classList.add('active', 'interacting');
-                
-                // cardeffect.css의 모든 빛 계산 변수 연동
-                card.style.setProperty('--mx', `${px}%`);
-                card.style.setProperty('--my', `${py}%`);
-                card.style.setProperty('--posx', `${px}%`);
-                card.style.setProperty('--posy', `${py}%`);
-                card.style.setProperty('--o', '1');
-                card.style.setProperty('--rx', `${(x / rect.width - 0.5) * 60}deg`);
-                card.style.setProperty('--ry', `${(y / rect.height - 0.5) * -60}deg`);
-                
-                // 광택 반사(hyp)를 위해 거리 계산
-                const hyp = Math.sqrt(Math.pow(x - rect.width/2, 2) + Math.pow(y - rect.height/2, 2)) / (rect.width/2);
-                card.style.setProperty('--hyp', hyp);
-            };
+        // 4. CSS 엔진에 마우스 좌표 전달 (핵심 로직)
+        const handleMove = (e) => {
+            const rect = card.getBoundingClientRect();
+            const x = (e.clientX || e.touches[0].clientX) - rect.left;
+            const y = (e.clientY || e.touches[0].clientY) - rect.top;
+            
+            const px = (x / rect.width) * 100;
+            const py = (y / rect.height) * 100;
 
-            const end = () => {
-                card.classList.remove('active', 'interacting');
-                card.style.setProperty('--o', '0');
-                card.style.setProperty('--rx', '0deg');
-                card.style.setProperty('--ry', '0deg');
-            };
+            card.classList.add('active', 'interacting');
+            
+            // cardeffect.css 내부의 변수들과 1:1 매칭
+            card.style.setProperty('--mx', `${px}%`);
+            card.style.setProperty('--my', `${py}%`);
+            card.style.setProperty('--posx', `${px}%`);
+            card.style.setProperty('--posy', `${py}%`);
+            card.style.setProperty('--o', '1');
+            
+            // 3D 회전각 계산
+            card.style.setProperty('--rx', `${(x / rect.width - 0.5) * 50}deg`);
+            card.style.setProperty('--ry', `${(y / rect.height - 0.5) * -50}deg`);
+        };
 
-            wrapper.addEventListener('mousemove', move);
-            wrapper.addEventListener('touchmove', (e) => { e.preventDefault(); move(e); }, {passive: false});
-            wrapper.addEventListener('mouseleave', end);
-            wrapper.addEventListener('touchend', end);
+        const handleEnd = () => {
+            card.classList.remove('active', 'interacting');
+            card.style.setProperty('--o', '0');
+            card.style.setProperty('--rx', '0deg');
+            card.style.setProperty('--ry', '0deg');
+        };
 
-            wrapper.appendChild(card);
-            grid.appendChild(wrapper);
-        }
-
-        testCards.forEach(render);
+        window.addEventListener('mousemove', handleMove);
+        window.addEventListener('touchmove', (e) => handleMove(e.touches[0]));
+        window.addEventListener('mouseleave', handleEnd);
     </script>
 </body>
 </html>
