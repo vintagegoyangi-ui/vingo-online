@@ -193,82 +193,80 @@ function renderCard(targetWrapper, item, isDraw, isDetail = false, isColl = fals
     const frame = targetWrapper.querySelector('.card-frame');
     const info = CARD_DATA_DB[item.id] || { name: "???", desc: "데이터 없음", attr: "노말" };
     
-    // 초기화 및 기본 설정
+    // 1. 초기화 및 3D 설정
     frame.className = "card-frame";
     frame.style.animation = "";
     frame.style.transform = "rotateX(0deg) rotateY(0deg)";
     frame.style.setProperty('--glow-c', set.color);
     frame.style.transformStyle = "preserve-3d";
-    frame.style.transition = isDetail ? "none" : "transform 0.6s cubic-bezier(0.23, 1, 0.32, 1)";
+    frame.style.transition = isDetail ? "none" : "all 0.1s";
 
-    // [연출] 가챠 및 도감 고등급 후광
+    // 2. 가챠/도감 고등급 카드 연출 (플로팅 + 후광)
     if (!isDetail && isHigh) {
         frame.classList.add('float-effect');
         frame.style.animation = `float 3s ease-in-out infinite, glow-pulse 1.5s ease-in-out infinite alternate`;
-        frame.style.boxShadow = `0 0 25px ${set.color}, 0 0 10px ${set.color} inset`;
+        frame.style.boxShadow = `0 0 20px ${set.color}`;
+        frame.style.border = `${isColl ? '2px' : '4px'} solid ${set.color}`;
+    } else {
+        frame.style.border = `${isColl ? '2px' : '4px'} solid ${set.color}`;
     }
 
-    // 카드 앞면/뒷면 구조 강제 재설정 (뒷면 미출력 방지)
-    const cardHTML = `
-        <div class="card-face card-front" style="position:absolute; inset:0; backface-visibility:hidden; z-index:2; transform: rotateY(0deg);">
-            <div class="card-clip">
-                ${isHigh ? `
-                    <div class="prism-layer" style="
-                        position:absolute; inset:0; z-index:5; pointer-events:none; opacity:0.6;
-                        mix-blend-mode: color-dodge;
-                        background-image: 
-                            url('https://www.transparenttextures.com/patterns/glass-knobs.png'), 
-                            linear-gradient(var(--p-angle, 135deg), rgba(255,0,0,0.4), rgba(255,255,0,0.4), rgba(0,255,0,0.4), rgba(0,255,255,0.4), rgba(0,0,255,0.4), rgba(255,0,255,0.4));
-                        background-size: 200% 200%;
-                        background-position: var(--p-x, 50%) var(--p-y, 50%);
-                    "></div>` : ''}
-                <div style="height:70%; display:flex; align-items:center; justify-content:center; position:relative; background: radial-gradient(circle at center, ${set.color}22 0%, #000 100%);">
-                    <div style="position:absolute; top:10px; right:10px; border:2px solid ${set.color}; padding:3px 8px; border-radius:6px; font-size:10px; font-weight:900; color:${set.color}; background:rgba(0,0,0,0.8); z-index:10;">${info.attr}</div>
-                    <div style="position:absolute; top:10px; left:10px; background:${set.color}; color:#fff; font-size:10px; font-weight:900; padding:2px 8px; border-radius:4px; z-index:10;">${item.grade}</div>
-                    <img src="images/${item.id}" style="max-width:95%; max-height:95%; object-fit:contain; z-index:2;">
+    // 3. 카드 내부 레이어 생성 (가져오신 .overlay 로직 적용)
+    frame.innerHTML = `
+        <div class="card-face card-front" style="position:absolute; inset:0; backface-visibility:hidden; z-index:2; border-radius:16px; overflow:hidden;">
+            <div class="card-overlay" style="
+                position: absolute; inset: 0; z-index: 5; pointer-events: none;
+                background: linear-gradient(105deg, transparent 40%, rgba(255, 219, 112, 0.4) 45%, rgba(132, 50, 255, 0.3) 50%, transparent 54%);
+                background-size: 150% 150%; background-position: 100%;
+                filter: brightness(1.1) opacity(0); mix-blend-mode: color-dodge; transition: all 0.1s;
+            "></div>
+            
+            <div class="card-clip" style="height:100%;">
+                <div style="height:70%; display:flex; align-items:center; justify-content:center; background: radial-gradient(circle at center, ${set.color}22 0%, #050505 100%);">
+                    <div style="position:absolute; top:12px; left:12px; background:${set.color}; color:#000; font-size:10px; font-weight:900; padding:2px 8px; border-radius:4px; z-index:10;">${item.grade}</div>
+                    <img src="images/${item.id}" style="max-width:90%; max-height:90%; object-fit:contain; z-index:2;">
                 </div>
-                <div style="height:30%; background:linear-gradient(to bottom, #0f0f0f, #000); border-top:1px solid ${set.color}33; padding:10px 15px; text-align:left;">
-                    <div style="font-size:1.4rem; font-weight:900; color:${set.color}; line-height:1.2;">${info.name}</div>
+                <div style="height:30%; background:#111; padding:15px; border-top:1px solid ${set.color}33;">
+                    <div style="font-size:1.2rem; font-weight:900; color:${set.color};">${info.name}</div>
                     <p style="font-size:10px; color:#666; margin-top:5px;">${info.desc}</p>
                 </div>
             </div>
         </div>
-        <div class="card-face card-back" style="position:absolute; inset:0; backface-visibility:hidden; z-index:1; transform: rotateY(180deg);">
+        <div class="card-face card-back" style="position:absolute; inset:0; backface-visibility:hidden; transform:rotateY(180deg); z-index:1;">
             <img src="${BACK_IMG_URL}" style="width:100%; height:100%; object-fit:cover; border-radius:16px;">
         </div>
     `;
-    frame.innerHTML = cardHTML;
 
-    // [상세보기] 틸트 기반 전후좌우 회전 (180도 이상 기울여 뒷면 확인 가능)
+    // 4. 상세보기(isDetail) 시 마우스/터치 연동 로직
     if (isDetail) {
-        const prism = frame.querySelector('.prism-layer');
+        const overlay = frame.querySelector('.card-overlay');
         const view = document.getElementById('detail-view');
 
         const handleMove = (e) => {
             const rect = frame.getBoundingClientRect();
-            const cx = e.clientX || (e.touches && e.touches[0].clientX);
-            const cy = e.clientY || (e.touches && e.touches[0].clientY);
+            const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+            const clientY = e.clientY || (e.touches && e.touches[0].clientY);
             
-            // 중앙 기준 상대 좌표 (-1 ~ 1)
-            const x = (cx - (rect.left + rect.width / 2)) / (window.innerWidth / 2);
-            const y = (cy - (rect.top + rect.height / 2)) / (window.innerHeight / 2);
+            const x = clientX - rect.left;
+            const y = clientY - rect.top;
 
-            // 기울기 제한을 풀어서 뒷면(180도)까지 도달 가능하게 설정
-            const tiltY = x * 180; 
-            const tiltX = -y * 90; 
+            // 가져오신 계산식 활용 (상세보기에 맞게 회전각 확장)
+            // 좌우 스와이프로 뒷면까지 보이게 rotateY 범위를 조절했습니다.
+            const rotateY = (x / rect.width - 0.5) * 360; 
+            const rotateX = (0.5 - y / rect.height) * 60;
 
-            frame.style.transform = `rotateY(${tiltY}deg) rotateX(${tiltX}deg)`;
+            frame.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
 
-            if (prism) {
-                prism.style.setProperty('--p-angle', `${tiltY + tiltX + 135}deg`);
-                prism.style.setProperty('--p-x', `${50 + x * 50}%`);
-                prism.style.setProperty('--p-y', `${50 + y * 50}%`);
+            if (isHigh && overlay) {
+                overlay.style.backgroundPosition = `${x/5 + y/5}%`;
+                overlay.style.filter = `opacity(${Math.min(x/rect.width, 0.8)}) brightness(1.2)`;
             }
         };
 
         const handleEnd = () => {
-            frame.style.transition = "transform 0.6s cubic-bezier(0.23, 1, 0.32, 1)";
-            frame.style.transform = "rotateX(0deg) rotateY(0deg)";
+            frame.style.transition = "all 0.5s";
+            frame.style.transform = "perspective(1000px) rotateX(0deg) rotateY(0deg)";
+            if (overlay) overlay.style.filter = "opacity(0)";
         };
 
         view.addEventListener('mousemove', handleMove);
@@ -277,7 +275,7 @@ function renderCard(targetWrapper, item, isDraw, isDetail = false, isColl = fals
         view.addEventListener('touchend', handleEnd);
     }
 
-    // 파티클 효과 생성
+    // 5. 파티클 효과 (고등급 전용)
     if (isHigh && (isDetail || isDraw)) {
         createParticles(frame, set.color);
     }
@@ -547,6 +545,7 @@ function showDetail(item) {
     </script>
 </body>
 </html>
+
 
 
 
