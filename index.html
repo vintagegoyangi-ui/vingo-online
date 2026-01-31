@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
     <title>VINGO EXPEDITION v2.0</title>
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
-    <link rel="stylesheet" href="cardeffect.css"> <script src="card_data.js"></script>
+    <link rel="stylesheet" href="cardeffect.css">
+    <script src="card_data.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
     <script>
-        // [기능 유지] Firebase 및 전역 변수 설정
         const firebaseConfig = {
             apiKey: "AIzaSyBOmMyRoAZ57YQVWaiiLDLVE5Lwu5aU9-4",
             authDomain: "vingo-expedition.firebaseapp.com",
@@ -29,7 +29,6 @@
         let isGachaRunning = false;
         let isResultPending = false; 
 
-        // [기능 유지] 로그인/회원가입 로직
         async function handleAuth(type) {
             const id = document.getElementById('auth-id').value.trim();
             const pw = document.getElementById('auth-pw').value.trim();
@@ -57,13 +56,11 @@
     </script>
 
     <style>
-        /* [기능 유지] 기존 스타일 테마 */
         :root { --ex-color: #ff007f; --ssr-color: #ffdf00; --sr-color: #a335ee; --r-color: #0070dd; --bg-color: #050505; --scan-color: #00ff00; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; font-family: 'Pretendard', sans-serif !important; }
         body { background-color: var(--bg-color); color: white; display: flex; flex-direction: column; align-items: center; min-height: 100svh; width: 100%; overflow-x: hidden; overscroll-behavior-y: contain; }
         body.lock-scroll { overflow: hidden !important; touch-action: none; }
 
-        /* [애니메이션 유지] */
         @keyframes shake { 0%, 100% { transform: translate(0,0); } 10%, 30%, 50%, 70%, 90% { transform: translate(-4px, -2px); } 20%, 40%, 60%, 80% { transform: translate(4px, 2px); } }
         @keyframes vortex { 0% { transform: rotate(0deg) scale(1); opacity: 0; } 50% { opacity: 0.35; transform: rotate(180deg) scale(2.2); } 100% { transform: rotate(360deg) scale(3.5); opacity: 0; } }
         @keyframes scanOnce { 0% { top: 0%; opacity: 0; } 10% { opacity: 1; } 50% { top: 100%; } 90% { opacity: 1; } 100% { top: 0%; opacity: 0; } }
@@ -77,7 +74,6 @@
         .vortex-ex { background: radial-gradient(circle, var(--ex-color) 0%, transparent 70%); animation: vortex 1.2s ease-in-out forwards; }
         .screen-flash { background: white; z-index: 9000; animation: flash 0.3s ease-out; display: none; }
 
-        /* [카드 컨테이너 설정] */
         .card-container-wrapper { position: relative; width: 100%; max-width: 290px; aspect-ratio: 3 / 4.4; margin: 0 auto; perspective: 1500px; }
         #cut-in-layer { position: absolute; inset: -4px; z-index: 1000; display: none; align-items: center; justify-content: center; flex-direction: column; border-radius: 20px; pointer-events: none; }
         .scan-line { position: absolute; left: 0; width: 100%; height: 8px; background: var(--scan-color); box-shadow: 0 0 20px var(--scan-color); animation: scanOnce 1.5s ease-in-out infinite; }
@@ -165,13 +161,11 @@
 
         async function save() { if (!USER_ID) return; try { await db.ref('users/' + USER_ID).update({ inventory: myItems, energy: energy }); } catch (e) { console.error(e); } }
 
-        // [핵심] cardeffect.css와 연동된 렌더링 함수
         function renderCard(targetWrapper, item, isDraw, isDetail = false, isColl = false) {
             const set = SETTINGS[item.grade];
             const info = CARD_DATA_DB[item.id] || { name: "???", desc: "데이터 없음" };
             const isHigh = item.grade === 'EX' || item.grade === 'SSR';
 
-            // 등급별 Rarity 속성 매칭
             let rarity = "rare holo";
             if (item.grade === 'EX') rarity = "rare holo vmax";
             else if (item.grade === 'SSR') rarity = "rare holo galaxy";
@@ -185,13 +179,12 @@
             cardEl.className = `card ${isDetail ? 'active interacting' : ''} ${(!isDetail && isHigh) ? 'float-effect' : ''}`;
             cardEl.style.setProperty('--glow', set.color);
 
-            // cardeffect.css 전용 구조 주입
             cardEl.innerHTML = `
                 <div class="card__translater">
                     <div class="card__rotator">
                         <div class="card__front">
                             <div class="card-clip" style="height:100%; display:flex; flex-direction:column; background:#000; border:3px solid ${set.color}; border-radius:15px;">
-                                <div style="height:70%; display:flex; align-items:center; justify-content:center; position:relative; background: radial-gradient(circle, ${set.color}22 0%, #050505 100%);">
+                                <div style="height:70%; display:flex; align-items:center; justify-content:center; background: radial-gradient(circle, ${set.color}22 0%, #050505 100%); position: relative;">
                                     <div style="position:absolute; top:8px; left:8px; background:${set.color}; color:#000; font-size:10px; font-weight:900; padding:2px 6px; border-radius:4px; z-index:10;">${item.grade}</div>
                                     <img src="images/${item.id}" style="max-width:85%; max-height:85%; object-fit:contain; z-index:2;">
                                 </div>
@@ -219,7 +212,6 @@
                     const x = cx - rect.left, y = cy - rect.top;
                     const px = (x / rect.width) * 100, py = (y / rect.height) * 100;
 
-                    // 실시간 변수 주입
                     cardEl.style.setProperty('--mx', `${px}%`);
                     cardEl.style.setProperty('--my', `${py}%`);
                     cardEl.style.setProperty('--posx', `${px}%`);
@@ -236,7 +228,6 @@
             }
         }
 
-        // [기능 유지] 가챠 로직 및 연출
         async function playGacha(count) {
             if (isGachaRunning) return;
             if (energy.count < count) { showMessage("에너지가 부족합니다!"); return; }
@@ -286,7 +277,6 @@
             document.getElementById('btn-home').style.display = "block";
         }
 
-        // [기능 유지] 기타 유틸리티 함수들
         function renderTen(results) {
             const d = document.getElementById('multi-result-display');
             d.innerHTML = ""; d.style.display = "flex";
