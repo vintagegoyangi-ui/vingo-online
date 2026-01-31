@@ -3,8 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-    <title>VINGO EXPEDITION v1.5</title>
+    <title>VINGO EXPEDITION v2.0</title>
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+    <link rel="stylesheet" href="cardeffect.css">
+    
     <script src="card_data.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     
@@ -66,8 +68,6 @@
         @keyframes scanOnce { 0% { top: 0%; opacity: 0; } 10% { opacity: 1; } 50% { top: 100%; } 90% { opacity: 1; } 100% { top: 0%; opacity: 0; } }
         @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
         @keyframes particle-rise { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-120px) scale(0); opacity: 0; } }
-        @keyframes prism { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
-        @keyframes glow-pulse { 0% { box-shadow: 0 0 10px var(--glow-c); } 100% { box-shadow: 0 0 30px var(--glow-c), 0 0 10px var(--glow-c) inset; } }
 
         .float-effect { animation: float 3s ease-in-out infinite !important; }
         .shake-effect { animation: shake 0.4s linear infinite !important; }
@@ -80,21 +80,13 @@
         #cut-in-msg { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 9500; font-size: 2.2rem; font-weight: 900; font-style: italic; pointer-events: none; text-align: center; }
         .particle { position: absolute; pointer-events: none; border-radius: 50%; animation: particle-rise linear forwards; z-index: 100; }
 
+        /* 기존 card 레이어는 cardeffect.css에 최적화된 wrapper 역할만 수행 */
         .card-container-wrapper { position: relative; width: 100%; max-width: 290px; aspect-ratio: 3 / 4.4; margin: 0 auto; perspective: 1500px; }
-        .card-frame { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); border-radius: 20px; border: 4px solid #222; background: #0a0a0a; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-        .card-face { position: absolute; inset: 0; backface-visibility: hidden; border-radius: 16px; overflow: hidden; background: #000; }
-        .card-front { z-index: 2; transform: rotateY(0deg); } 
-        .card-back { z-index: 1; transform: rotateY(180deg); display: flex; align-items: center; justify-content: center; background: #111; }
-        .card-back img { width: 100%; height: 100%; object-fit: cover; }
-        .card-clip { position: absolute; inset: 0; display: flex; flex-direction: column; border-radius: 16px; overflow: hidden; }
-
-        /* 무지개 프리즘 효과 */
-        .prism-layer { position: absolute; inset: 0; z-index: 5; pointer-events: none; mix-blend-mode: color-dodge; opacity: 0.4; background: linear-gradient(135deg, rgba(255,0,0,0.2), rgba(255,165,0,0.2), rgba(255,255,0,0.2), rgba(0,128,0,0.2), rgba(0,0,255,0.2), rgba(75,0,130,0.2), rgba(238,130,238,0.2)); background-size: 400% 400%; animation: prism 4s linear infinite; }
-
-        #cut-in-layer { position: absolute; inset: -4px; z-index: 100; display: none; align-items: center; justify-content: center; flex-direction: column; border-radius: 20px; pointer-events: none; }
+        
+        #cut-in-layer { position: absolute; inset: -4px; z-index: 1000; display: none; align-items: center; justify-content: center; flex-direction: column; border-radius: 20px; pointer-events: none; }
         .scan-line { position: absolute; left: 0; width: 100%; height: 8px; background: var(--scan-color); box-shadow: 0 0 20px var(--scan-color); animation: scanOnce 1.5s ease-in-out infinite; }
         
-        #slot-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
+        #slot-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; width: 100%; height: 100%; background: #0a0a0a; border: 4px solid #222; border-radius: 20px;}
         .slot-bg-text { font-size: 2rem; font-weight: 900; font-style: italic; background: linear-gradient(to bottom, #444, #111); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
         .container { width: 92%; max-width: 400px; text-align: center; background: #111; padding: 20px; border-radius: 30px; border: 1px solid #222; margin: auto; display: none; position: relative; min-height: 520px; }
@@ -150,14 +142,11 @@
         </div>
         <div id="result-area">
             <div class="card-container-wrapper" id="main-card-wrapper">
-                <div class="card-frame" id="main-card-frame">
+                <div id="main-card-frame" class="card">
                     <div id="slot-placeholder">
                         <div class="slot-bg-text">VINGO GACHA</div>
                         <div style="color:#444; font-size:0.7rem; font-weight:700; margin-top:5px;">정예 빈고를 수집하여 원정을 준비하세요.</div>
                     </div>
-                    <div class="card-face card-back" id="main-card-back" style="display:none;"><img src="images/card_back.webp"></div>
-                    <div class="card-face card-front" id="main-card-front" style="display:none;"><div class="card-clip"></div></div>
-                    <div id="cut-in-layer"><div class="scan-line"></div></div>
                 </div>
             </div>
         </div>
@@ -185,215 +174,120 @@
 
         async function save() { if (!USER_ID) return; try { await db.ref('users/' + USER_ID).update({ inventory: myItems, energy: energy }); } catch (e) { console.error(e); } }
 
-        // ... 앞부분 생략 (Firebase 설정 등은 동일) ...
-
-function renderCard(targetWrapper, item, isDraw, isDetail = false, isColl = false) {
-    const set = SETTINGS[item.grade];
-    const isHigh = item.grade === 'EX' || item.grade === 'SSR';
-    const frame = targetWrapper.querySelector('.card-frame');
-    const info = CARD_DATA_DB[item.id] || { name: "???", desc: "데이터 없음", attr: "노말" };
-    
-    // 1. 초기 상태 세팅
-    frame.className = "card-frame";
-    frame.style.animation = "";
-    frame.style.transform = "perspective(1000px) rotateX(0deg) rotateY(0deg)";
-    frame.style.setProperty('--glow-c', set.color);
-    frame.style.transformStyle = "preserve-3d";
-    frame.style.transition = "all 0.1s";
-
-    // 2. 가챠 결과(1회/10회) 및 도감 고등급 연출
-    if (!isDetail && isHigh) {
-        frame.classList.add('float-effect');
-        frame.style.animation = `float 3s ease-in-out infinite, glow-pulse 1.5s ease-in-out infinite alternate`;
-        frame.style.boxShadow = `0 0 20px ${set.color}`;
-    }
-    frame.style.border = `${isColl ? '2px' : '4px'} solid ${set.color}`;
-
-    // 3. 카드 레이어 구조 (요청하신 .overlay 로직 포함)
-    frame.innerHTML = `
-        <div class="card-face card-front" style="position:absolute; inset:0; backface-visibility:hidden; z-index:2; border-radius:16px; overflow:hidden;">
-            <div class="card-overlay" style="
-                position: absolute; inset: 0; z-index: 5; pointer-events: none;
-                background: linear-gradient(105deg, transparent 40%, rgba(255, 219, 112, 0.6) 45%, rgba(132, 50, 255, 0.4) 50%, transparent 54%);
-                background-size: 150% 150%; background-position: 100%;
-                filter: brightness(1.1) opacity(0); mix-blend-mode: color-dodge; transition: all 0.1s;
-            "></div>
+        function renderCard(targetWrapper, item, isDraw, isDetail = false, isColl = false) {
+            const set = SETTINGS[item.grade];
+            const isHigh = item.grade === 'EX' || item.grade === 'SSR';
+            const info = CARD_DATA_DB[item.id] || { name: "???", desc: "데이터 없음", attr: "노말" };
             
-            <div class="card-clip" style="height:100%; display:flex; flex-direction:column; background: #000;">
-                <div style="height:70%; display:flex; align-items:center; justify-content:center; position:relative; background: radial-gradient(circle at center, ${set.color}22 0%, #050505 100%);">
-                    <div style="position:absolute; top:10px; left:10px; background:${set.color}; color:#000; font-size:10px; font-weight:900; padding:2px 8px; border-radius:4px; z-index:10;">${item.grade}</div>
-                    <img src="images/${item.id}" style="max-width:90%; max-height:90%; object-fit:contain; z-index:2;">
-                </div>
-                <div style="height:30%; background:#111; padding:15px; border-top:1px solid ${set.color}33;">
-                    <div style="font-size:1.2rem; font-weight:900; color:${set.color};">${info.name}</div>
-                    <p style="font-size:10px; color:#666; margin-top:5px; height:30px; overflow:hidden;">${info.desc}</p>
-                </div>
-            </div>
-        </div>
-        <div class="card-face card-back" style="position:absolute; inset:0; backface-visibility:hidden; transform:rotateY(180deg); z-index:1;">
-            <img src="${BACK_IMG_URL}" style="width:100%; height:100%; object-fit:cover; border-radius:16px;">
-        </div>
-    `;
+            // 1. 등급에 따른 Rarity 매칭 (cardeffect.css 기반)
+            let rarity = "rare holo";
+            if (item.grade === 'EX') rarity = "rare holo vmax";
+            else if (item.grade === 'SSR') rarity = "rare holo galaxy";
+            else if (item.grade === 'SR') rarity = "rare holo";
+            else rarity = "common";
 
-    // 4. 상세보기(isDetail) 인터랙션 적용
-    if (isDetail) {
-        const overlay = frame.querySelector('.card-overlay');
-        const view = document.getElementById('detail-view');
-
-        const updateInteraction = (e) => {
-            const rect = frame.getBoundingClientRect();
-            const clientX = e.clientX || (e.touches && e.touches[0].clientX);
-            const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+            // 2. card-frame 찾기 및 클래스/속성 설정
+            // 가챠 결과 10개일 때는 targetWrapper 자체가 frame일 수 있음
+            const frame = targetWrapper.id === 'main-card-frame' ? targetWrapper : targetWrapper.querySelector('.card');
             
-            // 프레임 내부 상대 좌표 계산
-            const x = clientX - rect.left;
-            const y = clientY - rect.top;
+            frame.className = `card ${isDetail ? 'active interacting' : ''}`;
+            frame.setAttribute('data-rarity', rarity);
+            frame.style.setProperty('--glow', set.color);
 
-            // 요청하신 로직 기반 + 뒷면까지 볼 수 있도록 범위 조절
-            // (화면 끝으로 갈수록 뒷면이 보이게 회전값을 확장)
-            const rotateY = -1/2 * x + (rect.width / 4); 
-            const rotateX = 4/30 * y - 20;
-
-            frame.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
-
-            if (isHigh && overlay) {
-                overlay.style.backgroundPosition = `${x/5 + y/5}%`;
-                overlay.style.filter = `opacity(${x / rect.width}) brightness(1.2)`;
+            // 3. 고등급 연출 (가챠/도감 전용)
+            if (!isDetail && isHigh) {
+                frame.classList.add('float-effect');
+                frame.style.setProperty('--glow-c', set.color);
+            } else {
+                frame.classList.remove('float-effect');
             }
-        };
 
-        const resetInteraction = () => {
-            frame.style.transition = "all 0.5s ease-out";
-            frame.style.transform = "perspective(1000px) rotateX(0deg) rotateY(0deg)";
-            if (overlay) overlay.style.filter = "opacity(0)";
-        };
-
-        // 이벤트 연결
-        view.addEventListener('mousemove', updateInteraction);
-        view.addEventListener('touchmove', updateInteraction, { passive: false });
-        view.addEventListener('mouseleave', resetInteraction);
-        view.addEventListener('touchend', resetInteraction);
-    }
-
-    // 5. 파티클 효과 복구
-    if (isHigh && (isDetail || isDraw)) {
-        createParticles(frame, set.color);
-    }
-}
-
-// showDetail 함수도 구조에 맞춰 간단히 정리
-function showDetail(item) {
-    document.body.classList.add('lock-scroll');
-    const target = document.getElementById('detail-card-target');
-    target.innerHTML = `<div class="card-container-wrapper" style="width:100%; perspective:2000px;"><div class="card-frame"></div></div>`;
-    
-    renderCard(target.querySelector('.card-container-wrapper'), item, false, true); 
-
-    const view = document.getElementById('detail-view');
-    view.style.display = 'flex';
-
-    view.onclick = (e) => {
-        if(e.target === view) {
-            view.style.display = 'none';
-            document.body.classList.remove('lock-scroll');
-            if(pTimer) clearInterval(pTimer);
-        }
-    };
-}
-
-function showDetail(item) {
-    document.body.classList.add('lock-scroll');
-    const target = document.getElementById('detail-card-target');
-    
-    target.innerHTML = `
-        <div class="card-container-wrapper" style="width:100%; perspective:2000px;">
-            <div class="card-frame" style="transform-style: preserve-3d;">
-                <div class="card-face card-front" style="backface-visibility: hidden; z-index: 2; position:absolute; inset:0;">
-                    <div class="card-clip"></div>
+            // 4. cardeffect.css 구조 렌더링
+            frame.innerHTML = `
+                <div class="card__translater">
+                    <div class="card__rotator">
+                        <div class="card__front" style="backface-visibility: hidden;">
+                            <div class="card-clip" style="height:100%; display:flex; flex-direction:column; background: #000; border: 4px solid ${set.color}; border-radius: 16px;">
+                                <div style="height:70%; display:flex; align-items:center; justify-content:center; background: radial-gradient(circle at center, ${set.color}22 0%, #050505 100%); position: relative;">
+                                    <div style="position:absolute; top:10px; left:10px; background:${set.color}; color:#000; font-size:10px; font-weight:900; padding:2px 8px; border-radius:4px; z-index:10;">${item.grade}</div>
+                                    <img src="images/${item.id}" style="max-width:90%; max-height:90%; object-fit:contain; z-index:2;">
+                                </div>
+                                <div style="height:30%; background:#111; padding:15px; border-top:1px solid ${set.color}33;">
+                                    <div style="font-size:1.2rem; font-weight:900; color:${set.color};">${info.name}</div>
+                                    <p style="font-size:10px; color:#666; margin-top:5px; height:30px; overflow:hidden;">${info.desc}</p>
+                                </div>
+                            </div>
+                            <div class="card__shine"></div>
+                            <div class="card__glare"></div>
+                        </div>
+                        <div class="card__back" style="backface-visibility: hidden; transform: rotateY(180deg);">
+                            <img src="${BACK_IMG_URL}" style="width:100%; height:100%; object-fit:cover; border-radius:12px; border: 4px solid ${set.color};">
+                        </div>
+                    </div>
                 </div>
-                <div class="card-face card-back" style="backface-visibility: hidden; transform: rotateY(180deg); z-index: 1; position:absolute; inset:0;">
-                    <img src="${BACK_IMG_URL}" style="width:100%; height:100%; object-fit:cover;">
-                </div>
-            </div>
-        </div>`;
-    
-    renderCard(target.querySelector('.card-container-wrapper'), item, false, true); 
+            `;
 
-    const view = document.getElementById('detail-view');
-    view.style.display = 'flex';
+            // 5. 상세보기 인터랙션 (실시간 변수 연동)
+            if (isDetail) {
+                const view = document.getElementById('detail-view');
 
-    view.onclick = (e) => {
-        if(e.target === view) {
-            view.style.display = 'none';
-            document.body.classList.remove('lock-scroll');
-            window.onmousemove = window.onmouseup = window.ontouchmove = window.ontouchend = null;
-            if(pTimer) clearInterval(pTimer);
+                const updateInteraction = (e) => {
+                    const rect = frame.getBoundingClientRect();
+                    const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+                    const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+                    
+                    const x = clientX - rect.left;
+                    const y = clientY - rect.top;
+                    const px = (x / rect.width) * 100;
+                    const py = (y / rect.height) * 100;
+
+                    frame.style.setProperty('--mx', `${px}%`);
+                    frame.style.setProperty('--my', `${py}%`);
+                    frame.style.setProperty('--posx', `${px}%`);
+                    frame.style.setProperty('--posy', `${py}%`);
+                    frame.style.setProperty('--o', '1');
+                    
+                    const rotateY = (x / rect.width - 0.5) * 360;
+                    const rotateX = (y / rect.height - 0.5) * -60;
+                    frame.style.setProperty('--rx', `${rotateY}deg`);
+                    frame.style.setProperty('--ry', `${rotateX}deg`);
+                    
+                    const hyp = Math.sqrt(Math.pow((x - rect.width/2), 2) + Math.pow((y - rect.height/2), 2)) / (rect.width/2);
+                    frame.style.setProperty('--hyp', hyp);
+                };
+
+                const resetInteraction = () => {
+                    frame.style.setProperty('--o', '0');
+                    frame.style.setProperty('--rx', '0deg');
+                    frame.style.setProperty('--ry', '0deg');
+                };
+
+                view.addEventListener('mousemove', updateInteraction);
+                view.addEventListener('touchmove', updateInteraction, { passive: false });
+                view.addEventListener('mouseleave', resetInteraction);
+                view.addEventListener('touchend', resetInteraction);
+            }
+
+            if (isHigh && (isDetail || isDraw)) createParticles(frame, set.color);
         }
-    };
-}
 
-function showDetail(item) {
-    document.body.classList.add('lock-scroll');
-    const target = document.getElementById('detail-card-target');
-    
-    // 상세보기용 스켈레톤 생성 (앞면/뒷면 레이어 확실히 분리)
-    target.innerHTML = `
-        <div class="card-container-wrapper" style="width:100%; perspective:2000px;">
-            <div class="card-frame" style="transform-style: preserve-3d; transition: transform 0.1s;">
-                <div class="card-face card-front" style="backface-visibility: hidden; z-index: 2;">
-                    <div class="card-clip"></div>
-                </div>
-                <div class="card-face card-back" style="backface-visibility: hidden; transform: rotateY(180deg); z-index: 1;">
-                    <img src="${BACK_IMG_URL}" style="width:100%; height:100%; object-fit:cover;">
-                </div>
-            </div>
-        </div>`;
-    
-    renderCard(target.querySelector('.card-container-wrapper'), item, false, true); 
+        function showDetail(item) {
+            document.body.classList.add('lock-scroll');
+            const target = document.getElementById('detail-card-target');
+            target.innerHTML = `<div class="card-container-wrapper" style="width:100%;"><div class="card"></div></div>`;
+            renderCard(target.querySelector('.card-container-wrapper'), item, false, true); 
 
-    const view = document.getElementById('detail-view');
-    view.style.display = 'flex';
+            const view = document.getElementById('detail-view');
+            view.style.display = 'flex';
 
-    view.onclick = (e) => {
-        if(e.target === view) {
-            view.style.display = 'none';
-            document.body.classList.remove('lock-scroll');
-            // 이벤트 클린업
-            window.onmousemove = null; window.onmouseup = null;
-            window.ontouchmove = null; window.ontouchend = null;
-            if(pTimer) clearInterval(pTimer);
+            view.onclick = (e) => {
+                if(e.target === view) {
+                    view.style.display = 'none';
+                    document.body.classList.remove('lock-scroll');
+                    if(pTimer) clearInterval(pTimer);
+                }
+            };
         }
-    };
-}
-
-// [중요] showDetail 함수도 수정 (기존 틸트 로직 제거)
-function showDetail(item) {
-    document.body.classList.add('lock-scroll');
-    const target = document.getElementById('detail-card-target');
-    target.innerHTML = `
-        <div class="card-container-wrapper" style="width:100%;">
-            <div class="card-frame">
-                <div class="card-face card-front"><div class="card-clip"></div></div>
-                <div class="card-face card-back"><img src="${BACK_IMG_URL}"></div>
-            </div>
-        </div>`;
-    
-    // 상세보기 모드로 호출 (isDraw=false, isDetail=true)
-    renderCard(target.querySelector('.card-container-wrapper'), item, false, true); 
-
-    const view = document.getElementById('detail-view');
-    view.style.display = 'flex';
-
-    view.onclick = (e) => {
-        if(e.target === view) {
-            view.style.display = 'none';
-            document.body.classList.remove('lock-scroll');
-            // 이벤트 리스너 해제 (메모리 관리)
-            window.onmousemove = null; window.onmouseup = null;
-            window.ontouchmove = null; window.ontouchend = null;
-        }
-    };
-}
 
         let pTimer = null;
         function createParticles(target, color) {
@@ -424,8 +318,10 @@ function showDetail(item) {
             updateUI(); await save();
 
             const mf = document.getElementById('main-card-frame'), cl = document.getElementById('cut-in-layer'), ph = document.getElementById('slot-placeholder');
-            ph.style.display = 'none'; cl.style.display = "flex";
+            ph.style.display = 'none'; 
+            cl.style.display = "flex";
             await new Promise(r => setTimeout(r, 1500));
+            cl.style.display = "none";
 
             const highest = results.reduce((a, b) => (gradeValue(a.grade) > gradeValue(b.grade)) ? a : b);
             if (highest.grade === 'SSR' || highest.grade === 'EX') {
@@ -445,10 +341,8 @@ function showDetail(item) {
                 confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
             }
 
-            cl.style.display = "none";
             if (count === 1) { 
-                document.getElementById('main-card-front').style.display = 'block';
-                renderCard(document.getElementById('main-card-wrapper'), results[0], true);
+                renderCard(document.getElementById('main-card-frame'), results[0], true);
                 mf.onclick = () => showDetail(results[0]);
             } else { 
                 document.getElementById('main-card-wrapper').style.display = "none"; 
@@ -467,8 +361,8 @@ function showDetail(item) {
             results.forEach(item => {
                 const w = document.createElement('div'); w.className = "card-container-wrapper";
                 w.style.flex = "0 0 250px"; w.style.scrollSnapAlign = "center";
-                w.innerHTML = `<div class="card-frame"><div class="card-face card-front"><div class="card-clip"></div></div><div class="card-face card-back"><img src="${BACK_IMG_URL}"></div></div>`;
-                renderCard(w, item, false); w.onclick = () => showDetail(item); d.appendChild(w);
+                w.innerHTML = `<div class="card"></div>`;
+                renderCard(w, item, true); w.onclick = () => showDetail(item); d.appendChild(w);
             });
         }
 
@@ -482,7 +376,7 @@ function showDetail(item) {
                 const f = myItems.find(i => i.id === item.id);
                 const w = document.createElement('div'); w.className = "coll-item-wrapper";
                 if (f) {
-                    w.innerHTML = `<div class="card-frame" style="width:100%; height:100%;"><div class="card-face card-front"><div class="card-clip"></div></div></div><div class="count-badge">x${f.count}</div>`;
+                    w.innerHTML = `<div class="card" style="width:100%; height:100%;"></div><div class="count-badge">x${f.count}</div>`;
                     renderCard(w, item, false, false, true); w.onclick = () => showDetail(item);
                 } else { w.innerHTML = `<div class="coll-card-locked">?</div>`; }
                 grid.appendChild(w);
@@ -490,52 +384,8 @@ function showDetail(item) {
             modal.style.display = "flex"; document.body.classList.add('lock-scroll');
         }
 
-        function showDetail(item) {
-            document.body.classList.add('lock-scroll');
-            const target = document.getElementById('detail-card-target');
-            target.innerHTML = `<div class="card-container-wrapper" style="width:100%;"><div class="card-frame"><div class="card-face card-front"><div class="card-clip"></div></div></div></div>`;
-            renderCard(target.querySelector('.card-container-wrapper'), item, false, true); 
-            
-            const card = target.querySelector('.card-frame'), view = document.getElementById('detail-view');
-            view.style.display = 'flex';
-
-            // 틸트 로테이션 복구 로직 (모바일 최적화)
-            let curX = 0, curY = 0, tarX = 0, tarY = 0;
-            let rafId = null;
-
-            const animate = () => {
-                curX += (tarX - curX) * 0.1;
-                curY += (tarY - curY) * 0.1;
-                card.style.transform = `rotateY(${curY}deg) rotateX(${curX}deg) scale(1.05)`;
-                rafId = requestAnimationFrame(animate);
-            };
-
-            const handleMove = (e) => {
-                const rect = card.getBoundingClientRect();
-                const cx = e.clientX || (e.touches && e.touches[0].clientX);
-                const cy = e.clientY || (e.touches && e.touches[0].clientY);
-                if (cx === undefined || cy === undefined) return;
-                const x = cx - rect.left, y = cy - rect.top;
-                tarY = ((x / rect.width) - 0.5) * 35; // Y축 회전 (좌우)
-                tarX = (0.5 - (y / rect.height)) * 35; // X축 회전 (상하)
-            };
-
-            view.addEventListener('mousemove', handleMove);
-            view.addEventListener('touchmove', handleMove, { passive: false });
-            rafId = requestAnimationFrame(animate);
-
-            view.onclick = (e) => { 
-                if(e.target === view) { 
-                    cancelAnimationFrame(rafId);
-                    view.style.display = 'none'; 
-                    document.body.classList.remove('lock-scroll'); 
-                    if(pTimer) clearInterval(pTimer); 
-                } 
-            };
-        }
-
         function toggleMainBtns(b) { document.getElementById('btn-1').disabled = b; document.getElementById('btn-10').disabled = b; document.getElementById('btn-coll-open').disabled = b; if(document.getElementById('btn-home')) document.getElementById('btn-home').disabled = b; }
-        function goHomeInternal() { document.getElementById('main-card-wrapper').style.display = "block"; document.getElementById('multi-result-display').style.display = "none"; document.getElementById('btn-home').style.display = "none"; const frame = document.getElementById('main-card-frame'); frame.style.border = "4px solid #222"; frame.style.boxShadow = "none"; frame.classList.remove('float-effect'); frame.style.animation = ""; document.getElementById('main-card-front').style.display = 'none'; document.getElementById('main-card-back').style.display = 'none'; document.getElementById('slot-placeholder').style.display = 'flex'; frame.onclick = null; }
+        function goHomeInternal() { document.getElementById('main-card-wrapper').style.display = "block"; document.getElementById('multi-result-display').style.display = "none"; document.getElementById('btn-home').style.display = "none"; const frame = document.getElementById('main-card-frame'); frame.className = "card"; frame.style = ""; frame.onclick = null; frame.innerHTML = '<div id="slot-placeholder"><div class="slot-bg-text">VINGO GACHA</div><div style="color:#444; font-size:0.7rem; font-weight:700; margin-top:5px;">정예 빈고를 수집하여 원정을 준비하세요.</div></div>'; }
         function goHome() { goHomeInternal(); showMessage("메인 화면으로 돌아왔습니다."); }
         function updateUI() { document.getElementById('energy-display').innerText = `${energy.count} / ${MAX_ENERGY}`; }
         function updateEnergyOnLoad() { if (!energy.last) return; const g = Math.floor((Date.now() - energy.last) / RECHARGE_TIME); if (g > 0) { energy.count = Math.min(MAX_ENERGY, energy.count + g); energy.last = (energy.count >= MAX_ENERGY) ? null : energy.last + (g * RECHARGE_TIME); save(); } }
@@ -545,14 +395,3 @@ function showDetail(item) {
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
