@@ -186,49 +186,96 @@
         async function save() { if (!USER_ID) return; try { await db.ref('users/' + USER_ID).update({ inventory: myItems, energy: energy }); } catch (e) { console.error(e); } }
 
         function renderCard(targetWrapper, item, isDraw, isDetail = false, isColl = false) {
-            const set = SETTINGS[item.grade];
-            const isHigh = item.grade === 'EX' || item.grade === 'SSR';
-            const frame = targetWrapper.querySelector('.card-frame');
-            const info = CARD_DATA_DB[item.id] || { name: "???", desc: "데이터 없음", attr: "노말", stats: [1,1,1,1] };
-            
-            // 초기화
-            frame.className = "card-frame";
-            frame.style.animation = "";
-            frame.style.setProperty('--glow-c', set.color);
+    const set = SETTINGS[item.grade];
+    const isHigh = item.grade === 'EX' || item.grade === 'SSR';
+    const frame = targetWrapper.querySelector('.card-frame');
+    const info = CARD_DATA_DB[item.id] || { name: "???", desc: "데이터 없음", attr: "노말", stats: [1,1,1,1] };
+    
+    // 초기화 및 기본 스타일 설정
+    frame.className = "card-frame";
+    frame.style.animation = "";
+    frame.style.setProperty('--glow-c', set.color);
+    frame.style.transition = "transform 0.6s cubic-bezier(0.23, 1, 0.32, 1)"; // 부드러운 회전용
 
-            // 후광 및 플로팅 효과 적용 (가챠 결과용)
-            if (!isColl && isHigh) {
-                frame.classList.add('float-effect');
-                frame.style.animation = `float 3s ease-in-out infinite, glow-pulse 1.5s ease-in-out infinite alternate`;
-                frame.style.border = `4px solid ${set.color}`;
-            } else {
-                frame.style.border = `${isColl ? '2px' : '4px'} solid ${set.color}`;
-            }
+    if (!isColl && isHigh) {
+        frame.classList.add('float-effect');
+        frame.style.animation = `float 3s ease-in-out infinite, glow-pulse 1.5s ease-in-out infinite alternate`;
+        frame.style.border = `4px solid ${set.color}`;
+    } else {
+        frame.style.border = `${isColl ? '2px' : '4px'} solid ${set.color}`;
+    }
 
-            const frontFace = frame.querySelector('.card-front');
-            if(frontFace) {
-                frontFace.style.display = 'block';
-                frontFace.style.background = isColl ? `#000` : `radial-gradient(circle at center, ${set.color}22 0%, #000 100%)`;
-            }
+    const frontFace = frame.querySelector('.card-front');
+    if(frontFace) {
+        frontFace.style.display = 'block';
+        frontFace.style.background = isColl ? `#000` : `radial-gradient(circle at center, ${set.color}22 0%, #000 100%)`;
+    }
 
-            const cardHTML = isColl ? `
-                <div style="height:75%; display:flex; align-items:center; justify-content:center;"><img src="images/${item.id}" style="max-width:90%; max-height:90%; object-fit:contain;"></div>
-                <div style="height:25%; background:#111; display:flex; align-items:center; justify-content:center; font-size:8px; font-weight:900; color:${set.color}; border-top:1px solid ${set.color}33;">${info.name}</div>
-            ` : `
-                ${isDetail && isHigh ? '<div class="prism-layer"></div>' : ''}
-                <div style="height:70%; display:flex; align-items:center; justify-content:center; position:relative;">
-                    <div style="position:absolute; top:10px; right:10px; border:2px solid ${set.color}; padding:3px 8px; border-radius:6px; font-size:10px; font-weight:900; color:${set.color}; background:rgba(0,0,0,0.8); z-index:10;">${info.attr}</div>
-                    <div style="position:absolute; top:10px; left:10px; background:${set.color}; color:#fff; font-size:10px; font-weight:900; padding:2px 8px; border-radius:4px; z-index:10;">${item.grade}</div>
-                    <img src="images/${item.id}" style="max-width:95%; max-height:95%; object-fit:contain; z-index:2;">
-                </div>
-                <div style="height:30%; background:linear-gradient(to bottom, #0f0f0f, #000); border-top:1px solid ${set.color}33; padding:10px 15px; text-align:left; position:relative; z-index:10;">
-                    <div style="font-size:1.4rem; font-weight:900; color:${set.color}; line-height:1.2;">${info.name}</div>
-                    <p style="font-size:10px; color:#666; margin-top:5px; height:30px; overflow:hidden;">${info.desc}</p>
-                </div>`;
-            
-            frame.querySelector('.card-clip').innerHTML = cardHTML;
-            if (isHigh && isDetail) createParticles(frame, set.color);
+    // 카드 내부 HTML 구조 (동적 프리즘 레이어 포함)
+    const cardHTML = isColl ? `
+        <div style="height:75%; display:flex; align-items:center; justify-content:center;"><img src="images/${item.id}" style="max-width:90%; max-height:90%; object-fit:contain;"></div>
+        <div style="height:25%; background:#111; display:flex; align-items:center; justify-content:center; font-size:8px; font-weight:900; color:${set.color}; border-top:1px solid ${set.color}33;">${info.name}</div>
+    ` : `
+        ${isHigh ? '<div class="prism-layer" style="opacity:0; transition: opacity 0.3s; mix-blend-mode: screen; background: linear-gradient(var(--p-angle, 135deg), transparent 0%, rgba(255,255,255,0.4) 45%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0.4) 55%, transparent 100%); background-size: 200% 200%;"></div>' : ''}
+        <div style="height:70%; display:flex; align-items:center; justify-content:center; position:relative;">
+            <div style="position:absolute; top:10px; right:10px; border:2px solid ${set.color}; padding:3px 8px; border-radius:6px; font-size:10px; font-weight:900; color:${set.color}; background:rgba(0,0,0,0.8); z-index:10;">${info.attr}</div>
+            <div style="position:absolute; top:10px; left:10px; background:${set.color}; color:#fff; font-size:10px; font-weight:900; padding:2px 8px; border-radius:4px; z-index:10;">${item.grade}</div>
+            <img src="images/${item.id}" style="max-width:95%; max-height:95%; object-fit:contain; z-index:2;">
+        </div>
+        <div style="height:30%; background:linear-gradient(to bottom, #0f0f0f, #000); border-top:1px solid ${set.color}33; padding:10px 15px; text-align:left; position:relative; z-index:10;">
+            <div style="font-size:1.4rem; font-weight:900; color:${set.color}; line-height:1.2;">${info.name}</div>
+            <p style="font-size:10px; color:#666; margin-top:5px; height:30px; overflow:hidden;">${info.desc}</p>
+        </div>`;
+    
+    frame.querySelector('.card-clip').innerHTML = cardHTML;
+
+    // --- 360도 회전 및 틸트 프리즘 연동 로직 ---
+    let isFlipped = false;
+    const prism = frame.querySelector('.prism-layer');
+
+    frame.onclick = (e) => {
+        // 상세 보기(Detail) 모드일 때는 클릭 시 360도 회전
+        if (isDetail || !isColl) {
+            isFlipped = !isFlipped;
+            frame.style.transform = isFlipped ? "rotateY(180deg)" : "rotateY(0deg)";
+            if (isFlipped && prism) prism.style.opacity = "0";
+            e.stopPropagation(); // 부모 이벤트 방지
         }
+    };
+
+    // 마우스/터치 이동에 따른 동적 프리즘 및 틸트
+    const handleMove = (e) => {
+        if (isFlipped || isColl) return; // 뒤집혔거나 도감 모드면 중단
+        
+        const rect = frame.getBoundingClientRect();
+        const x = (e.clientX || e.touches?.[0].clientX) - rect.left;
+        const y = (e.clientY || e.touches?.[0].clientY) - rect.top;
+        
+        const rX = (rect.height / 2 - y) / 10;
+        const rY = (x - rect.width / 2) / 10;
+
+        frame.style.transform = `rotateX(${rX}deg) rotateY(${rY}deg) scale(1.02)`;
+
+        if (prism) {
+            prism.style.opacity = "1";
+            prism.style.setProperty('--p-angle', `${(rX + rY) * 5 + 135}deg`);
+            prism.style.backgroundPosition = `${x / rect.width * 100}% ${y / rect.height * 100}%`;
+        }
+    };
+
+    const handleLeave = () => {
+        if (isFlipped) return;
+        frame.style.transform = "rotateX(0deg) rotateY(0deg) scale(1)";
+        if (prism) prism.style.opacity = "0";
+    };
+
+    frame.addEventListener('mousemove', handleMove);
+    frame.addEventListener('mouseleave', handleLeave);
+    frame.addEventListener('touchstart', handleMove, {passive: true});
+    frame.addEventListener('touchend', handleLeave);
+
+    if (isHigh && isDetail) createParticles(frame, set.color);
+}
 
         let pTimer = null;
         function createParticles(target, color) {
@@ -380,3 +427,4 @@
     </script>
 </body>
 </html>
+
