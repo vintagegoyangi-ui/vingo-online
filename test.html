@@ -3,109 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>카드 효과 엔진 테스트</title>
+    <title>VINGO 카드 엔진 실전 테스트</title>
     <link rel="stylesheet" href="cardeffect.css">
     <style>
-        body {
-            background: #111;
-            color: white;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 50px 20px;
-            margin: 0;
-            font-family: sans-serif;
-        }
-        .test-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 40px;
-            width: 100%;
-            max-width: 1200px;
-        }
-        .card-wrapper {
-            width: 280px;
-            aspect-ratio: 3 / 4.4;
-            margin: 0 auto;
-        }
-        h1 { color: #ffdf00; margin-bottom: 10px; }
-        p { color: #888; margin-bottom: 40px; }
+        body { background: #050505; color: white; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; margin: 0; font-family: sans-serif; }
+        .test-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px; width: 100%; max-width: 1000px; margin-top: 30px; }
+        .card-wrapper { width: 280px; aspect-ratio: 3 / 4.4; margin: 0 auto; perspective: 1000px; }
+        h1 { color: #ffdf00; font-style: italic; letter-spacing: -1px; }
+        .status-panel { background: #111; padding: 15px; border-radius: 10px; border: 1px solid #222; font-size: 13px; color: #aaa; line-height: 1.6; }
         
-        /* 2. 레이아웃 강제 교정 (css 미로드 대비) */
-        .card__front, .card__back {
-            position: absolute !important;
-            inset: 0 !important;
-            backface-visibility: hidden !important;
-        }
+        /* 레이아웃 강제 교정 */
+        .card { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; }
+        .card__front, .card__back { position: absolute !important; inset: 0 !important; width: 100% !important; height: 100% !important; backface-visibility: hidden !important; border-radius: 15px; overflow: hidden; }
         .card__back { transform: rotateY(180deg) !important; }
+        .card__back img { width: 100%; height: 100%; object-fit: cover; }
     </style>
 </head>
 <body>
 
-    <h1>Card Effect Engine Test</h1>
-    <p>이미지가 보이지 않거나 반짝이지 않는다면 F12 콘솔의 에러 메시지를 확인하세요.</p>
+    <h1>ENGINE TEST: LIVE</h1>
+    <div class="status-panel">
+        • EX_오리지널.webp (VMAX 효과) <br>
+        • SR_빈미.webp (일반 홀로 효과) <br>
+        • R_남고.webp (효과 없음)
+    </div>
 
-    <div class="test-grid" id="test-grid">
-        </div>
+    <div class="test-grid" id="test-grid"></div>
 
     <script>
-        // 3. 테스트용 데이터 (본인의 images/ 폴더에 있는 실제 파일명으로 바꾸세요)
+        // 실제 파일명 매칭
         const testCards = [
-            { id: "EX_01.webp", grade: "EX", rarity: "rare holo vmax" },
-            { id: "SSR_01.webp", grade: "SSR", rarity: "rare holo galaxy" },
-            { id: "SR_01.webp", grade: "SR", rarity: "rare holo" },
-            { id: "R_01.webp", grade: "R", rarity: "common" }
+            { id: "EX_오리지널.webp", rarity: "rare holo vmax", color: "#ff007f" },
+            { id: "SR_빈미.webp", rarity: "rare holo", color: "#a335ee" },
+            { id: "R_남고.webp", rarity: "common", color: "#0070dd" }
         ];
 
         const BACK_IMG = "images/card_back.webp";
 
-        function createTestCard(item) {
+        function renderTest(item) {
             const grid = document.getElementById('test-grid');
-            
-            // 래퍼 생성
             const wrapper = document.createElement('div');
             wrapper.className = "card-wrapper";
             
-            // 카드 엘리먼트 생성 (cardeffect.css 타겟)
             const card = document.createElement('div');
             card.className = "card";
             card.setAttribute('data-rarity', item.rarity);
-            
-            // 구조 주입
+            card.style.setProperty('--glow', item.color);
+
             card.innerHTML = `
                 <div class="card__translater">
                     <div class="card__rotator">
                         <div class="card__front">
-                            <div style="width:100%; height:100%; background:#000; display:flex; align-items:center; justify-content:center; border-radius:15px; border:2px solid #444; overflow:hidden;">
-                                <img src="images/${item.id}" style="width:90%; height:auto;" onerror="this.src='https://via.placeholder.com/200x280?text=Missing+Image'">
+                            <div style="width:100%; height:100%; background:#000; border:3px solid ${item.color}; display:flex; flex-direction:column;">
+                                <div style="height:70%; display:flex; align-items:center; justify-content:center; background:radial-gradient(circle, ${item.color}33, #000);">
+                                    <img src="images/${item.id}" style="max-width:85%; max-height:85%; object-fit:contain;" onerror="console.error('${item.id}를 찾을 수 없음')">
+                                </div>
+                                <div style="height:30%; background:#111; padding:10px; border-top:1px solid ${item.color}44;">
+                                    <div style="font-weight:900; color:${item.color}">${item.id}</div>
+                                    <div style="font-size:10px; color:#555; margin-top:5px;">TEST RENDER MODE</div>
+                                </div>
                             </div>
                             <div class="card__shine"></div>
                             <div class="card__glare"></div>
                         </div>
                         <div class="card__back">
-                            <img src="${BACK_IMG}" style="width:100%; height:100%; object-fit:cover; border-radius:15px;" onerror="this.src='https://via.placeholder.com/200x280?text=No+Back'">
+                            <img src="${BACK_IMG}" onerror="console.error('뒷면 이미지 없음')">
                         </div>
                     </div>
                 </div>
             `;
 
-            // 인터랙션 로직
+            // 인터랙션 (마우스/터치)
             const handleMove = (e) => {
                 const rect = card.getBoundingClientRect();
-                const x = (e.clientX || e.touches[0].clientX) - rect.left;
-                const y = (e.clientY || e.touches[0].clientY) - rect.top;
+                const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+                const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+                const x = clientX - rect.left, y = clientY - rect.top;
                 
-                const px = (x / rect.width) * 100;
-                const py = (y / rect.height) * 100;
-
                 card.classList.add('active', 'interacting');
-                card.style.setProperty('--mx', `${px}%`);
-                card.style.setProperty('--my', `${py}%`);
-                card.style.setProperty('--posx', `${px}%`);
-                card.style.setProperty('--posy', `${py}%`);
+                card.style.setProperty('--mx', `${(x / rect.width) * 100}%`);
+                card.style.setProperty('--my', `${(y / rect.height) * 100}%`);
                 card.style.setProperty('--o', '1');
-                card.style.setProperty('--rx', `${(x / rect.width - 0.5) * 50}deg`);
-                card.style.setProperty('--ry', `${(y / rect.height - 0.5) * -50}deg`);
+                card.style.setProperty('--rx', `${(x / rect.width - 0.5) * 60}deg`);
+                card.style.setProperty('--ry', `${(y / rect.height - 0.5) * -60}deg`);
+                card.style.setProperty('--hyp', Math.sqrt(Math.pow(x - rect.width/2, 2) + Math.pow(y - rect.height/2, 2)) / (rect.width/2));
             };
 
             const handleEnd = () => {
@@ -116,16 +97,15 @@
             };
 
             wrapper.addEventListener('mousemove', handleMove);
+            wrapper.addEventListener('touchmove', (e) => { e.preventDefault(); handleMove(e); }, {passive: false});
             wrapper.addEventListener('mouseleave', handleEnd);
-            wrapper.addEventListener('touchstart', (e) => handleMove(e.touches[0]));
             wrapper.addEventListener('touchend', handleEnd);
 
             wrapper.appendChild(card);
             grid.appendChild(wrapper);
         }
 
-        // 실행
-        testCards.forEach(createTestCard);
+        testCards.forEach(renderTest);
     </script>
 </body>
 </html>
