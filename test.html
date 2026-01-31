@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VINGO ENGINE TEST (a.webp)</title>
+    <title>VINGO ENGINE TEST (Fixed)</title>
     <link rel="stylesheet" href="cardeffect.css">
     <style>
         body { 
@@ -16,35 +16,48 @@
             margin: 0; 
             font-family: sans-serif; 
         }
+        /* 핑크색 선 현상 해결: 컨테이너에 확실한 높이 부여 */
         .test-container { 
-            width: 300px; 
-            aspect-ratio: 3 / 4.4; 
+            width: 280px; 
+            height: 410px; /* 높이 강제 고정 */
             perspective: 1200px; 
+            margin-top: 30px;
         }
         .status-info {
             background: #111;
             padding: 15px;
             border-radius: 10px;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
             border: 1px solid #333;
             font-size: 14px;
             text-align: center;
         }
-        /* CSS 미로드 시 대비 레이아웃 */
-        .card { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; }
+        /* cardeffect.css와 별개로 카드의 기본 형태 유지 */
+        .card { 
+            position: relative; 
+            width: 100%; 
+            height: 100%; 
+            transform-style: preserve-3d;
+        }
         .card__front, .card__back { 
-            position: absolute !important; inset: 0 !important; 
-            backface-visibility: hidden !important; border-radius: 15px; 
+            position: absolute !important; 
+            inset: 0 !important; 
+            width: 100% !important;
+            height: 100% !important;
+            backface-visibility: hidden !important; 
+            border-radius: 15px; 
+            overflow: hidden;
         }
         .card__back { transform: rotateY(180deg) !important; }
+        .card__front { z-index: 2; }
     </style>
 </head>
 <body>
 
     <h1>ENGINE TEST: a.webp</h1>
     <div class="status-info">
-        현재 <b>images/a.webp</b> 파일을 불러오고 있습니다. <br>
-        카드를 마우스로 휘저어 보세요.
+        핑크색 선만 보인다면 높이값이 0이 된 상태입니다.<br>
+        현재 강제로 <b>410px</b> 높이를 부여했습니다.
     </div>
 
     <div class="test-container">
@@ -52,14 +65,20 @@
             <div class="card__translater">
                 <div class="card__rotator">
                     <div class="card__front">
-                        <div style="width:100%; height:100%; background:#000; border:3px solid #ff007f; border-radius:15px; overflow:hidden; display:flex; align-items:center; justify-content:center;">
-                            <img src="images/a.webp" style="width:90%; height:auto;" onerror="this.parentElement.style.background='red';">
+                        <div style="width:100%; height:100%; background:#000; border:3px solid #ff007f; display:flex; flex-direction:column;">
+                            <div style="flex: 1; display:flex; align-items:center; justify-content:center; background:radial-gradient(circle, #ff007f33, #000);">
+                                <img src="images/a.webp" style="max-width:85%; max-height:85%; object-fit:contain;" onerror="this.src='https://dummyimage.com/280x410/ff007f/fff&text=a.webp+Not+Found'">
+                            </div>
+                            <div style="height:100px; background:#111; padding:15px; border-top:1px solid #ff007f44;">
+                                <div style="font-weight:900; color:#ff007f; font-size:1.2rem;">TEST CARD</div>
+                                <div style="font-size:10px; color:#555; margin-top:5px;">RARITY: VMAX HOLO</div>
+                            </div>
                         </div>
                         <div class="card__shine"></div>
                         <div class="card__glare"></div>
                     </div>
                     <div class="card__back">
-                        <img src="images/card_back.webp" style="width:100%; height:100%; object-fit:cover; border-radius:15px;" onerror="this.src='https://dummyimage.com/300x440/222/fff&text=No+Back+Image'">
+                        <img src="images/card_back.webp" style="width:100%; height:100%; object-fit:cover;" onerror="this.src='https://dummyimage.com/280x410/222/fff&text=card_back+Not+Found'">
                     </div>
                 </div>
             </div>
@@ -87,9 +106,14 @@
             card.style.setProperty('--posx', `${px}%`);
             card.style.setProperty('--posy', `${py}%`);
             card.style.setProperty('--o', '1');
+            
+            // 기울기 각도
             card.style.setProperty('--rx', `${(x / rect.width - 0.5) * 50}deg`);
             card.style.setProperty('--ry', `${(y / rect.height - 0.5) * -50}deg`);
-            card.style.setProperty('--hyp', Math.sqrt(Math.pow(x - rect.width/2, 2) + Math.pow(y - rect.height/2, 2)) / (rect.width/2));
+            
+            // 광택 계산
+            const hyp = Math.sqrt(Math.pow(x - rect.width/2, 2) + Math.pow(y - rect.height/2, 2)) / (rect.width/2);
+            card.style.setProperty('--hyp', hyp);
         }
 
         function handleEnd() {
