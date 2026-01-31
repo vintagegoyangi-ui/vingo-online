@@ -3,116 +3,106 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VINGO 카드 엔진 한글 경로 테스트</title>
+    <title>VINGO ENGINE TEST (a.webp)</title>
     <link rel="stylesheet" href="cardeffect.css">
     <style>
-        body { background: #050505; color: white; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; margin: 0; font-family: 'Pretendard', sans-serif; }
-        .test-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px; width: 100%; max-width: 1000px; margin-top: 30px; }
-        .card-wrapper { width: 280px; aspect-ratio: 3 / 4.4; margin: 0 auto; perspective: 1000px; }
-        h1 { color: #ffdf00; font-style: italic; letter-spacing: -1px; margin-bottom: 5px; }
-        .status-panel { background: #111; padding: 15px; border-radius: 10px; border: 1px solid #222; font-size: 13px; color: #aaa; line-height: 1.6; text-align: center; width: 100%; max-width: 600px; }
-        
-        /* 레이아웃 강제 교정 (CSS가 로드되지 않아도 카드가 겹치도록 설정) */
+        body { 
+            background: #050505; 
+            color: white; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            padding: 50px 20px; 
+            margin: 0; 
+            font-family: sans-serif; 
+        }
+        .test-container { 
+            width: 300px; 
+            aspect-ratio: 3 / 4.4; 
+            perspective: 1200px; 
+        }
+        .status-info {
+            background: #111;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border: 1px solid #333;
+            font-size: 14px;
+            text-align: center;
+        }
+        /* CSS 미로드 시 대비 레이아웃 */
         .card { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; }
-        .card__front, .card__back { position: absolute !important; inset: 0 !important; width: 100% !important; height: 100% !important; backface-visibility: hidden !important; border-radius: 15px; overflow: hidden; }
-        .card__back { transform: rotateY(180deg) !important; z-index: 1; }
-        .card__front { z-index: 2; }
-        .card__back img { width: 100%; height: 100%; object-fit: cover; }
+        .card__front, .card__back { 
+            position: absolute !important; inset: 0 !important; 
+            backface-visibility: hidden !important; border-radius: 15px; 
+        }
+        .card__back { transform: rotateY(180deg) !important; }
     </style>
 </head>
 <body>
 
-    <h1>ENGINE TEST: HANGUL PATH</h1>
-    <div class="status-panel">
-        카드 위로 마우스를 올리거나 터치해 보세요. <br>
-        이미지가 안 나오면 <b>images/</b> 폴더 내 파일명과 아래 리스트가 대소문자까지 같은지 확인하세요.
+    <h1>ENGINE TEST: a.webp</h1>
+    <div class="status-info">
+        현재 <b>images/a.webp</b> 파일을 불러오고 있습니다. <br>
+        카드를 마우스로 휘저어 보세요.
     </div>
 
-    <div class="test-grid" id="test-grid"></div>
-
-    <script>
-        // 한글 파일명 리스트 (images/ 폴더 내 실제 파일명과 정확히 일치해야 함)
-        const testCards = [
-            { id: "EX_오리지널.webp", rarity: "rare holo vmax", color: "#ff007f" },
-            { id: "SR_빈미.webp", rarity: "rare holo", color: "#a335ee" },
-            { id: "R_남고.webp", rarity: "common", color: "#0070dd" }
-        ];
-
-        const BACK_IMG = "images/card_back.webp";
-
-        function renderTest(item) {
-            const grid = document.getElementById('test-grid');
-            const wrapper = document.createElement('div');
-            wrapper.className = "card-wrapper";
-            
-            const card = document.createElement('div');
-            card.className = "card";
-            card.setAttribute('data-rarity', item.rarity);
-            card.style.setProperty('--glow', item.color);
-
-            // encodeURIComponent를 사용하여 한글 경로 안전하게 변환
-            const safePath = `images/${encodeURIComponent(item.id)}`;
-
-            card.innerHTML = `
-                <div class="card__translater">
-                    <div class="card__rotator">
-                        <div class="card__front">
-                            <div style="width:100%; height:100%; background:#000; border:3px solid ${item.color}; display:flex; flex-direction:column;">
-                                <div style="height:70%; display:flex; align-items:center; justify-content:center; background:radial-gradient(circle, ${item.color}33, #000);">
-                                    <img src="${safePath}" style="max-width:85%; max-height:85%; object-fit:contain;" 
-                                         onerror="this.onerror=null; this.src='https://dummyimage.com/200x280/222/fff&text=Not+Found';">
-                                </div>
-                                <div style="height:30%; background:#111; padding:10px; border-top:1px solid ${item.color}44; display:flex; flex-direction:column; justify-content:center;">
-                                    <div style="font-weight:900; color:${item.color}; font-size:1.1rem;">${item.id.split('.')[0]}</div>
-                                    <div style="font-size:10px; color:#555; margin-top:5px;">TEST RENDER MODE (${item.rarity})</div>
-                                </div>
-                            </div>
-                            <div class="card__shine"></div>
-                            <div class="card__glare"></div>
+    <div class="test-container">
+        <div class="card" id="test-card" data-rarity="rare holo vmax">
+            <div class="card__translater">
+                <div class="card__rotator">
+                    <div class="card__front">
+                        <div style="width:100%; height:100%; background:#000; border:3px solid #ff007f; border-radius:15px; overflow:hidden; display:flex; align-items:center; justify-content:center;">
+                            <img src="images/a.webp" style="width:90%; height:auto;" onerror="this.parentElement.style.background='red';">
                         </div>
-                        <div class="card__back">
-                            <img src="${BACK_IMG}" onerror="this.src='https://dummyimage.com/200x280/111/444&text=No+Back';">
-                        </div>
+                        <div class="card__shine"></div>
+                        <div class="card__glare"></div>
+                    </div>
+                    <div class="card__back">
+                        <img src="images/card_back.webp" style="width:100%; height:100%; object-fit:cover; border-radius:15px;" onerror="this.src='https://dummyimage.com/300x440/222/fff&text=No+Back+Image'">
                     </div>
                 </div>
-            `;
+            </div>
+        </div>
+    </div>
 
-            const handleMove = (e) => {
-                const rect = card.getBoundingClientRect();
-                const clientX = e.clientX || (e.touches && e.touches[0].clientX);
-                const clientY = e.clientY || (e.touches && e.touches[0].clientY);
-                if (!clientX || !clientY) return;
+    <script>
+        const card = document.getElementById('test-card');
 
-                const x = clientX - rect.left, y = clientY - rect.top;
-                
-                card.classList.add('active', 'interacting');
-                card.style.setProperty('--mx', `${(x / rect.width) * 100}%`);
-                card.style.setProperty('--my', `${(y / rect.height) * 100}%`);
-                card.style.setProperty('--posx', `${(x / rect.width) * 100}%`);
-                card.style.setProperty('--posy', `${(y / rect.height) * 100}%`);
-                card.style.setProperty('--o', '1');
-                card.style.setProperty('--rx', `${(x / rect.width - 0.5) * 60}deg`);
-                card.style.setProperty('--ry', `${(y / rect.height - 0.5) * -60}deg`);
-                card.style.setProperty('--hyp', Math.sqrt(Math.pow(x - rect.width/2, 2) + Math.pow(y - rect.height/2, 2)) / (rect.width/2));
-            };
+        function handleMove(e) {
+            const rect = card.getBoundingClientRect();
+            const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+            const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+            if (!clientX || !clientY) return;
 
-            const handleEnd = () => {
-                card.classList.remove('active', 'interacting');
-                card.style.setProperty('--o', '0');
-                card.style.setProperty('--rx', '0deg');
-                card.style.setProperty('--ry', '0deg');
-            };
+            const x = clientX - rect.left;
+            const y = clientY - rect.top;
+            
+            const px = (x / rect.width) * 100;
+            const py = (y / rect.height) * 100;
 
-            wrapper.addEventListener('mousemove', handleMove);
-            wrapper.addEventListener('touchmove', (e) => { e.preventDefault(); handleMove(e); }, {passive: false});
-            wrapper.addEventListener('mouseleave', handleEnd);
-            wrapper.addEventListener('touchend', handleEnd);
-
-            wrapper.appendChild(card);
-            grid.appendChild(wrapper);
+            card.classList.add('active', 'interacting');
+            card.style.setProperty('--mx', `${px}%`);
+            card.style.setProperty('--my', `${py}%`);
+            card.style.setProperty('--posx', `${px}%`);
+            card.style.setProperty('--posy', `${py}%`);
+            card.style.setProperty('--o', '1');
+            card.style.setProperty('--rx', `${(x / rect.width - 0.5) * 50}deg`);
+            card.style.setProperty('--ry', `${(y / rect.height - 0.5) * -50}deg`);
+            card.style.setProperty('--hyp', Math.sqrt(Math.pow(x - rect.width/2, 2) + Math.pow(y - rect.height/2, 2)) / (rect.width/2));
         }
 
-        testCards.forEach(renderTest);
+        function handleEnd() {
+            card.classList.remove('active', 'interacting');
+            card.style.setProperty('--o', '0');
+            card.style.setProperty('--rx', '0deg');
+            card.style.setProperty('--ry', '0deg');
+        }
+
+        window.addEventListener('mousemove', handleMove);
+        window.addEventListener('touchmove', (e) => { handleMove(e); }, {passive: false});
+        window.addEventListener('mouseleave', handleEnd);
+        window.addEventListener('touchend', handleEnd);
     </script>
 </body>
 </html>
