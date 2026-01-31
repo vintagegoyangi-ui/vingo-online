@@ -185,20 +185,23 @@
 
         async function save() { if (!USER_ID) return; try { await db.ref('users/' + USER_ID).update({ inventory: myItems, energy: energy }); } catch (e) { console.error(e); } }
 
-        function renderCard(targetWrapper, item, isDraw, isDetail = false, isColl = false) {
+        // ... 앞부분 생략 (Firebase 설정 등은 동일) ...
+
+function renderCard(targetWrapper, item, isDraw, isDetail = false, isColl = false) {
     const set = SETTINGS[item.grade];
-    const isHigh = item.grade === 'EX' || item.grade === 'SSR'];
+    // [수정] 오타 제거: ] 기호가 들어가 있어서 에러가 났었습니다.
+    const isHigh = item.grade === 'EX' || item.grade === 'SSR';
     const frame = targetWrapper.querySelector('.card-frame');
-    const info = CARD_DATA_DB[item.id] || { name: "???", desc: "데이터 없음", attr: "노말", stats: [1,1,1,1] };
+    const info = CARD_DATA_DB[item.id] || { name: "???", desc: "데이터 없음", attr: "노말" };
     
-    // 1. 초기 상태 리셋
+    // 1. 상태 초기화
     frame.className = "card-frame";
     frame.style.animation = "";
     frame.style.transform = "rotateX(0deg) rotateY(0deg)";
     frame.style.setProperty('--glow-c', set.color);
     frame.style.border = `${isColl ? '2px' : '4px'} solid ${set.color}`;
 
-    // 2. 가챠 결과 화면(isDraw)에서만 플로팅 효과 적용 (상세보기 제외)
+    // 2. 가챠 결과(isDraw) 시에만 플로팅 적용
     if (isDraw && isHigh) {
         frame.classList.add('float-effect');
         frame.style.animation = `float 3s ease-in-out infinite, glow-pulse 1.5s ease-in-out infinite alternate`;
@@ -210,7 +213,7 @@
         frontFace.style.background = isColl ? `#000` : `radial-gradient(circle at center, ${set.color}22 0%, #000 100%)`;
     }
 
-    // 3. 카드 내부 레이어 생성 (프리즘 포함)
+    // 3. 카드 내부 레이어 (고급 프리즘 포함)
     const cardHTML = isColl ? `
         <div style="height:75%; display:flex; align-items:center; justify-content:center;"><img src="images/${item.id}" style="max-width:90%; max-height:90%; object-fit:contain;"></div>
         <div style="height:25%; background:#111; display:flex; align-items:center; justify-content:center; font-size:8px; font-weight:900; color:${set.color}; border-top:1px solid ${set.color}33;">${info.name}</div>
@@ -228,59 +231,71 @@
     
     frame.querySelector('.card-clip').innerHTML = cardHTML;
 
-    // 4. 상세 보기(isDetail)에서만 자유로운 360도 회전 로직 적용
+    // 4. 상세보기 전용 드래그 360도 회전 로직
     if (isDetail) {
-        let isDragging = false;
-        let startX, startY;
-        let rotY = 0, rotX = 0;
+        let isDragging = false, startX, startY, rotY = 0, rotX = 0;
         const prism = frame.querySelector('.prism-layer');
 
-        const onStart = (e) => {
+        const moveStart = (e) => {
             isDragging = true;
             startX = e.clientX || e.touches[0].clientX;
             startY = e.clientY || e.touches[0].clientY;
-            frame.style.transition = "none"; // 조작 시에는 즉각 반응
+            frame.style.transition = "none";
         };
 
-        const onMove = (e) => {
+        const moveUpdate = (e) => {
             if (!isDragging) return;
-            const x = e.clientX || e.touches[0].clientX;
-            const y = e.clientY || e.touches[0].clientY;
-            
-            const deltaX = x - startX;
-            const deltaY = y - startY;
-
-            rotY += deltaX * 0.5; // 전후좌우 회전 민감도
-            rotX -= deltaY * 0.5;
-
+            const x = e.clientX || (e.touches ? e.touches[0].clientX : 0);
+            const y = e.clientY || (e.touches ? e.touches[0].clientY : 0);
+            rotY += (x - startX) * 0.5;
+            rotX -= (y - startY) * 0.5;
             frame.style.transform = `rotateY(${rotY}deg) rotateX(${rotX}deg)`;
-
             if (prism) {
-                // 회전 각도에 따라 프리즘 광원 이동
                 prism.style.setProperty('--p-angle', `${rotY + rotX + 135}deg`);
-                prism.style.backgroundPosition = `${(rotY % 100)}% ${(rotX % 100)}%`;
+                prism.style.backgroundPosition = `${rotY % 100}% ${rotX % 100}%`;
             }
-
-            startX = x;
-            startY = y;
+            startX = x; startY = y;
         };
 
-        const onEnd = () => {
-            isDragging = false;
-            frame.style.transition = "transform 0.5s ease-out"; // 손 떼면 부드럽게 감속 효과 (옵션)
-        };
+        const moveEnd = () => { isDragging = false; frame.style.transition = "transform 0.3s ease-out"; };
 
-        // 상세페이지 전체 영역에서 조작 가능하게 이벤트 바인딩
         const view = document.getElementById('detail-view');
-        view.addEventListener('mousedown', onStart);
-        window.addEventListener('mousemove', onMove);
-        window.addEventListener('mouseup', onEnd);
-        view.addEventListener('touchstart', onStart, {passive: false});
-        window.addEventListener('touchmove', onMove, {passive: false});
-        window.addEventListener('touchend', onEnd);
+        view.onmousedown = moveStart;
+        window.onmousemove = moveUpdate;
+        window.onmouseup = moveEnd;
+        view.ontouchstart = moveStart;
+        window.ontouchmove = moveUpdate;
+        window.ontouchend = moveEnd;
     }
+}
 
-    if (isHigh && isDetail) createParticles(frame, set.color);
+// [중요] showDetail 함수도 수정 (기존 틸트 로직 제거)
+function showDetail(item) {
+    document.body.classList.add('lock-scroll');
+    const target = document.getElementById('detail-card-target');
+    target.innerHTML = `
+        <div class="card-container-wrapper" style="width:100%;">
+            <div class="card-frame">
+                <div class="card-face card-front"><div class="card-clip"></div></div>
+                <div class="card-face card-back"><img src="${BACK_IMG_URL}"></div>
+            </div>
+        </div>`;
+    
+    // 상세보기 모드로 호출 (isDraw=false, isDetail=true)
+    renderCard(target.querySelector('.card-container-wrapper'), item, false, true); 
+
+    const view = document.getElementById('detail-view');
+    view.style.display = 'flex';
+
+    view.onclick = (e) => {
+        if(e.target === view) {
+            view.style.display = 'none';
+            document.body.classList.remove('lock-scroll');
+            // 이벤트 리스너 해제 (메모리 관리)
+            window.onmousemove = null; window.onmouseup = null;
+            window.ontouchmove = null; window.ontouchend = null;
+        }
+    };
 }
 
         let pTimer = null;
@@ -433,5 +448,6 @@
     </script>
 </body>
 </html>
+
 
 
