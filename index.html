@@ -193,42 +193,40 @@ function renderCard(targetWrapper, item, isDraw, isDetail = false, isColl = fals
     const frame = targetWrapper.querySelector('.card-frame');
     const info = CARD_DATA_DB[item.id] || { name: "???", desc: "데이터 없음", attr: "노말" };
     
-    // 1. 초기화 및 3D 설정
+    // 1. 초기 상태 세팅
     frame.className = "card-frame";
     frame.style.animation = "";
-    frame.style.transform = "rotateX(0deg) rotateY(0deg)";
+    frame.style.transform = "perspective(1000px) rotateX(0deg) rotateY(0deg)";
     frame.style.setProperty('--glow-c', set.color);
     frame.style.transformStyle = "preserve-3d";
-    frame.style.transition = isDetail ? "none" : "all 0.1s";
+    frame.style.transition = "all 0.1s";
 
-    // 2. 가챠/도감 고등급 카드 연출 (플로팅 + 후광)
+    // 2. 가챠 결과(1회/10회) 및 도감 고등급 연출
     if (!isDetail && isHigh) {
         frame.classList.add('float-effect');
         frame.style.animation = `float 3s ease-in-out infinite, glow-pulse 1.5s ease-in-out infinite alternate`;
         frame.style.boxShadow = `0 0 20px ${set.color}`;
-        frame.style.border = `${isColl ? '2px' : '4px'} solid ${set.color}`;
-    } else {
-        frame.style.border = `${isColl ? '2px' : '4px'} solid ${set.color}`;
     }
+    frame.style.border = `${isColl ? '2px' : '4px'} solid ${set.color}`;
 
-    // 3. 카드 내부 레이어 생성 (가져오신 .overlay 로직 적용)
+    // 3. 카드 레이어 구조 (요청하신 .overlay 로직 포함)
     frame.innerHTML = `
         <div class="card-face card-front" style="position:absolute; inset:0; backface-visibility:hidden; z-index:2; border-radius:16px; overflow:hidden;">
             <div class="card-overlay" style="
                 position: absolute; inset: 0; z-index: 5; pointer-events: none;
-                background: linear-gradient(105deg, transparent 40%, rgba(255, 219, 112, 0.4) 45%, rgba(132, 50, 255, 0.3) 50%, transparent 54%);
+                background: linear-gradient(105deg, transparent 40%, rgba(255, 219, 112, 0.6) 45%, rgba(132, 50, 255, 0.4) 50%, transparent 54%);
                 background-size: 150% 150%; background-position: 100%;
                 filter: brightness(1.1) opacity(0); mix-blend-mode: color-dodge; transition: all 0.1s;
             "></div>
             
-            <div class="card-clip" style="height:100%;">
-                <div style="height:70%; display:flex; align-items:center; justify-content:center; background: radial-gradient(circle at center, ${set.color}22 0%, #050505 100%);">
-                    <div style="position:absolute; top:12px; left:12px; background:${set.color}; color:#000; font-size:10px; font-weight:900; padding:2px 8px; border-radius:4px; z-index:10;">${item.grade}</div>
+            <div class="card-clip" style="height:100%; display:flex; flex-direction:column; background: #000;">
+                <div style="height:70%; display:flex; align-items:center; justify-content:center; position:relative; background: radial-gradient(circle at center, ${set.color}22 0%, #050505 100%);">
+                    <div style="position:absolute; top:10px; left:10px; background:${set.color}; color:#000; font-size:10px; font-weight:900; padding:2px 8px; border-radius:4px; z-index:10;">${item.grade}</div>
                     <img src="images/${item.id}" style="max-width:90%; max-height:90%; object-fit:contain; z-index:2;">
                 </div>
                 <div style="height:30%; background:#111; padding:15px; border-top:1px solid ${set.color}33;">
                     <div style="font-size:1.2rem; font-weight:900; color:${set.color};">${info.name}</div>
-                    <p style="font-size:10px; color:#666; margin-top:5px;">${info.desc}</p>
+                    <p style="font-size:10px; color:#666; margin-top:5px; height:30px; overflow:hidden;">${info.desc}</p>
                 </div>
             </div>
         </div>
@@ -237,45 +235,47 @@ function renderCard(targetWrapper, item, isDraw, isDetail = false, isColl = fals
         </div>
     `;
 
-    // 4. 상세보기(isDetail) 시 마우스/터치 연동 로직
+    // 4. 상세보기(isDetail) 인터랙션 적용
     if (isDetail) {
         const overlay = frame.querySelector('.card-overlay');
         const view = document.getElementById('detail-view');
 
-        const handleMove = (e) => {
+        const updateInteraction = (e) => {
             const rect = frame.getBoundingClientRect();
             const clientX = e.clientX || (e.touches && e.touches[0].clientX);
             const clientY = e.clientY || (e.touches && e.touches[0].clientY);
             
+            // 프레임 내부 상대 좌표 계산
             const x = clientX - rect.left;
             const y = clientY - rect.top;
 
-            // 가져오신 계산식 활용 (상세보기에 맞게 회전각 확장)
-            // 좌우 스와이프로 뒷면까지 보이게 rotateY 범위를 조절했습니다.
-            const rotateY = (x / rect.width - 0.5) * 360; 
-            const rotateX = (0.5 - y / rect.height) * 60;
+            // 요청하신 로직 기반 + 뒷면까지 볼 수 있도록 범위 조절
+            // (화면 끝으로 갈수록 뒷면이 보이게 회전값을 확장)
+            const rotateY = -1/2 * x + (rect.width / 4); 
+            const rotateX = 4/30 * y - 20;
 
             frame.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
 
             if (isHigh && overlay) {
                 overlay.style.backgroundPosition = `${x/5 + y/5}%`;
-                overlay.style.filter = `opacity(${Math.min(x/rect.width, 0.8)}) brightness(1.2)`;
+                overlay.style.filter = `opacity(${x / rect.width}) brightness(1.2)`;
             }
         };
 
-        const handleEnd = () => {
-            frame.style.transition = "all 0.5s";
+        const resetInteraction = () => {
+            frame.style.transition = "all 0.5s ease-out";
             frame.style.transform = "perspective(1000px) rotateX(0deg) rotateY(0deg)";
             if (overlay) overlay.style.filter = "opacity(0)";
         };
 
-        view.addEventListener('mousemove', handleMove);
-        view.addEventListener('touchmove', handleMove, { passive: false });
-        view.addEventListener('mouseleave', handleEnd);
-        view.addEventListener('touchend', handleEnd);
+        // 이벤트 연결
+        view.addEventListener('mousemove', updateInteraction);
+        view.addEventListener('touchmove', updateInteraction, { passive: false });
+        view.addEventListener('mouseleave', resetInteraction);
+        view.addEventListener('touchend', resetInteraction);
     }
 
-    // 5. 파티클 효과 (고등급 전용)
+    // 5. 파티클 효과 복구
     if (isHigh && (isDetail || isDraw)) {
         createParticles(frame, set.color);
     }
@@ -545,6 +545,7 @@ function showDetail(item) {
     </script>
 </body>
 </html>
+
 
 
 
