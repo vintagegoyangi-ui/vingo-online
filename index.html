@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-    <title>VINGO EXPEDITION v1.5</title>
+    <title>VINGO EXPEDITION v1.6</title>
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
     <script src="card_data.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -61,16 +61,18 @@
         body { background-color: var(--bg-color); color: white; display: flex; flex-direction: column; align-items: center; min-height: 100svh; width: 100%; overflow-x: hidden; overscroll-behavior-y: contain; }
         body.lock-scroll { overflow: hidden !important; touch-action: none; }
 
-        @keyframes shake { 0%, 100% { transform: translate(0,0); } 10%, 30%, 50%, 70%, 90% { transform: translate(-4px, -2px); } 20%, 40%, 60%, 80% { transform: translate(4px, 2px); } }
+        /* 애니메이션 강화 */
+        @keyframes shake { 0% { transform: translate(0, 0); } 25% { transform: translate(-3px, 3px); } 50% { transform: translate(3px, -3px); } 75% { transform: translate(-3px, -3px); } 100% { transform: translate(3px, 3px); } }
+        @keyframes ex-shake { 0% { transform: translate(0, 0); } 10% { transform: translate(-8px, 4px); } 20% { transform: translate(8px, -4px); } 30% { transform: translate(-8px, -4px); } 100% { transform: translate(0, 0); } }
         @keyframes vortex { 0% { transform: rotate(0deg) scale(1); opacity: 0; } 50% { opacity: 0.35; transform: rotate(180deg) scale(2.2); } 100% { transform: rotate(360deg) scale(3.5); opacity: 0; } }
-        @keyframes scanOnce { 0% { top: 0%; opacity: 0; } 10% { opacity: 1; } 50% { top: 100%; } 90% { opacity: 1; } 100% { top: 0%; opacity: 0; } }
+        @keyframes scanLineMove { 0% { top: 0%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
         @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
-        @keyframes particle-rise { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-120px) scale(0); opacity: 0; } }
-        @keyframes prism { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
         @keyframes glow-pulse { 0% { box-shadow: 0 0 10px var(--glow-c); } 100% { box-shadow: 0 0 30px var(--glow-c), 0 0 10px var(--glow-c) inset; } }
 
         .float-effect { animation: float 3s ease-in-out infinite !important; }
-        .shake-effect { animation: shake 0.4s linear infinite !important; }
+        .shake-effect { animation: shake 0.2s linear infinite !important; }
+        .ex-shake-effect { animation: ex-shake 0.1s linear infinite !important; }
+        
         .vortex-ssr, .vortex-ex, .screen-flash { position: fixed; inset: 0; z-index: 8000; pointer-events: none; display: none; mix-blend-mode: screen; }
         .vortex-ssr { background: radial-gradient(circle, var(--ssr-color) 0%, transparent 70%); animation: vortex 1s ease-out forwards; }
         .vortex-ex { background: radial-gradient(circle, var(--ex-color) 0%, transparent 70%); animation: vortex 1.2s ease-in-out forwards; }
@@ -78,7 +80,6 @@
         @keyframes flash { 0% { opacity: 0; } 50% { opacity: 0.8; } 100% { opacity: 0; } }
 
         #cut-in-msg { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 9500; font-size: 2.2rem; font-weight: 900; font-style: italic; pointer-events: none; text-align: center; }
-        .particle { position: absolute; pointer-events: none; border-radius: 50%; animation: particle-rise linear forwards; z-index: 100; }
 
         .card-container-wrapper { position: relative; width: 100%; max-width: 290px; aspect-ratio: 3 / 4.4; margin: 0 auto; perspective: 1500px; }
         .card-frame { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); border-radius: 20px; border: 4px solid #222; background: #0a0a0a; display: flex; align-items: center; justify-content: center; cursor: pointer; }
@@ -88,12 +89,10 @@
         .card-back img { width: 100%; height: 100%; object-fit: cover; }
         .card-clip { position: absolute; inset: 0; display: flex; flex-direction: column; border-radius: 16px; overflow: hidden; }
 
-        /* 무지개 프리즘 효과 */
-        .prism-layer { position: absolute; inset: 0; z-index: 5; pointer-events: none; mix-blend-mode: color-dodge; opacity: 0.4; background: linear-gradient(135deg, rgba(255,0,0,0.2), rgba(255,165,0,0.2), rgba(255,255,0,0.2), rgba(0,128,0,0.2), rgba(0,0,255,0.2), rgba(75,0,130,0.2), rgba(238,130,238,0.2)); background-size: 400% 400%; animation: prism 4s linear infinite; }
+        #cut-in-layer { position: absolute; inset: -4px; z-index: 100; display: none; align-items: center; justify-content: center; flex-direction: column; border-radius: 20px; pointer-events: none; background: rgba(0,255,0,0.05); }
+        .scan-line { position: absolute; left: 0; width: 100%; height: 6px; background: var(--scan-color); box-shadow: 0 0 15px var(--scan-color); animation: scanLineMove 1.5s ease-in-out infinite; z-index: 102; }
+        .scan-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--scan-color); font-size: 1.5rem; font-weight: 900; letter-spacing: 3px; text-shadow: 0 0 10px var(--scan-color); z-index: 101; opacity: 0.8; }
 
-        #cut-in-layer { position: absolute; inset: -4px; z-index: 100; display: none; align-items: center; justify-content: center; flex-direction: column; border-radius: 20px; pointer-events: none; }
-        .scan-line { position: absolute; left: 0; width: 100%; height: 8px; background: var(--scan-color); box-shadow: 0 0 20px var(--scan-color); animation: scanOnce 1.5s ease-in-out infinite; }
-        
         #slot-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
         .slot-bg-text { font-size: 2rem; font-weight: 900; font-style: italic; background: linear-gradient(to bottom, #444, #111); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
@@ -157,7 +156,10 @@
                     </div>
                     <div class="card-face card-back" id="main-card-back" style="display:none;"><img src="images/card_back.webp"></div>
                     <div class="card-face card-front" id="main-card-front" style="display:none;"><div class="card-clip"></div></div>
-                    <div id="cut-in-layer"><div class="scan-line"></div></div>
+                    <div id="cut-in-layer">
+                        <div class="scan-line"></div>
+                        <div class="scan-text">SCANNING...</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -185,277 +187,125 @@
 
         async function save() { if (!USER_ID) return; try { await db.ref('users/' + USER_ID).update({ inventory: myItems, energy: energy }); } catch (e) { console.error(e); } }
 
-        // ... 앞부분 생략 (Firebase 설정 등은 동일) ...
-
-function renderCard(targetWrapper, item, isDraw, isDetail = false, isColl = false) {
-    const set = SETTINGS[item.grade];
-    const isHigh = item.grade === 'EX' || item.grade === 'SSR';
-    const frame = targetWrapper.querySelector('.card-frame');
-    const info = CARD_DATA_DB[item.id] || { name: "???", desc: "데이터 없음", attr: "노말" };
-    
-    // 1. 초기 상태 세팅
-    frame.className = "card-frame";
-    frame.style.animation = "";
-    frame.style.transform = "perspective(1000px) rotateX(0deg) rotateY(0deg)";
-    frame.style.setProperty('--glow-c', set.color);
-    frame.style.transformStyle = "preserve-3d";
-    frame.style.transition = "all 0.1s";
-
-    // 2. 가챠 결과(1회/10회) 및 도감 고등급 연출
-    if (!isDetail && isHigh) {
-        frame.classList.add('float-effect');
-        frame.style.animation = `float 3s ease-in-out infinite, glow-pulse 1.5s ease-in-out infinite alternate`;
-        frame.style.boxShadow = `0 0 20px ${set.color}`;
-    }
-    frame.style.border = `${isColl ? '2px' : '4px'} solid ${set.color}`;
-
-    // 3. 카드 레이어 구조 (요청하신 .overlay 로직 포함)
-    frame.innerHTML = `
-        <div class="card-face card-front" style="position:absolute; inset:0; backface-visibility:hidden; z-index:2; border-radius:16px; overflow:hidden;">
-            <div class="card-overlay" style="
-                position: absolute; inset: 0; z-index: 5; pointer-events: none;
-                background: linear-gradient(105deg, transparent 40%, rgba(255, 219, 112, 0.6) 45%, rgba(132, 50, 255, 0.4) 50%, transparent 54%);
-                background-size: 150% 150%; background-position: 100%;
-                filter: brightness(1.1) opacity(0); mix-blend-mode: color-dodge; transition: all 0.1s;
-            "></div>
+        function renderCard(targetWrapper, item, isDraw, isDetail = false, isColl = false) {
+            const set = SETTINGS[item.grade];
+            const isHigh = item.grade === 'EX' || item.grade === 'SSR';
+            const frame = targetWrapper.querySelector('.card-frame');
+            const info = CARD_DATA_DB[item.id] || { name: "???", desc: "데이터 없음" };
             
-            <div class="card-clip" style="height:100%; display:flex; flex-direction:column; background: #000;">
-                <div style="height:70%; display:flex; align-items:center; justify-content:center; position:relative; background: radial-gradient(circle at center, ${set.color}22 0%, #050505 100%);">
-                    <div style="position:absolute; top:10px; left:10px; background:${set.color}; color:#000; font-size:10px; font-weight:900; padding:2px 8px; border-radius:4px; z-index:10;">${item.grade}</div>
-                    <img src="images/${item.id}" style="max-width:90%; max-height:90%; object-fit:contain; z-index:2;">
-                </div>
-                <div style="height:30%; background:#111; padding:15px; border-top:1px solid ${set.color}33;">
-                    <div style="font-size:1.2rem; font-weight:900; color:${set.color};">${info.name}</div>
-                    <p style="font-size:10px; color:#666; margin-top:5px; height:30px; overflow:hidden;">${info.desc}</p>
-                </div>
-            </div>
-        </div>
-        <div class="card-face card-back" style="position:absolute; inset:0; backface-visibility:hidden; transform:rotateY(180deg); z-index:1;">
-            <img src="${BACK_IMG_URL}" style="width:100%; height:100%; object-fit:cover; border-radius:16px;">
-        </div>
-    `;
+            frame.className = "card-frame";
+            frame.style.animation = "";
+            frame.style.transform = "rotateY(0deg)";
+            frame.style.setProperty('--glow-c', set.color);
 
-    // 4. 상세보기(isDetail) 인터랙션 적용
-    if (isDetail) {
-        const overlay = frame.querySelector('.card-overlay');
-        const view = document.getElementById('detail-view');
-
-        const updateInteraction = (e) => {
-            const rect = frame.getBoundingClientRect();
-            const clientX = e.clientX || (e.touches && e.touches[0].clientX);
-            const clientY = e.clientY || (e.touches && e.touches[0].clientY);
-            
-            // 프레임 내부 상대 좌표 계산
-            const x = clientX - rect.left;
-            const y = clientY - rect.top;
-
-            // 요청하신 로직 기반 + 뒷면까지 볼 수 있도록 범위 조절
-            // (화면 끝으로 갈수록 뒷면이 보이게 회전값을 확장)
-            const rotateY = -1/2 * x + (rect.width / 4); 
-            const rotateX = 4/30 * y - 20;
-
-            frame.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
-
-            if (isHigh && overlay) {
-                overlay.style.backgroundPosition = `${x/5 + y/5}%`;
-                overlay.style.filter = `opacity(${x / rect.width}) brightness(1.2)`;
+            if (!isDetail && isHigh) {
+                frame.classList.add('float-effect');
+                frame.style.animation = `float 3s ease-in-out infinite, glow-pulse 1.5s ease-in-out infinite alternate`;
+                frame.style.boxShadow = `0 0 20px ${set.color}`;
             }
-        };
+            frame.style.border = `${isColl ? '2px' : '4px'} solid ${set.color}`;
 
-        const resetInteraction = () => {
-            frame.style.transition = "all 0.5s ease-out";
-            frame.style.transform = "perspective(1000px) rotateX(0deg) rotateY(0deg)";
-            if (overlay) overlay.style.filter = "opacity(0)";
-        };
-
-        // 이벤트 연결
-        view.addEventListener('mousemove', updateInteraction);
-        view.addEventListener('touchmove', updateInteraction, { passive: false });
-        view.addEventListener('mouseleave', resetInteraction);
-        view.addEventListener('touchend', resetInteraction);
-    }
-
-    // 5. 파티클 효과 복구
-    if (isHigh && (isDetail || isDraw)) {
-        createParticles(frame, set.color);
-    }
-}
-
-// showDetail 함수도 구조에 맞춰 간단히 정리
-function showDetail(item) {
-    document.body.classList.add('lock-scroll');
-    const target = document.getElementById('detail-card-target');
-    target.innerHTML = `<div class="card-container-wrapper" style="width:100%; perspective:2000px;"><div class="card-frame"></div></div>`;
-    
-    renderCard(target.querySelector('.card-container-wrapper'), item, false, true); 
-
-    const view = document.getElementById('detail-view');
-    view.style.display = 'flex';
-
-    view.onclick = (e) => {
-        if(e.target === view) {
-            view.style.display = 'none';
-            document.body.classList.remove('lock-scroll');
-            if(pTimer) clearInterval(pTimer);
-        }
-    };
-}
-
-function showDetail(item) {
-    document.body.classList.add('lock-scroll');
-    const target = document.getElementById('detail-card-target');
-    
-    target.innerHTML = `
-        <div class="card-container-wrapper" style="width:100%; perspective:2000px;">
-            <div class="card-frame" style="transform-style: preserve-3d;">
-                <div class="card-face card-front" style="backface-visibility: hidden; z-index: 2; position:absolute; inset:0;">
-                    <div class="card-clip"></div>
+            frame.innerHTML = `
+                <div class="card-face card-front" style="position:absolute; inset:0; backface-visibility:hidden; z-index:2; border-radius:16px; overflow:hidden;">
+                    <div class="card-clip" style="height:100%; display:flex; flex-direction:column; background: #000;">
+                        <div style="height:70%; display:flex; align-items:center; justify-content:center; position:relative; background: radial-gradient(circle at center, ${set.color}22 0%, #050505 100%);">
+                            <div style="position:absolute; top:10px; left:10px; background:${set.color}; color:#000; font-size:10px; font-weight:900; padding:2px 8px; border-radius:4px; z-index:10;">${item.grade}</div>
+                            <img src="images/${item.id}" style="max-width:90%; max-height:90%; object-fit:contain; z-index:2;">
+                        </div>
+                        <div style="height:30%; background:#111; padding:15px; border-top:1px solid ${set.color}33;">
+                            <div style="font-size:1.2rem; font-weight:900; color:${set.color};">${info.name}</div>
+                            <p style="font-size:10px; color:#666; margin-top:5px; height:30px; overflow:hidden;">${info.desc}</p>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-face card-back" style="backface-visibility: hidden; transform: rotateY(180deg); z-index: 1; position:absolute; inset:0;">
-                    <img src="${BACK_IMG_URL}" style="width:100%; height:100%; object-fit:cover;">
+                <div class="card-face card-back" style="position:absolute; inset:0; backface-visibility:hidden; transform:rotateY(180deg); z-index:1;">
+                    <img src="${BACK_IMG_URL}" style="width:100%; height:100%; object-fit:cover; border-radius:16px;">
                 </div>
-            </div>
-        </div>`;
-    
-    renderCard(target.querySelector('.card-container-wrapper'), item, false, true); 
-
-    const view = document.getElementById('detail-view');
-    view.style.display = 'flex';
-
-    view.onclick = (e) => {
-        if(e.target === view) {
-            view.style.display = 'none';
-            document.body.classList.remove('lock-scroll');
-            window.onmousemove = window.onmouseup = window.ontouchmove = window.ontouchend = null;
-            if(pTimer) clearInterval(pTimer);
-        }
-    };
-}
-
-function showDetail(item) {
-    document.body.classList.add('lock-scroll');
-    const target = document.getElementById('detail-card-target');
-    
-    // 상세보기용 스켈레톤 생성 (앞면/뒷면 레이어 확실히 분리)
-    target.innerHTML = `
-        <div class="card-container-wrapper" style="width:100%; perspective:2000px;">
-            <div class="card-frame" style="transform-style: preserve-3d; transition: transform 0.1s;">
-                <div class="card-face card-front" style="backface-visibility: hidden; z-index: 2;">
-                    <div class="card-clip"></div>
-                </div>
-                <div class="card-face card-back" style="backface-visibility: hidden; transform: rotateY(180deg); z-index: 1;">
-                    <img src="${BACK_IMG_URL}" style="width:100%; height:100%; object-fit:cover;">
-                </div>
-            </div>
-        </div>`;
-    
-    renderCard(target.querySelector('.card-container-wrapper'), item, false, true); 
-
-    const view = document.getElementById('detail-view');
-    view.style.display = 'flex';
-
-    view.onclick = (e) => {
-        if(e.target === view) {
-            view.style.display = 'none';
-            document.body.classList.remove('lock-scroll');
-            // 이벤트 클린업
-            window.onmousemove = null; window.onmouseup = null;
-            window.ontouchmove = null; window.ontouchend = null;
-            if(pTimer) clearInterval(pTimer);
-        }
-    };
-}
-
-// [중요] showDetail 함수도 수정 (기존 틸트 로직 제거)
-function showDetail(item) {
-    document.body.classList.add('lock-scroll');
-    const target = document.getElementById('detail-card-target');
-    target.innerHTML = `
-        <div class="card-container-wrapper" style="width:100%;">
-            <div class="card-frame">
-                <div class="card-face card-front"><div class="card-clip"></div></div>
-                <div class="card-face card-back"><img src="${BACK_IMG_URL}"></div>
-            </div>
-        </div>`;
-    
-    // 상세보기 모드로 호출 (isDraw=false, isDetail=true)
-    renderCard(target.querySelector('.card-container-wrapper'), item, false, true); 
-
-    const view = document.getElementById('detail-view');
-    view.style.display = 'flex';
-
-    view.onclick = (e) => {
-        if(e.target === view) {
-            view.style.display = 'none';
-            document.body.classList.remove('lock-scroll');
-            // 이벤트 리스너 해제 (메모리 관리)
-            window.onmousemove = null; window.onmouseup = null;
-            window.ontouchmove = null; window.ontouchend = null;
-        }
-    };
-}
-
-        let pTimer = null;
-        function createParticles(target, color) {
-            if(pTimer) clearInterval(pTimer);
-            pTimer = setInterval(() => {
-                const p = document.createElement('div'); p.className = 'particle';
-                const size = Math.random() * 3 + 2;
-                p.style.width = p.style.height = `${size}px`; p.style.background = color;
-                p.style.left = `${Math.random() * 90 + 5}%`; p.style.bottom = '10%';
-                p.style.animationDuration = `${Math.random() * 1 + 1}s`;
-                target.appendChild(p); p.addEventListener('animationend', () => p.remove());
-            }, 150);
+            `;
         }
 
         async function playGacha(count) {
             if (isGachaRunning) return;
             if (energy.count < count) { showMessage("에너지가 부족합니다!"); return; }
+            
             goHomeInternal(); 
             isGachaRunning = isResultPending = true;
             toggleMainBtns(true);
 
-            if (count === 1) { document.getElementById('main-card-wrapper').style.display = "block"; document.getElementById('multi-result-display').style.display = "none"; }
-            else { const d = document.getElementById('multi-result-display'); d.scrollLeft = 0; d.style.display = "none"; }
+            if (count === 1) { 
+                document.getElementById('main-card-wrapper').style.display = "block"; 
+                document.getElementById('multi-result-display').style.display = "none"; 
+            } else { 
+                const d = document.getElementById('multi-result-display'); 
+                d.scrollLeft = 0; d.style.display = "none"; 
+            }
 
-            energy.count -= count; if (energy.count < MAX_ENERGY && !energy.last) energy.last = Date.now();
+            energy.count -= count; 
+            if (energy.count < MAX_ENERGY && !energy.last) energy.last = Date.now();
+            
             const results = Array.from({length: count}, draw);
-            results.forEach(item => { const f = myItems.find(i => i.id === item.id); if (f) f.count++; else myItems.push({id: item.id, count: 1}); });
-            updateUI(); await save();
+            results.forEach(item => { 
+                const f = myItems.find(i => i.id === item.id); 
+                if (f) f.count++; else myItems.push({id: item.id, count: 1}); 
+            });
+            
+            updateUI(); 
+            await save();
 
-            const mf = document.getElementById('main-card-frame'), cl = document.getElementById('cut-in-layer'), ph = document.getElementById('slot-placeholder');
-            ph.style.display = 'none'; cl.style.display = "flex";
-            await new Promise(r => setTimeout(r, 1500));
+            const mf = document.getElementById('main-card-frame'), 
+                  cl = document.getElementById('cut-in-layer'), 
+                  ph = document.getElementById('slot-placeholder');
+                  
+            ph.style.display = 'none'; 
+            cl.style.display = "flex";
+            
+            // 스캐닝 연출 (2초)
+            await new Promise(r => setTimeout(r, 2000));
 
             const highest = results.reduce((a, b) => (gradeValue(a.grade) > gradeValue(b.grade)) ? a : b);
+            
+            // 등급별 연출 (SSR/EX)
             if (highest.grade === 'SSR' || highest.grade === 'EX') {
                 document.getElementById('main-container').classList.add('shake-effect');
                 document.getElementById('vfx-vortex-ssr').style.display = "block";
-                showCutInMessage(highest.grade === 'EX' ? "SSR DETECTED?" : "SSR DETECTED!", "var(--ssr-color)");
-                await new Promise(r => setTimeout(r, 1000));
+                showCutInMessage("SSR DETECTED!", "var(--ssr-color)");
+                await new Promise(r => setTimeout(r, 1200));
+
                 if (highest.grade === 'EX') {
-                    document.getElementById('vfx-flash').style.display = "block"; setTimeout(()=>document.getElementById('vfx-flash').style.display="none", 200);
+                    // EX 전용 강력 연출
+                    document.getElementById('vfx-flash').style.display = "block"; 
+                    setTimeout(()=>document.getElementById('vfx-flash').style.display="none", 300);
+                    
+                    document.getElementById('main-container').classList.remove('shake-effect');
+                    document.getElementById('main-container').classList.add('ex-shake-effect');
+                    
                     document.getElementById('vfx-vortex-ex').style.display = "block";
-                    showCutInMessage("EX DETECTED!", "var(--ex-color)");
-                    await new Promise(r => setTimeout(r, 1200));
+                    showCutInMessage("⚠️ WARNING: EX UNKNOWN ⚠️", "var(--ex-color)");
+                    
+                    await new Promise(r => setTimeout(r, 2000)); 
                     document.getElementById('vfx-vortex-ex').style.display = "none";
+                    document.getElementById('main-container').classList.remove('ex-shake-effect');
                 }
+                
                 document.getElementById('vfx-vortex-ssr').style.display = "none";
                 document.getElementById('main-container').classList.remove('shake-effect');
-                confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+                confetti({ particleCount: 200, spread: 80, origin: { y: 0.5 }, colors: [highest.grade === 'EX' ? '#ff007f' : '#ffdf00', '#ffffff'] });
             }
 
             cl.style.display = "none";
+
             if (count === 1) { 
-                document.getElementById('main-card-front').style.display = 'block';
                 renderCard(document.getElementById('main-card-wrapper'), results[0], true);
                 mf.onclick = () => showDetail(results[0]);
             } else { 
                 document.getElementById('main-card-wrapper').style.display = "none"; 
                 renderTen(results);
             }
-            isResultPending = isGachaRunning = false;
-            toggleMainBtns(false);
+
+            // 가챠 종료: 상태 초기화 및 버튼 잠금 해제 (버그 수정)
+            isResultPending = false;
+            isGachaRunning = false;
+            toggleMainBtns(false); 
             document.getElementById('btn-home').style.display = "block";
         }
 
@@ -493,13 +343,12 @@ function showDetail(item) {
         function showDetail(item) {
             document.body.classList.add('lock-scroll');
             const target = document.getElementById('detail-card-target');
-            target.innerHTML = `<div class="card-container-wrapper" style="width:100%;"><div class="card-frame"><div class="card-face card-front"><div class="card-clip"></div></div></div></div>`;
+            target.innerHTML = `<div class="card-container-wrapper" style="width:100%;"><div class="card-frame"></div></div>`;
             renderCard(target.querySelector('.card-container-wrapper'), item, false, true); 
             
             const card = target.querySelector('.card-frame'), view = document.getElementById('detail-view');
             view.style.display = 'flex';
 
-            // 틸트 로테이션 복구 로직 (모바일 최적화)
             let curX = 0, curY = 0, tarX = 0, tarY = 0;
             let rafId = null;
 
@@ -516,8 +365,8 @@ function showDetail(item) {
                 const cy = e.clientY || (e.touches && e.touches[0].clientY);
                 if (cx === undefined || cy === undefined) return;
                 const x = cx - rect.left, y = cy - rect.top;
-                tarY = ((x / rect.width) - 0.5) * 35; // Y축 회전 (좌우)
-                tarX = (0.5 - (y / rect.height)) * 35; // X축 회전 (상하)
+                tarY = ((x / rect.width) - 0.5) * 45; 
+                tarX = (0.5 - (y / rect.height)) * 45; 
             };
 
             view.addEventListener('mousemove', handleMove);
@@ -529,13 +378,12 @@ function showDetail(item) {
                     cancelAnimationFrame(rafId);
                     view.style.display = 'none'; 
                     document.body.classList.remove('lock-scroll'); 
-                    if(pTimer) clearInterval(pTimer); 
                 } 
             };
         }
 
         function toggleMainBtns(b) { document.getElementById('btn-1').disabled = b; document.getElementById('btn-10').disabled = b; document.getElementById('btn-coll-open').disabled = b; if(document.getElementById('btn-home')) document.getElementById('btn-home').disabled = b; }
-        function goHomeInternal() { document.getElementById('main-card-wrapper').style.display = "block"; document.getElementById('multi-result-display').style.display = "none"; document.getElementById('btn-home').style.display = "none"; const frame = document.getElementById('main-card-frame'); frame.style.border = "4px solid #222"; frame.style.boxShadow = "none"; frame.classList.remove('float-effect'); frame.style.animation = ""; document.getElementById('main-card-front').style.display = 'none'; document.getElementById('main-card-back').style.display = 'none'; document.getElementById('slot-placeholder').style.display = 'flex'; frame.onclick = null; }
+        function goHomeInternal() { document.getElementById('main-card-wrapper').style.display = "block"; document.getElementById('multi-result-display').style.display = "none"; document.getElementById('btn-home').style.display = "none"; const frame = document.getElementById('main-card-frame'); frame.style.border = "4px solid #222"; frame.style.boxShadow = "none"; frame.classList.remove('float-effect'); frame.style.animation = ""; document.getElementById('slot-placeholder').style.display = 'flex'; frame.onclick = null; }
         function goHome() { goHomeInternal(); showMessage("메인 화면으로 돌아왔습니다."); }
         function updateUI() { document.getElementById('energy-display').innerText = `${energy.count} / ${MAX_ENERGY}`; }
         function updateEnergyOnLoad() { if (!energy.last) return; const g = Math.floor((Date.now() - energy.last) / RECHARGE_TIME); if (g > 0) { energy.count = Math.min(MAX_ENERGY, energy.count + g); energy.last = (energy.count >= MAX_ENERGY) ? null : energy.last + (g * RECHARGE_TIME); save(); } }
