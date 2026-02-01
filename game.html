@@ -22,12 +22,10 @@
         .game-phase { display: none; width: 100%; max-width: 500px; height: 100%; flex-direction: column; }
         .active { display: flex !important; }
 
-        /* 네비게이션 */
         .nav-bar { display: grid; grid-template-columns: 1fr 1.5fr 1fr; align-items: center; padding: 10px 15px; background: #111; border-bottom: 1px solid #333; height: 60px; }
         .btn-back { background: #333; padding: 8px 12px; border-radius: 8px; font-size: 0.75rem; color: #fff; cursor: pointer; border: none; font-weight: bold; }
         .nav-title { font-weight: 800; font-size: 0.9rem; color: var(--focus-color); text-align: center; }
 
-        /* 카드 디자인 */
         .card-wrapper { width: 95px; flex-shrink: 0; height: 145px; position: relative; transition: transform 0.2s; }
         .card-base { 
             width: 100%; height: 100%; border-radius: 12px; border: 2.5px solid #333; 
@@ -46,13 +44,11 @@
         .selected-card { animation: selectedShake 0.6s infinite ease-in-out; z-index: 10; }
         .selected-card .card-base { border-color: #fff !important; box-shadow: 0 0 15px #fff; }
 
-        /* 스탯 다이아몬드 */
         .stat-diamond-container { position: absolute; bottom: 8px; right: 8px; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; z-index: 10; }
         .diamond-bg { position: absolute; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); border: 1.5px solid rgba(255, 255, 255, 0.5); transform: rotate(45deg); border-radius: 4px; }
         .stat-val { position: absolute; font-size: 11px; font-weight: 900; color: #fff; z-index: 2; text-shadow: 1px 1px 2px #000; }
         .v-top { top: 1px; } .v-bottom { bottom: 1px; } .v-left { left: 3px; } .v-right { right: 3px; }
 
-        /* 배틀 필드 */
         .battle-grid { 
             display: grid; grid-template-columns: repeat(3, 100px); grid-template-rows: repeat(3, 150px); 
             gap: 8px; justify-content: center; align-content: center; padding: 15px; 
@@ -81,33 +77,12 @@
         </div>
     </section>
 
-    <div id="guide-modal" class="modal-overlay">
-        <div class="modal-content">
-            <h2 style="color:var(--focus-color); margin-bottom:15px; font-style:italic;">GAME RULES</h2>
-            <div style="font-size:0.85rem; line-height:1.6; color:#ccc; text-align: left;">
-                * 3x3 필드에 카드를 번갈아 놓습니다.<br>
-                * 놓인 카드의 인접한 면의 숫자를 비교합니다.<br>
-                * **내 숫자가 더 크면** 상대 카드를 내 것으로 만듭니다.<br>
-                * 필드가 가득 찼을 때 카드가 많은 쪽이 승리합니다.<br>
-                * 승리 시 에너지가 1 회복됩니다.
-            </div>
-            <button class="main-btn" style="margin-top:20px;" onclick="closeModal('guide-modal')">알겠어!</button>
-        </div>
-    </div>
-
-    <div id="win-modal" class="modal-overlay">
-        <div class="modal-content" style="border-color: var(--win-color);">
-            <h1 id="win-title" style="color: var(--win-color); font-style: italic; margin-bottom: 10px;">STAGE CLEAR!</h1>
-            <p id="win-desc" style="color: #ccc; font-size: 0.9rem; margin-bottom: 20px;">에너지가 1 회복되었습니다.</p>
-            <button class="main-btn" id="win-next-btn" style="background: var(--win-color);">다음 스테이지로</button>
-        </div>
-    </div>
+    <div id="guide-modal" class="modal-overlay"><div class="modal-content"><h2 style="color:var(--focus-color); margin-bottom:15px; font-style:italic;">GAME RULES</h2><div style="font-size:0.85rem; line-height:1.6; color:#ccc; text-align: left;">* 3x3 필드에 카드를 번갈아 놓습니다.<br>* 숫자를 비교하여 상대 카드를 뺏습니다.<br>* 필드가 가득 찼을 때 카드가 많은 쪽이 승리!</div><button class="main-btn" style="margin-top:20px;" onclick="closeModal('guide-modal')">알겠어!</button></div></div>
+    <div id="win-modal" class="modal-overlay"><div class="modal-content" style="border-color: var(--win-color);"><h1 id="win-title" style="color: var(--win-color); font-style: italic; margin-bottom: 10px;">STAGE CLEAR!</h1><p id="win-desc" style="color: #ccc; font-size: 0.9rem; margin-bottom: 20px;">에너지가 1 회복되었습니다.</p><button class="main-btn" id="win-next-btn" style="background: var(--win-color);">다음 스테이지로</button></div></div>
 
     <section id="phase-deck" class="game-phase">
         <div class="nav-bar"><button class="btn-back" onclick="location.reload()">◀ 메인</button><div class="nav-title">원정대 모집</div><div></div></div>
-        <div style="background:#111; padding:12px; border-bottom:1px solid #333; text-align:center; font-weight:800;">
-            선발: <span id="deck-count" style="color:var(--focus-color)">0</span>/5 | CP: <span id="deck-cost" style="color:var(--ex-color)">25</span>
-        </div>
+        <div style="background:#111; padding:12px; border-bottom:1px solid #333; text-align:center; font-weight:800;">선발: <span id="deck-count" style="color:var(--focus-color)">0</span>/5 | CP: <span id="deck-cost" style="color:var(--ex-color)">25</span></div>
         <div style="flex:1; overflow-y:auto; padding:20px;"><div id="deck-grid" style="display:flex; flex-wrap:wrap; gap:10px; justify-content:center;"></div></div>
         <div class="sticky-footer"><button id="btn-to-battle" class="main-btn" disabled onclick="startBattlePhase()">모집 완료</button></div>
     </section>
@@ -127,28 +102,14 @@
         </div>
     </section>
 
-    <div id="card-modal" class="modal-overlay">
-        <div id="modal-content-area"></div>
-        <div style="display:flex; flex-direction:column; gap:10px; width:220px; margin-top:20px;">
-            <button id="modal-confirm" class="main-btn">선발하기</button>
-            <button onclick="closeModal('card-modal')" style="background: #222; padding:12px; border-radius:12px; color:white; border:none; font-weight:bold;">돌아가기</button>
-        </div>
-    </div>
+    <div id="card-modal" class="modal-overlay"><div id="modal-content-area"></div><div style="display:flex; flex-direction:column; gap:10px; width:220px; margin-top:20px;"><button id="modal-confirm" class="main-btn">선발하기</button><button onclick="closeModal('card-modal')" style="background: #222; padding:12px; border-radius:12px; color:white; border:none; font-weight:bold;">돌아가기</button></div></div>
 
     <script src="card_data.js"></script>
     <script src="battle_engine.js"></script>
 
     <script>
-    // 1. Firebase 초기화
-    const firebaseConfig = {
-        apiKey: "AIzaSyBOmMyRoAZ57YQVWaiiLDLVE5Lwu5aU9-4",
-        authDomain: "vingo-expedition.firebaseapp.com",
-        databaseURL: "https://vingo-expedition-default-rtdb.asia-southeast1.firebasedatabase.app",
-        projectId: "vingo-expedition",
-        storageBucket: "vingo-expedition.firebasestorage.app",
-        messagingSenderId: "593803537592",
-        appId: "1:593803537592:web:d076b2b34a410d144e584d"
-    };
+    // Firebase 초기화 (생략 없이 유지)
+    const firebaseConfig = { apiKey: "AIzaSyBOmMyRoAZ57YQVWaiiLDLVE5Lwu5aU9-4", authDomain: "vingo-expedition.firebaseapp.com", databaseURL: "https://vingo-expedition-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "vingo-expedition", storageBucket: "vingo-expedition.firebasestorage.app", messagingSenderId: "593803537592", appId: "1:593803537592:web:d076b2b34a410d144e584d" };
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
@@ -164,14 +125,9 @@
         "R": { cp: 2, color: "#0070dd", rank: 3, bg: "radial-gradient(circle, rgba(0,112,221,0.5), #000)" } 
     };
 
-    // 2. 보안 및 로그인 체크
     window.onload = async () => {
         USER_ID = localStorage.getItem('vingo_user_id');
-        if (!USER_ID) {
-            alert("로그인이 필요합니다!");
-            location.href = 'index.html';
-            return;
-        }
+        if (!USER_ID) { alert("로그인이 필요합니다!"); location.href = 'index.html'; return; }
         await loadUserData();
     };
 
@@ -189,18 +145,22 @@
         renderDeckBuilding();
     }
 
-    // 3. 카드 배치 및 배틀 로직
+    // [수정] 카드 배치 및 AI 작동 로직 강화
     function placeCard(idx) {
         if(gameState.turn !== 'player' || gameState.selectedHandIdx === null || gameState.grid[idx]) return;
         
-        const card = gameState.battleHand[gameState.selectedHandIdx];
-        gameState.grid[idx] = JSON.parse(JSON.stringify(card));
+        const originalCard = gameState.battleHand[gameState.selectedHandIdx];
+        // 중요: owner 정보와 함께 깊은 복사
+        const cardToPlace = { ...JSON.parse(JSON.stringify(originalCard)), owner: 'player' };
+        
+        gameState.grid[idx] = cardToPlace;
         gameState.battleHand.splice(gameState.selectedHandIdx, 1);
         gameState.selectedHandIdx = null;
 
-        // BattleEngine을 통한 카드 뒤집기 처리
         if(window.BattleEngine) {
             BattleEngine.processTurn(gameState.grid, idx);
+        } else {
+            console.error("BattleEngine not found!");
         }
 
         renderBattleBoard();
@@ -209,7 +169,31 @@
         if(!checkEnd()) {
             gameState.turn = 'enemy';
             updateBattleUI();
-            setTimeout(enemyAction, 800);
+            // 플레이어 배치가 화면에 그려진 후 AI가 행동하도록 딜레이
+            setTimeout(enemyAction, 1000); 
+        }
+    }
+
+    function enemyAction() {
+        if(!window.BattleEngine) return;
+
+        // AI가 둘 최적의 위치 계산
+        const move = BattleEngine.getBestMove(gameState.grid, gameState.enemyDeck);
+        if(!move) return;
+
+        const originalCard = gameState.enemyDeck[move.handIdx];
+        const cardToPlace = { ...JSON.parse(JSON.stringify(originalCard)), owner: 'enemy' };
+
+        gameState.grid[move.targetSlot] = cardToPlace;
+        gameState.enemyDeck.splice(move.handIdx, 1);
+        
+        BattleEngine.processTurn(gameState.grid, move.targetSlot);
+        
+        renderBattleBoard();
+        
+        if(!checkEnd()) {
+            gameState.turn = 'player';
+            updateBattleUI();
         }
     }
 
@@ -262,13 +246,14 @@
         });
     }
 
-    // --- 기타 엔진 함수 (디자인 유지) ---
     function createCardUI(u, id, owner = null, isLarge = false) {
         const wrap = document.createElement('div');
         const grade = id.split('_')[0];
         const conf = SETTINGS[grade];
         wrap.className = isLarge ? `modal-card-view` : `card-wrapper`;
-        let ownerClass = (owner === 'player') ? "owner-glow-player" : (owner === 'enemy' ? "owner-glow-enemy" : "");
+        // owner 정보가 명시적으로 넘어오지 않으면 객체 안의 정보를 사용
+        const cardOwner = owner || u.owner;
+        let ownerClass = (cardOwner === 'player') ? "owner-glow-player" : (cardOwner === 'enemy' ? "owner-glow-enemy" : "");
         wrap.innerHTML = `<div class="card-base ${ownerClass}" style="border-color:${conf.color}">
             <div class="card-img" style="background:${conf.bg}"><img src="images/${id}">${getDiamondHTML(u.stats)}</div>
             <div class="card-txt"><div class="char-name" style="color:${conf.color}">${u.name}</div></div>
@@ -277,6 +262,7 @@
     }
 
     function getDiamondHTML(stats) {
+        if(!stats) return "";
         const ds = stats.map(s => s === 10 ? 'A' : s);
         return `<div class="stat-diamond-container">
             <div class="diamond-bg"></div>
@@ -301,23 +287,13 @@
         gameState.battleHand.forEach((card, idx) => {
             const ui = createCardUI(card, card.id, 'player');
             if(gameState.selectedHandIdx === idx) ui.classList.add('selected-card');
-            ui.onclick = () => { gameState.selectedHandIdx = idx; renderPlayerHand(); };
+            ui.onclick = () => { if(gameState.turn === 'player') { gameState.selectedHandIdx = idx; renderPlayerHand(); } };
             hand.appendChild(ui);
         });
     }
 
-    function enemyAction() {
-        const move = BattleEngine.getBestMove(gameState.grid, gameState.enemyDeck);
-        if(!move) return;
-        const card = gameState.enemyDeck[move.handIdx];
-        gameState.grid[move.targetSlot] = JSON.parse(JSON.stringify(card));
-        gameState.enemyDeck.splice(move.handIdx, 1);
-        BattleEngine.processTurn(gameState.grid, move.targetSlot);
-        renderBattleBoard();
-        if(!checkEnd()) { gameState.turn = 'player'; updateBattleUI(); }
-    }
-
     function updateScore() {
+        if(!window.BattleEngine) return;
         const score = BattleEngine.getScore(gameState.grid);
         document.getElementById('score-display').innerText = `${score.player + gameState.battleHand.length} : ${score.enemy + gameState.enemyDeck.length}`;
     }
