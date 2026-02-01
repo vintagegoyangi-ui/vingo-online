@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-    <title>VINGO EXPEDITION v1.6</title>
+    <title>VINGO EXPEDITION v1.6.1</title>
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
     <script src="card_data.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -42,9 +42,7 @@
             } else {
                 if (userData && userData.password === pw) {
                     USER_ID = id;
-                    // [추가] 배틀 페이지(game.html)와 ID를 공유하기 위해 저장
                     localStorage.setItem('vingo_user_id', id); 
-
                     document.getElementById('login-layer').style.display = 'none';
                     document.getElementById('main-container').style.display = 'block';
                     myItems = Array.isArray(userData.inventory) ? userData.inventory : [];
@@ -64,7 +62,6 @@
         body { background-color: var(--bg-color); color: white; display: flex; flex-direction: column; align-items: center; min-height: 100svh; width: 100%; overflow-x: hidden; overscroll-behavior-y: contain; }
         body.lock-scroll { overflow: hidden !important; touch-action: none; }
 
-        /* 애니메이션 강화 */
         @keyframes shake { 0% { transform: translate(0, 0); } 25% { transform: translate(-3px, 3px); } 50% { transform: translate(3px, -3px); } 75% { transform: translate(-3px, -3px); } 100% { transform: translate(3px, 3px); } }
         @keyframes ex-shake { 0% { transform: translate(0, 0); } 10% { transform: translate(-8px, 4px); } 20% { transform: translate(8px, -4px); } 30% { transform: translate(-8px, -4px); } 100% { transform: translate(0, 0); } }
         @keyframes vortex { 0% { transform: rotate(0deg) scale(1); opacity: 0; } 50% { opacity: 0.35; transform: rotate(180deg) scale(2.2); } 100% { transform: rotate(360deg) scale(3.5); opacity: 0; } }
@@ -80,27 +77,20 @@
         .vortex-ssr { background: radial-gradient(circle, var(--ssr-color) 0%, transparent 70%); animation: vortex 1s ease-out forwards; }
         .vortex-ex { background: radial-gradient(circle, var(--ex-color) 0%, transparent 70%); animation: vortex 1.2s ease-in-out forwards; }
         .screen-flash { background: white; z-index: 9000; animation: flash 0.3s ease-out; display: none; }
-        @keyframes flash { 0% { opacity: 0; } 50% { opacity: 0.8; } 100% { opacity: 0; } }
-
-        #cut-in-msg { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 9500; font-size: 2.2rem; font-weight: 900; font-style: italic; pointer-events: none; text-align: center; }
 
         .card-container-wrapper { position: relative; width: 100%; max-width: 290px; aspect-ratio: 3 / 4.4; margin: 0 auto; perspective: 1500px; }
         .card-frame { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); border-radius: 20px; border: 4px solid #222; background: #0a0a0a; display: flex; align-items: center; justify-content: center; cursor: pointer; }
         .card-face { position: absolute; inset: 0; backface-visibility: hidden; border-radius: 16px; overflow: hidden; background: #000; }
-        .card-front { z-index: 2; transform: rotateY(0deg); } 
+        .card-front { z-index: 2; } 
         .card-back { z-index: 1; transform: rotateY(180deg); display: flex; align-items: center; justify-content: center; background: #111; }
         .card-back img { width: 100%; height: 100%; object-fit: cover; }
         .card-clip { position: absolute; inset: 0; display: flex; flex-direction: column; border-radius: 16px; overflow: hidden; }
 
-        #cut-in-layer { position: absolute; inset: -4px; z-index: 100; display: none; align-items: center; justify-content: center; flex-direction: column; border-radius: 20px; pointer-events: none; background: rgba(0,255,0,0.05); }
+        #cut-in-layer { position: absolute; inset: -4px; z-index: 100; display: none; align-items: center; justify-content: center; flex-direction: column; border-radius: 20px; pointer-events: none; }
         .scan-line { position: absolute; left: 0; width: 100%; height: 6px; background: var(--scan-color); box-shadow: 0 0 15px var(--scan-color); animation: scanLineMove 1.5s ease-in-out infinite; z-index: 102; }
         .scan-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--scan-color); font-size: 1.5rem; font-weight: 900; letter-spacing: 3px; text-shadow: 0 0 10px var(--scan-color); z-index: 101; opacity: 0.8; }
 
-        #slot-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
-        .slot-bg-text { font-size: 2rem; font-weight: 900; font-style: italic; background: linear-gradient(to bottom, #444, #111); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-
         .container { width: 92%; max-width: 400px; text-align: center; background: #111; padding: 20px; border-radius: 30px; border: 1px solid #222; margin: auto; display: none; position: relative; min-height: 520px; }
-        .logout-btn { position: absolute; top: 20px; right: 20px; font-size: 11px; color: #555; font-weight: bold; cursor: pointer; padding: 5px; border: 1px solid #222; border-radius: 5px; }
         .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin-top: 20px; }
         button { padding: 16px; font-size: 0.95rem; font-weight: 700; border: none; border-radius: 15px; cursor: pointer; color: white; transition: 0.2s; }
         button:disabled { opacity: 0.3; filter: grayscale(1); pointer-events: none; }
@@ -110,20 +100,14 @@
 
         #login-layer { position: fixed; inset: 0; background: #050505; z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; }
         .auth-box { width: 100%; max-width: 320px; background: #111; padding: 25px; border-radius: 20px; border: 1px solid #222; }
-        .auth-box input { width: 100%; padding: 15px; margin-bottom: 12px; border-radius: 12px; border: 1px solid #333; background: #000; color: white; font-size: 1rem; }
-        .auth-box button { width: 100%; padding: 15px; border-radius: 12px; font-weight: bold; margin-bottom: 10px; color: white; }
-
-        #multi-result-display { display:none; flex-wrap:nowrap; overflow-x:auto; gap:25px; width:100%; padding: 40px 25px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
-        #detail-view { position: fixed; inset: 0; background: rgba(0,0,0,0.97); z-index: 2000; display: none; align-items: center; justify-content: center; perspective: 1500px; touch-action: none; }
+        .auth-box input { width: 100%; padding: 15px; margin-bottom: 12px; border-radius: 12px; border: 1px solid #333; background: #000; color: white; }
         
+        #multi-result-display { display:none; flex-wrap:nowrap; overflow-x:auto; gap:25px; width:100%; padding: 40px 25px; scroll-snap-type: x mandatory; }
+        #detail-view { position: fixed; inset: 0; background: rgba(0,0,0,0.97); z-index: 2000; display: none; align-items: center; justify-content: center; perspective: 1500px; touch-action: none; }
         #collection-modal { position:fixed; inset:0; background:#050505; display:none; flex-direction:column; z-index:1500; }
-        #collection-header { padding:20px; display:flex; justify-content:space-between; align-items:center; background:#000; border-bottom:1px solid #222; }
         #collection-grid { display: grid; grid-template-columns: repeat(3, 1fr); column-gap: 10px; row-gap: 15px; padding: 15px; overflow-y: auto; flex:1; align-content: start; }
         .coll-item-wrapper { position: relative; width: 100%; aspect-ratio: 3 / 4.4; }
-        .coll-card-locked { width:100%; height:100%; background:#0a0a0a; border:2px dashed #333; border-radius:15px; display:flex; align-items:center; justify-content:center; color:#222; font-size:24px; font-weight:900; }
-        .count-badge { position: absolute; top: -5px; right: -5px; background: #fff; color: #000; font-size: 9px; padding: 2px 5px; border-radius: 4px; font-weight: 900; z-index: 10; border: 1px solid #000; }
-        
-        #custom-msg { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,0.95); color: #000; padding: 10px 20px; border-radius: 20px; z-index: 20000; font-weight: bold; display: none; font-size: 13px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        #custom-msg { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,0.95); color: #000; padding: 10px 20px; border-radius: 20px; z-index: 20000; font-weight: bold; display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
     </style>
 </head>
 <body>
@@ -135,18 +119,18 @@
 
     <div id="login-layer">
         <div class="auth-box">
-            <h2 style="color:var(--ssr-color); text-align:center; margin-bottom:20px; font-style:italic; letter-spacing:-1px;">VINGO EXPEDITION</h2>
+            <h2 style="color:var(--ssr-color); text-align:center; margin-bottom:20px; font-style:italic;">VINGO EXPEDITION</h2>
             <input type="text" id="auth-id" placeholder="아이디">
             <input type="password" id="auth-pw" placeholder="비밀번호">
-            <button onclick="handleAuth('login')" style="background:var(--r-color);">로그인</button>
-            <button onclick="handleAuth('signup')" style="background:#333;">회원가입</button>
+            <button onclick="handleAuth('login')" style="background:var(--r-color); width:100%; border-radius:12px; margin-bottom:10px;">로그인</button>
+            <button onclick="handleAuth('signup')" style="background:#333; width:100%; border-radius:12px;">회원가입</button>
         </div>
     </div>
 
     <div id="detail-view"><div id="detail-card-target" style="width:88vw; max-width:320px;"></div></div>
     
     <div class="container" id="main-container">
-        <div class="logout-btn" onclick="handleLogout()">LOGOUT</div>
+        <div class="logout-btn" onclick="handleLogout()" style="position:absolute; top:20px; right:20px; color:#555; cursor:pointer; font-size:11px;">LOGOUT</div>
         <div id="energy-tag" style="background:#1a1a1a; padding:10px 18px; border-radius:50px; font-weight:bold; margin-bottom:15px; display:inline-block; border:1px solid #333; font-size:0.8rem;">
             ⚡️ 에너지: <span id="energy-display">-- / --</span> <span id="timer-display"></span>
         </div>
@@ -157,8 +141,6 @@
                         <div class="slot-bg-text">VINGO GACHA</div>
                         <div style="color:#444; font-size:0.7rem; font-weight:700; margin-top:5px;">정예 빈고를 수집하여 원정을 준비하세요.</div>
                     </div>
-                    <div class="card-face card-back" id="main-card-back" style="display:none;"><img src="images/card_back.webp"></div>
-                    <div class="card-face card-front" id="main-card-front" style="display:none;"><div class="card-clip"></div></div>
                     <div id="cut-in-layer">
                         <div class="scan-line"></div>
                         <div class="scan-text">SCANNING...</div>
@@ -170,11 +152,8 @@
         <div class="btns">
             <button id="btn-1" class="btn-draw" onclick="playGacha(1)">1회 가챠</button>
             <button id="btn-10" class="btn-draw-10" onclick="playGacha(10)">10회 가챠</button>
-            
-            <button class="btn-sub" style="background: linear-gradient(135deg, #4b0082, #6a0dad); grid-column: span 2; margin-top: 10px;" 
-                    onclick="location.href='game.html'">⚔️ 원정(배틀) 시작</button>
-
-            <button id="btn-home" class="btn-sub" style="display:none; background:#444; grid-column: span 2;" onclick="goHome()">메인으로</button>
+            <button class="btn-sub" style="background: linear-gradient(135deg, #4b0082, #6a0dad);" onclick="location.href='game.html'">⚔️ 원정(배틀) 시작</button>
+            <button id="btn-home" class="btn-sub" style="display:none; background:#444;" onclick="goHome()">메인으로</button>
             <button id="btn-coll-open" class="btn-sub" onclick="openCollection()">도감 확인</button>
         </div>
     </div>
@@ -265,13 +244,10 @@
                   
             ph.style.display = 'none'; 
             cl.style.display = "flex";
-            
-            // 스캐닝 연출 (2초)
             await new Promise(r => setTimeout(r, 2000));
 
             const highest = results.reduce((a, b) => (gradeValue(a.grade) > gradeValue(b.grade)) ? a : b);
             
-            // 등급별 연출 (SSR/EX)
             if (highest.grade === 'SSR' || highest.grade === 'EX') {
                 document.getElementById('main-container').classList.add('shake-effect');
                 document.getElementById('vfx-vortex-ssr').style.display = "block";
@@ -279,21 +255,16 @@
                 await new Promise(r => setTimeout(r, 1200));
 
                 if (highest.grade === 'EX') {
-                    // EX 전용 강력 연출
                     document.getElementById('vfx-flash').style.display = "block"; 
                     setTimeout(()=>document.getElementById('vfx-flash').style.display="none", 300);
-                    
                     document.getElementById('main-container').classList.remove('shake-effect');
                     document.getElementById('main-container').classList.add('ex-shake-effect');
-                    
                     document.getElementById('vfx-vortex-ex').style.display = "block";
                     showCutInMessage("⚠️ WARNING: EX UNKNOWN ⚠️", "var(--ex-color)");
-                    
                     await new Promise(r => setTimeout(r, 2000)); 
                     document.getElementById('vfx-vortex-ex').style.display = "none";
                     document.getElementById('main-container').classList.remove('ex-shake-effect');
                 }
-                
                 document.getElementById('vfx-vortex-ssr').style.display = "none";
                 document.getElementById('main-container').classList.remove('shake-effect');
                 confetti({ particleCount: 200, spread: 80, origin: { y: 0.5 }, colors: [highest.grade === 'EX' ? '#ff007f' : '#ffdf00', '#ffffff'] });
@@ -302,14 +273,14 @@
             cl.style.display = "none";
 
             if (count === 1) { 
-                renderCard(document.getElementById('main-card-wrapper'), results[0], true);
+                const wrapper = document.getElementById('main-card-wrapper');
+                renderCard(wrapper, results[0], true);
                 mf.onclick = () => showDetail(results[0]);
             } else { 
                 document.getElementById('main-card-wrapper').style.display = "none"; 
                 renderTen(results);
             }
 
-            // 가챠 종료: 상태 초기화 및 버튼 잠금 해제 (버그 수정)
             isResultPending = false;
             isGachaRunning = false;
             toggleMainBtns(false); 
@@ -333,15 +304,15 @@
             const collectedCount = myItems.length, totalCount = pool.length;
             const rate = totalCount > 0 ? ((collectedCount / totalCount) * 100).toFixed(1) : 0;
             const modal = document.getElementById('collection-modal');
-            modal.innerHTML = `<div id="collection-header"><div><h2 style="color:var(--ssr-color); font-size:1.1rem; font-weight:900;">정예 도감 (${rate}%)</h2><p style="font-size:10px; color:#555; margin-top:2px;">수집 현황: ${collectedCount} / ${totalCount}</p></div><button onclick="document.getElementById('collection-modal').style.display='none'; document.body.classList.remove('lock-scroll');" style="background:#222; padding:5px 12px; border-radius:5px; color:#fff;">닫기</button></div><div id="collection-grid"></div><button onclick="resetData()" style="background:#500; color:#fff; padding:10px; width:100%; font-size:11px;">데이터 초기화</button>`;
+            modal.innerHTML = `<div id="collection-header" style="padding:20px; display:flex; justify-content:space-between; background:#000; border-bottom:1px solid #222;"><div><h2 style="color:var(--ssr-color); font-size:1.1rem;">정예 도감 (${rate}%)</h2><p style="font-size:10px; color:#555;">수집: ${collectedCount}/${totalCount}</p></div><button onclick="document.getElementById('collection-modal').style.display='none'; document.body.classList.remove('lock-scroll');" style="background:#222; padding:5px 12px; border-radius:5px; color:#fff;">닫기</button></div><div id="collection-grid"></div><button onclick="resetData()" style="background:#500; color:#fff; padding:10px; width:100%;">데이터 초기화</button>`;
             const grid = modal.querySelector('#collection-grid');
             pool.forEach((item) => {
                 const f = myItems.find(i => i.id === item.id);
                 const w = document.createElement('div'); w.className = "coll-item-wrapper";
                 if (f) {
-                    w.innerHTML = `<div class="card-frame" style="width:100%; height:100%;"><div class="card-face card-front"><div class="card-clip"></div></div></div><div class="count-badge">x${f.count}</div>`;
+                    w.innerHTML = `<div class="card-frame" style="width:100%; height:100%;"><div class="card-face card-front"><div class="card-clip"></div></div></div><div class="count-badge" style="position:absolute; top:-5px; right:-5px; background:#fff; color:#000; font-size:9px; padding:2px 5px; border-radius:4px; font-weight:900; z-index:10;">x${f.count}</div>`;
                     renderCard(w, item, false, false, true); w.onclick = () => showDetail(item);
-                } else { w.innerHTML = `<div class="coll-card-locked">?</div>`; }
+                } else { w.innerHTML = `<div style="width:100%; height:100%; background:#0a0a0a; border:2px dashed #333; border-radius:15px; display:flex; align-items:center; justify-content:center; color:#222; font-size:24px; font-weight:900;">?</div>`; }
                 grid.appendChild(w);
             });
             modal.style.display = "flex"; document.body.classList.add('lock-scroll');
@@ -351,42 +322,14 @@
             document.body.classList.add('lock-scroll');
             const target = document.getElementById('detail-card-target');
             target.innerHTML = `<div class="card-container-wrapper" style="width:100%;"><div class="card-frame"></div></div>`;
-            renderCard(target.querySelector('.card-container-wrapper'), item, false, true); 
-            
+            renderCard(target.querySelector('.card-container-wrapper'), item, false, true); 
             const card = target.querySelector('.card-frame'), view = document.getElementById('detail-view');
             view.style.display = 'flex';
-
-            let curX = 0, curY = 0, tarX = 0, tarY = 0;
-            let rafId = null;
-
-            const animate = () => {
-                curX += (tarX - curX) * 0.1;
-                curY += (tarY - curY) * 0.1;
-                card.style.transform = `rotateY(${curY}deg) rotateX(${curX}deg) scale(1.05)`;
-                rafId = requestAnimationFrame(animate);
-            };
-
-            const handleMove = (e) => {
-                const rect = card.getBoundingClientRect();
-                const cx = e.clientX || (e.touches && e.touches[0].clientX);
-                const cy = e.clientY || (e.touches && e.touches[0].clientY);
-                if (cx === undefined || cy === undefined) return;
-                const x = cx - rect.left, y = cy - rect.top;
-                tarY = ((x / rect.width) - 0.5) * 45; 
-                tarX = (0.5 - (y / rect.height)) * 45; 
-            };
-
-            view.addEventListener('mousemove', handleMove);
-            view.addEventListener('touchmove', handleMove, { passive: false });
-            rafId = requestAnimationFrame(animate);
-
-            view.onclick = (e) => { 
-                if(e.target === view) { 
-                    cancelAnimationFrame(rafId);
-                    view.style.display = 'none'; 
-                    document.body.classList.remove('lock-scroll'); 
-                } 
-            };
+            let curX = 0, curY = 0, tarX = 0, tarY = 0, rafId = null;
+            const animate = () => { curX += (tarX - curX) * 0.1; curY += (tarY - curY) * 0.1; card.style.transform = `rotateY(${curY}deg) rotateX(${curX}deg) scale(1.05)`; rafId = requestAnimationFrame(animate); };
+            const handleMove = (e) => { const rect = card.getBoundingClientRect(); const cx = e.clientX || (e.touches && e.touches[0].clientX); const cy = e.clientY || (e.touches && e.touches[0].clientY); if (cx === undefined || cy === undefined) return; const x = cx - rect.left, y = cy - rect.top; tarY = ((x / rect.width) - 0.5) * 45; tarX = (0.5 - (y / rect.height)) * 45; };
+            view.addEventListener('mousemove', handleMove); view.addEventListener('touchmove', handleMove, { passive: false }); rafId = requestAnimationFrame(animate);
+            view.onclick = (e) => { if(e.target === view) { cancelAnimationFrame(rafId); view.style.display = 'none'; document.body.classList.remove('lock-scroll'); } };
         }
 
         function toggleMainBtns(b) { document.getElementById('btn-1').disabled = b; document.getElementById('btn-10').disabled = b; document.getElementById('btn-coll-open').disabled = b; if(document.getElementById('btn-home')) document.getElementById('btn-home').disabled = b; }
