@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-    <title>VINGO EXPEDITION v1.6.5</title>
+    <title>VINGO EXPEDITION v1.6.6</title>
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
     <script src="card_data.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -28,7 +28,6 @@
         let isGachaRunning = false;
         let isResultPending = false; 
 
-        // [추가] 자동 로그인 기능
         window.addEventListener('DOMContentLoaded', async () => {
             const savedId = localStorage.getItem('vingo_user_id');
             if (savedId) {
@@ -58,7 +57,7 @@
             } else {
                 if (userData && userData.password === pw) {
                     USER_ID = id;
-                    localStorage.setItem('vingo_user_id', id); // ID 공유 저장
+                    localStorage.setItem('vingo_user_id', id); 
                     document.getElementById('login-layer').style.display = 'none';
                     document.getElementById('main-container').style.display = 'block';
                     myItems = Array.isArray(userData.inventory) ? userData.inventory : [];
@@ -90,10 +89,6 @@
         .vortex-ssr { background: radial-gradient(circle, var(--ssr-color) 0%, transparent 70%); animation: vortex 1s ease-out forwards; }
         .vortex-ex { background: radial-gradient(circle, var(--ex-color) 0%, transparent 70%); animation: vortex 1.2s ease-in-out forwards; }
         .screen-flash { background: white; z-index: 9000; animation: flash 0.3s ease-out; display: none; }
-        @keyframes flash { 0% { opacity: 0; } 50% { opacity: 0.8; } 100% { opacity: 0; } }
-
-        #cut-in-msg { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 9500; font-size: 2.2rem; font-weight: 900; font-style: italic; pointer-events: none; text-align: center; }
-        .particle { position: absolute; pointer-events: none; border-radius: 50%; animation: float linear forwards; z-index: 100; }
 
         .card-container-wrapper { position: relative; width: 100%; max-width: 290px; aspect-ratio: 3 / 4.4; margin: 0 auto; perspective: 1500px; }
         .card-frame { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); border-radius: 20px; border: 4px solid #222; background: #0a0a0a; display: flex; align-items: center; justify-content: center; cursor: pointer; }
@@ -101,14 +96,10 @@
         .card-front { z-index: 2; transform: rotateY(0deg); } 
         .card-back { z-index: 1; transform: rotateY(180deg); display: flex; align-items: center; justify-content: center; background: #111; }
         .card-back img { width: 100%; height: 100%; object-fit: cover; }
-        .card-clip { position: absolute; inset: 0; display: flex; flex-direction: column; border-radius: 16px; overflow: hidden; }
 
         #cut-in-layer { position: absolute; inset: -4px; z-index: 100; display: none; align-items: center; justify-content: center; flex-direction: column; border-radius: 20px; pointer-events: none; }
         .scan-line { position: absolute; left: 0; width: 100%; height: 8px; background: var(--scan-color); box-shadow: 0 0 20px var(--scan-color); animation: scanOnce 1.5s ease-in-out infinite; }
         
-        #slot-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; }
-        .slot-bg-text { font-size: 2rem; font-weight: 900; font-style: italic; background: linear-gradient(to bottom, #444, #111); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-
         .container { width: 92%; max-width: 400px; text-align: center; background: #111; padding: 20px; border-radius: 30px; border: 1px solid #222; margin: auto; display: none; position: relative; min-height: 520px; }
         .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin-top: 20px; }
         button { padding: 16px; font-size: 0.95rem; font-weight: 700; border: none; border-radius: 15px; cursor: pointer; color: white; transition: 0.2s; }
@@ -170,7 +161,7 @@
         <div class="btns">
             <button id="btn-1" class="btn-draw" onclick="playGacha(1)">1회 가챠</button>
             <button id="btn-10" class="btn-draw-10" onclick="playGacha(10)">10회 가챠</button>
-            <button class="btn-sub" style="background: linear-gradient(135deg, #4b0082, #ff007f);" onclick="location.href='game.html'">⚔️ 원정(배틀) 시작</button>
+            <button id="btn-battle" class="btn-sub" style="background: linear-gradient(135deg, #4b0082, #ff007f);" onclick="location.href='game.html'">⚔️ 원정(배틀) 시작</button>
             <button id="btn-home" class="btn-sub" style="display:none; background:#444; grid-column: span 2;" onclick="goHome()">메인으로</button>
             <button id="btn-coll-open" class="btn-sub" onclick="openCollection()">도감 확인</button>
         </div>
@@ -191,7 +182,6 @@
 
         async function save() { if (!USER_ID) return; try { await db.ref('users/' + USER_ID).update({ inventory: myItems, energy: energy }); } catch (e) { console.error(e); } }
 
-        // [수정] 원본 v1.5의 renderCard 구조를 보존하면서 레이어 파괴 방지 로직 추가
         function renderCard(targetWrapper, item, isDraw, isDetail = false, isColl = false) {
             const set = SETTINGS[item.grade];
             const isHigh = item.grade === 'EX' || item.grade === 'SSR';
@@ -224,14 +214,9 @@
                     </div>
                 </div>`;
 
-            // 가챠용 메인 프레임일 경우 전체 HTML을 덮어쓰지 않고 타겟 레이어만 수정 (이게 핵심)
             const frontLayer = frame.querySelector('.card-front');
-            if (frontLayer) {
-                frontLayer.innerHTML = cardContent;
-            } else {
-                // 도감이나 10연차 리스트용 (레이어가 없는 경우)
-                frame.innerHTML = `<div class="card-face card-front">${cardContent}</div><div class="card-face card-back"><img src="${BACK_IMG_URL}"></div>`;
-            }
+            if (frontLayer) { frontLayer.innerHTML = cardContent; } 
+            else { frame.innerHTML = `<div class="card-face card-front">${cardContent}</div><div class="card-face card-back"><img src="${BACK_IMG_URL}"></div>`; }
 
             if (isDetail) {
                 const view = document.getElementById('detail-view');
@@ -250,7 +235,6 @@
                     frame.style.transform = "perspective(1000px) rotateX(0deg) rotateY(0deg)";
                 });
             }
-            if (isHigh && (isDetail || isDraw)) createParticles(frame, set.color);
         }
 
         async function playGacha(count) {
@@ -259,7 +243,7 @@
             
             goHomeInternal(); 
             isGachaRunning = isResultPending = true;
-            toggleMainBtns(true);
+            toggleMainBtns(true); // 모든 버튼 잠금
 
             if (count === 1) { document.getElementById('main-card-wrapper').style.display = "block"; document.getElementById('multi-result-display').style.display = "none"; }
             else { const d = document.getElementById('multi-result-display'); d.scrollLeft = 0; d.style.display = "none"; }
@@ -302,24 +286,19 @@
             }
             
             isResultPending = isGachaRunning = false;
-            toggleMainBtns(false); // [핵심] 이제 정상적으로 실행됨
+            toggleMainBtns(false); // 모든 버튼 잠금 해제
             document.getElementById('btn-home').style.display = "block";
         }
 
-        let pTimer = null;
-        function createParticles(target, color) {
-            if(pTimer) clearInterval(pTimer);
-            pTimer = setInterval(() => {
-                const p = document.createElement('div'); p.className = 'particle';
-                const size = Math.random() * 3 + 2;
-                p.style.width = p.style.height = `${size}px`; p.style.background = color;
-                p.style.left = `${Math.random() * 90 + 5}%`; p.style.bottom = '10%';
-                p.style.animationDuration = `${Math.random() * 1 + 1}s`;
-                target.appendChild(p); p.addEventListener('animationend', () => p.remove());
-            }, 150);
+        // [수정] 모든 주요 버튼을 비활성화하도록 변경
+        function toggleMainBtns(b) { 
+            const targets = ['btn-1', 'btn-10', 'btn-battle', 'btn-coll-open', 'btn-home'];
+            targets.forEach(id => {
+                const btn = document.getElementById(id);
+                if(btn) btn.disabled = b;
+            });
         }
 
-        function gradeValue(g) { const v = {"EX":4, "SSR":3, "SR":2, "R":1}; return v[g] || 0; }
         function renderTen(results) {
             const d = document.getElementById('multi-result-display');
             d.innerHTML = ""; d.style.display = "flex"; d.scrollLeft = 0;
@@ -356,16 +335,29 @@
             renderCard(target.querySelector('.card-container-wrapper'), item, false, true); 
             const view = document.getElementById('detail-view');
             view.style.display = 'flex';
-            view.onclick = (e) => { if(e.target === view) { view.style.display = 'none'; document.body.classList.remove('lock-scroll'); if(pTimer) clearInterval(pTimer); } };
+            view.onclick = (e) => { if(e.target === view) { view.style.display = 'none'; document.body.classList.remove('lock-scroll'); } };
         }
 
-        function toggleMainBtns(b) { document.getElementById('btn-1').disabled = b; document.getElementById('btn-10').disabled = b; }
+        // [수정] 초기화 시 로그인창으로 가지 않고 가챠 메인으로 복구
+        async function resetData() { 
+            if(confirm("정말 모든 데이터를 초기화하시겠습니까?")) { 
+                myItems = []; 
+                energy = { count: 30, last: null }; 
+                await save(); 
+                document.getElementById('collection-modal').style.display = 'none'; 
+                document.body.classList.remove('lock-scroll'); 
+                goHome(); 
+                updateUI(); 
+                showMessage("데이터가 초기화되었습니다."); 
+            } 
+        }
+
         function goHomeInternal() { document.getElementById('main-card-wrapper').style.display = "block"; document.getElementById('multi-result-display').style.display = "none"; document.getElementById('btn-home').style.display = "none"; const frame = document.getElementById('main-card-frame'); frame.style.border = "4px solid #222"; frame.style.boxShadow = "none"; frame.classList.remove('float-effect'); frame.style.animation = ""; document.getElementById('main-card-front').style.display = 'none'; document.getElementById('main-card-back').style.display = 'none'; document.getElementById('slot-placeholder').style.display = 'flex'; frame.onclick = null; }
         function goHome() { goHomeInternal(); showMessage("메인 화면으로 돌아왔습니다."); }
         function updateUI() { document.getElementById('energy-display').innerText = `${energy.count} / ${MAX_ENERGY}`; }
         function updateEnergyOnLoad() { if (!energy.last) return; const g = Math.floor((Date.now() - energy.last) / RECHARGE_TIME); if (g > 0) { energy.count = Math.min(MAX_ENERGY, energy.count + g); energy.last = (energy.count >= MAX_ENERGY) ? null : energy.last + (g * RECHARGE_TIME); save(); } }
         function updateTimer() { const td = document.getElementById('timer-display'); if (energy.count >= MAX_ENERGY) { td.innerText = "(MAX)"; return; } if (!energy.last) energy.last = Date.now(); const el = Date.now() - energy.last; if (el >= RECHARGE_TIME) { energy.count++; energy.last = (energy.count >= MAX_ENERGY) ? null : Date.now(); save(); updateUI(); } if (energy.last) { const rm = RECHARGE_TIME - (el % RECHARGE_TIME); const m = Math.floor(rm/60000), s = Math.floor((rm%60000)/1000).toString().padStart(2,'0'); td.innerText = `(${m}:${s})`; } }
-        async function resetData() { if(confirm("정말 모든 데이터를 초기화하시겠습니까?")) { myItems = []; energy = { count: 30, last: null }; await save(); localStorage.removeItem('vingo_user_id'); location.reload(); } }
+        function gradeValue(g) { const v = {"EX":4, "SSR":3, "SR":2, "R":1}; return v[g] || 0; }
         function draw() { const total = pool.reduce((s, i) => s + i.chance, 0); let r = Math.random() * total, acc = 0; for (const i of pool) { acc += i.chance; if (r <= acc) return i; } return pool[0]; }
     </script>
 </body>
