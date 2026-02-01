@@ -42,6 +42,9 @@
             } else {
                 if (userData && userData.password === pw) {
                     USER_ID = id;
+                    // [추가] 배틀 페이지(game.html)와 ID를 공유하기 위해 저장
+                    localStorage.setItem('vingo_user_id', id); 
+
                     document.getElementById('login-layer').style.display = 'none';
                     document.getElementById('main-container').style.display = 'block';
                     myItems = Array.isArray(userData.inventory) ? userData.inventory : [];
@@ -167,7 +170,11 @@
         <div class="btns">
             <button id="btn-1" class="btn-draw" onclick="playGacha(1)">1회 가챠</button>
             <button id="btn-10" class="btn-draw-10" onclick="playGacha(10)">10회 가챠</button>
-            <button id="btn-home" class="btn-sub" style="display:none; background:#444;" onclick="goHome()">메인으로</button>
+            
+            <button class="btn-sub" style="background: linear-gradient(135deg, #4b0082, #6a0dad); grid-column: span 2; margin-top: 10px;" 
+                    onclick="location.href='game.html'">⚔️ 원정(배틀) 시작</button>
+
+            <button id="btn-home" class="btn-sub" style="display:none; background:#444; grid-column: span 2;" onclick="goHome()">메인으로</button>
             <button id="btn-coll-open" class="btn-sub" onclick="openCollection()">도감 확인</button>
         </div>
     </div>
@@ -344,7 +351,7 @@
             document.body.classList.add('lock-scroll');
             const target = document.getElementById('detail-card-target');
             target.innerHTML = `<div class="card-container-wrapper" style="width:100%;"><div class="card-frame"></div></div>`;
-            renderCard(target.querySelector('.card-container-wrapper'), item, false, true); 
+            renderCard(target.querySelector('.card-container-wrapper'), item, false, true); 
             
             const card = target.querySelector('.card-frame'), view = document.getElementById('detail-view');
             view.style.display = 'flex';
@@ -365,20 +372,20 @@
                 const cy = e.clientY || (e.touches && e.touches[0].clientY);
                 if (cx === undefined || cy === undefined) return;
                 const x = cx - rect.left, y = cy - rect.top;
-                tarY = ((x / rect.width) - 0.5) * 45; 
-                tarX = (0.5 - (y / rect.height)) * 45; 
+                tarY = ((x / rect.width) - 0.5) * 45; 
+                tarX = (0.5 - (y / rect.height)) * 45; 
             };
 
             view.addEventListener('mousemove', handleMove);
             view.addEventListener('touchmove', handleMove, { passive: false });
             rafId = requestAnimationFrame(animate);
 
-            view.onclick = (e) => { 
-                if(e.target === view) { 
+            view.onclick = (e) => { 
+                if(e.target === view) { 
                     cancelAnimationFrame(rafId);
-                    view.style.display = 'none'; 
-                    document.body.classList.remove('lock-scroll'); 
-                } 
+                    view.style.display = 'none'; 
+                    document.body.classList.remove('lock-scroll'); 
+                } 
             };
         }
 
