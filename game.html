@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
     <title>VINGO EXPEDITION - TRIAD BATTLE</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
-    
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -17,68 +16,78 @@
             --focus-color: #00ffff; --player-bg: #1e90ff; --enemy-bg: #ff4757;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Pretendard', sans-serif !important; }
-        body { background-color: var(--bg-color); color: white; display: flex; flex-direction: column; align-items: center; height: 100svh; width: 100%; overflow: hidden; }
+        
+        /* [아이폰 대응] 전체 바디 높이 계산 보정 */
+        body { 
+            background-color: var(--bg-color); color: white; 
+            display: flex; flex-direction: column; align-items: center; 
+            height: 100svh; width: 100%; overflow: hidden; 
+        }
 
         .game-phase { display: none; width: 100%; max-width: 500px; height: 100%; flex-direction: column; }
         .active { display: flex !important; }
 
         /* 네비게이션 */
-        .nav-bar { display: grid; grid-template-columns: 1fr 1.5fr 1fr; align-items: center; padding: 10px 15px; background: #111; border-bottom: 1px solid #333; height: 60px; }
+        .nav-bar { 
+            display: grid; grid-template-columns: 1fr 2fr 1fr; align-items: center; padding: 10px 15px; 
+            background: #111; border-bottom: 1px solid #333; height: 60px;
+            padding-top: calc(10px + env(safe-area-inset-top)); /* 아이폰 상단 노치 대응 */
+        }
         .btn-back { background: #333; padding: 8px 12px; border-radius: 8px; font-size: 0.75rem; color: #fff; cursor: pointer; border: none; font-weight: bold; }
         .nav-title { font-weight: 800; font-size: 0.9rem; color: var(--focus-color); text-align: center; }
 
-        /* 카드 베이스 디자인 (원본 규격 복구) */
-        .card-wrapper { width: 95px; flex-shrink: 0; height: 145px; position: relative; }
+        /* 카드 디자인 */
+        .card-wrapper { width: 95px; flex-shrink: 0; height: 145px; position: relative; transition: transform 0.2s; }
         .card-base { 
             width: 100%; height: 100%; border-radius: 12px; border: 2.5px solid #333; 
             background: #000; overflow: hidden; display: flex; flex-direction: column; position: relative; 
             box-shadow: 0 4px 10px rgba(0,0,0,0.5);
         }
-        
-        .card-img { 
-            height: 105px; display: flex; align-items: center; justify-content: center; 
-            position: relative; overflow: hidden; 
-        }
+        .card-img { height: 105px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
         .card-img img { max-width: 85%; max-height: 85%; object-fit: contain; z-index: 1; filter: drop-shadow(0 5px 15px rgba(0,0,0,0.5)); }
-        
         .card-txt { height: 40px; background: rgba(0,0,0,0.8); border-top: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 2; }
         .char-name { font-size: 0.65rem; font-weight: 900; white-space: nowrap; }
 
         .owner-glow-player { box-shadow: 0 0 12px var(--player-bg) inset, 0 0 8px var(--player-bg); border-color: var(--player-bg) !important; }
         .owner-glow-enemy { box-shadow: 0 0 12px var(--enemy-bg) inset, 0 0 8px var(--enemy-bg); border-color: var(--enemy-bg) !important; }
 
-        @keyframes selectedShake {
-            0%, 100% { transform: scale(1.05) translateY(-5px); }
-            50% { transform: scale(1.05) translateY(-10px); }
-        }
+        @keyframes selectedShake { 0%, 100% { transform: scale(1.05) translateY(-5px); } 50% { transform: scale(1.05) translateY(-10px); } }
         .selected-card { animation: selectedShake 0.6s infinite ease-in-out; z-index: 10; }
         .selected-card .card-base { border-color: #fff !important; box-shadow: 0 0 15px #fff; }
 
-        /* 마름모 스탯 (원본 규격 복구) */
         .stat-diamond-container { position: absolute; bottom: 8px; right: 8px; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; z-index: 10; }
         .diamond-bg { position: absolute; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); border: 1.5px solid rgba(255, 255, 255, 0.5); transform: rotate(45deg); border-radius: 4px; box-shadow: 0 0 5px rgba(0,0,0,0.8); }
         .stat-val { position: absolute; font-size: 11px; font-weight: 900; color: #fff; z-index: 2; text-shadow: 1px 1px 2px #000; }
         .v-top { top: 1px; } .v-bottom { bottom: 1px; } .v-left { left: 3px; } .v-right { right: 3px; }
 
-        /* 배틀 필드 (원본 규격 복구) */
+        /* 배틀 필드 간격 조절 */
         .battle-grid { 
             display: grid; grid-template-columns: repeat(3, 100px); grid-template-rows: repeat(3, 150px); 
-            gap: 8px; justify-content: center; align-content: center; padding: 15px; 
-            background: radial-gradient(circle, #1a1a1a 0%, #000 100%); border-radius: 20px; margin: 10px auto;
+            gap: 8px; justify-content: center; align-content: center; padding: 10px; 
+            background: radial-gradient(circle, #1a1a1a 0%, #000 100%); border-radius: 20px; margin: 5px auto;
             border: 1px solid #333;
         }
         .grid-slot { border: 1.5px dashed #444; border-radius: 12px; display: flex; align-items: center; justify-content: center; min-height: 145px; }
 
-        /* 손패 영역 */
-        .hand-area { display: flex; gap: 10px; padding: 10px 15px 30px 15px; min-height: 190px; overflow-x: auto; width: 100%; -webkit-overflow-scrolling: touch; }
+        /* [아이폰 대응] 손패 영역 Safe Area 적용 */
+        .hand-area { 
+            display: flex; gap: 10px; 
+            padding: 5px 15px calc(15px + env(safe-area-inset-bottom)) 15px; 
+            min-height: calc(165px + env(safe-area-inset-bottom)); 
+            overflow-x: auto; width: 100%; -webkit-overflow-scrolling: touch; 
+        }
 
-        .sticky-footer { width: 100%; padding: 15px; background: #111; border-top: 2px solid #333; display: flex; justify-content: center; }
+        .sticky-footer { 
+            width: 100%; padding: 15px; background: #111; border-top: 2px solid #333; display: flex; justify-content: center;
+            padding-bottom: calc(15px + env(safe-area-inset-bottom));
+        }
         button.main-btn { padding: 16px; border: none; border-radius: 15px; font-weight: 900; cursor: pointer; color: white; background: linear-gradient(135deg, #4b0082, #ff007f); width: 90%; font-size: 1rem; }
 
-        /* 모달 스타일 (원본 복구) */
         .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 4000; align-items: center; justify-content: center; flex-direction: column; padding: 20px; }
         .modal-content { background: #111; padding: 25px; border-radius: 20px; border: 1px solid #333; width: 100%; max-width: 350px; position: relative; }
-        .modal-card-view { width: 220px; height: 320px; margin: 0 auto; position: relative; z-index: 5; }
+        
+        /* 상세보기 크기 확대 */
+        .modal-card-view { width: 280px; height: 410px; margin: 0 auto; position: relative; z-index: 5; }
         
         .particle { position: absolute; background: white; border-radius: 50%; pointer-events: none; animation: float 3s infinite linear; opacity: 0; z-index: 6; }
         @keyframes float { 0% { transform: translateY(0) scale(1); opacity: 0; } 50% { opacity: 0.8; } 100% { transform: translateY(-120px) scale(0); opacity: 0; } }
@@ -98,16 +107,15 @@
         </div>
     </section>
 
-    <div id="guide-modal" class="modal-overlay">
-        <div class="modal-content">
+    <div id="guide-modal" class="modal-overlay" onclick="closeModal('guide-modal')">
+        <div class="modal-content" onclick="event.stopPropagation()">
             <h2 style="color:var(--focus-color); margin-bottom:15px; font-style:italic;">GAME RULES</h2>
             <div style="font-size:0.85rem; line-height:1.6; color:#ccc;">
                 * 3x3 필드에 카드를 번갈아 놓습니다.<br>
-                * 놓인 카드의 인접한 면의 숫자를 비교합니다.<br>
-                * **내 숫자가 더 크면** 상대 카드를 내 것으로 만듭니다.<br>
-                * 스탯 숫자는 1~9까지이며, **A는 10**을 의미합니다.<br>
+                * 숫자를 비교하여 상대 카드를 내 것으로 만듭니다.<br>
                 * 필드가 가득 찼을 때 카드가 많은 쪽이 승리합니다.<br>
-                * 승리 시 다음 스테이지로 이동하며 에너지가 1 회복됩니다.
+                * 승리 시 다음 스테이지로 이동하며 에너지가 1 회복됩니다.<br>
+                * 한번 정한 원정대는 끝까지 함께합니다.
             </div>
             <button class="main-btn" style="margin-top:20px;" onclick="closeModal('guide-modal')">알겠어!</button>
         </div>
@@ -130,29 +138,29 @@
         <div style="flex:1; overflow-y:auto; padding:20px;">
             <div id="deck-grid" style="display:flex; flex-wrap:wrap; gap:10px; justify-content:center;"></div>
         </div>
-        <div class="sticky-footer"><button id="btn-to-battle" class="main-btn" disabled onclick="startBattlePhase()">모집 완료</button></div>
+        <div class="sticky-footer"><button id="btn-to-battle" class="main-btn" disabled onclick="confirmDeckAndStart()">원정 시작</button></div>
     </section>
 
     <section id="phase-battle" class="game-phase">
         <div class="nav-bar">
             <button class="btn-back" onclick="saveAndExit()">◀ 저장/나가기</button>
-            <div id="stage-display" class="nav-title">STAGE 1</div>
+            <div id="stage-display" class="nav-title">STAGE 1 [하]</div>
             <div id="score-display" style="font-weight:900; font-size:1.1rem; text-align:right; color:var(--focus-color);">5 : 5</div>
         </div>
         <div class="battle-grid" id="battle-grid"></div>
-        <div style="margin-top:auto;">
-            <div style="display:flex; justify-content:space-between; align-items:center; padding: 0 20px; margin-bottom:5px;">
-                <div id="turn-display" style="font-size:0.7rem; font-weight:900; padding:4px 12px; border-radius:20px; background:var(--player-bg);">MY TURN</div>
+        <div style="margin-top:0px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; padding: 0 20px; margin-bottom:2px;">
+                <div id="turn-display" style="font-size:0.65rem; font-weight:900; padding:3px 10px; border-radius:20px; background:var(--player-bg);">MY TURN</div>
             </div>
             <div class="hand-area" id="player-hand"></div>
         </div>
     </section>
 
-    <div id="card-modal" class="modal-overlay">
-        <div id="modal-content-area"></div>
-        <div style="display:flex; flex-direction:column; gap:10px; width:220px; margin-top:20px;">
-            <button id="modal-confirm" class="main-btn">선발하기</button>
-            <button onclick="closeModal('card-modal')" style="background: #222; padding:12px; border-radius:12px; color:white; border:none; font-weight:bold;">돌아가기</button>
+    <div id="card-modal" class="modal-overlay" onclick="closeModal('card-modal')">
+        <div id="modal-content-area" onclick="event.stopPropagation()"></div>
+        <div style="display:flex; flex-direction:column; gap:10px; width:280px; margin-top:15px;" onclick="event.stopPropagation()">
+            <button id="modal-confirm" class="main-btn" style="width:100%;">선발하기</button>
+            <button class="main-btn" style="width:100%; background:#222;" onclick="closeModal('card-modal')">돌아가기</button>
         </div>
     </div>
 
@@ -160,23 +168,14 @@
     <script src="battle_engine.js"></script>
 
     <script>
-    // 1. Firebase 설정 (ID 공유용)
-    const firebaseConfig = {
-        apiKey: "AIzaSyBOmMyRoAZ57YQVWaiiLDLVE5Lwu5aU9-4",
-        authDomain: "vingo-expedition.firebaseapp.com",
-        databaseURL: "https://vingo-expedition-default-rtdb.asia-southeast1.firebasedatabase.app",
-        projectId: "vingo-expedition",
-        storageBucket: "vingo-expedition.firebasestorage.app",
-        messagingSenderId: "593803537592",
-        appId: "1:593803537592:web:d076b2b34a410d144e584d"
-    };
+    const firebaseConfig = { apiKey: "AIzaSyBOmMyRoAZ57YQVWaiiLDLVE5Lwu5aU9-4", authDomain: "vingo-expedition.firebaseapp.com", databaseURL: "https://vingo-expedition-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "vingo-expedition", storageBucket: "vingo-expedition.firebasestorage.app", messagingSenderId: "593803537592", appId: "1:593803537592:web:d076b2b34a410d144e584d" };
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
     let USER_ID = null;
     let myInventory = []; 
     let currentEnergy = { count: 30, last: null };
-    let gameState = { playerDeck: [], battleHand: [], enemyDeck: [], grid: Array(9).fill(null), currentStage: 1, turn: 'player', selectedHandIdx: null };
+    let gameState = { playerDeck: [], battleHand: [], enemyDeck: [], grid: Array(9).fill(null), currentStage: 1, turn: 'player', selectedHandIdx: null, isDeckFixed: false };
 
     const SETTINGS = { 
         "EX": { cp: 10, color: "#ff007f", rank: 0, bg: "radial-gradient(circle at center, rgba(255, 0, 127, 0.6) 0%, rgba(40, 0, 20, 0.9) 60%, #000 100%)" }, 
@@ -185,14 +184,9 @@
         "R": { cp: 2, color: "#0070dd", rank: 3, bg: "radial-gradient(circle at center, rgba(0, 112, 221, 0.5) 0%, rgba(0, 20, 40, 0.9) 60%, #000 100%)" } 
     };
 
-    // [추가] 보안 체크 및 데이터 로드
     window.onload = async () => {
         USER_ID = localStorage.getItem('vingo_user_id');
-        if (!USER_ID) {
-            alert("로그인이 필요합니다!");
-            location.href = 'index.html';
-            return;
-        }
+        if (!USER_ID) { alert("로그인이 필요합니다!"); location.href = 'index.html'; return; }
         await loadUserData();
     };
 
@@ -202,30 +196,22 @@
         if (data) {
             myInventory = Array.isArray(data.inventory) ? data.inventory : [];
             currentEnergy = data.energy || { count: 30, last: Date.now() };
-            // 세이브 로직: Firebase에서 진행상황 로드
             if (data.battleSave) {
                 gameState.currentStage = data.battleSave.stage || 1;
                 gameState.playerDeck = data.battleSave.playerDeck || [];
+                gameState.isDeckFixed = data.battleSave.isDeckFixed || false;
             }
         }
         renderDeckBuilding();
     }
 
-    // [추가] 승리 보상 및 서버 저장
     async function saveWinProgress() {
         if (!USER_ID) return;
         currentEnergy.count = Math.min(30, currentEnergy.count + 1);
         await db.ref('users/' + USER_ID).update({
             energy: currentEnergy,
-            battleSave: { stage: gameState.currentStage, playerDeck: gameState.playerDeck }
+            battleSave: { stage: gameState.currentStage, playerDeck: gameState.playerDeck, isDeckFixed: gameState.isDeckFixed }
         });
-    }
-
-    // --- 원본 UI 함수 (v1.5 그대로 유지) ---
-    function getDiamondHTML(stats, scale = 1) {
-        if(!stats) return "";
-        const ds = stats.map(s => s === 10 ? 'A' : s);
-        return `<div class="stat-diamond-container" style="transform: scale(${scale});"><div class="diamond-bg"></div><div class="stat-val v-top">${ds[0]}</div><div class="stat-val v-bottom">${ds[1]}</div><div class="stat-val v-left">${ds[2]}</div><div class="stat-val v-right">${ds[3]}</div></div>`;
     }
 
     function createCardUI(u, id, owner = null, isLarge = false) {
@@ -233,16 +219,22 @@
         const grade = id.split('_')[0];
         const conf = SETTINGS[grade];
         wrap.className = isLarge ? `modal-card-view` : `card-wrapper`;
-        let ownerClass = (owner === 'player') ? "owner-glow-player" : (owner === 'enemy' ? "owner-glow-enemy" : "");
+        const cardOwner = owner || u.owner;
+        let ownerClass = (cardOwner === 'player') ? "owner-glow-player" : (cardOwner === 'enemy' ? "owner-glow-enemy" : "");
         if (isLarge) {
-            wrap.innerHTML = `<div class="card-base" style="border-color:${conf.color}; height:100%; display:flex; flex-direction:column;"><div style="position:absolute; top:10px; right:10px; background:rgba(0,0,0,0.8); font-size:10px; padding:2px 6px; border-radius:5px; color:${conf.color}; font-weight:900; z-index:15; border: 1px solid ${conf.color};">CP ${conf.cp}</div><div class="card-img" style="flex: 1; min-height:220px; background: ${conf.bg}; position:relative;"><img src="images/${id}" onerror="this.src='https://via.placeholder.com/150x150?text=Card'">${getDiamondHTML(u.stats, 1.4)}</div><div class="card-txt" style="height:130px; align-items: flex-start; padding: 15px; background: #0a0a0a;"><div style="color:${conf.color}; font-size:1.2rem; font-weight:900;">${u.name}</div><div style="font-size:0.85rem; color:#ccc; margin-top:5px;">${u.desc || "원정대의 핵심 전력입니다."}</div></div></div>`;
+            wrap.innerHTML = `<div class="card-base" style="border-color:${conf.color}; height:100%; display:flex; flex-direction:column;"><div style="position:absolute; top:10px; right:10px; background:rgba(0,0,0,0.8); font-size:12px; padding:4px 8px; border-radius:5px; color:${conf.color}; font-weight:900; z-index:15; border: 1px solid ${conf.color};">CP ${conf.cp}</div><div class="card-img" style="flex: 1; background: ${conf.bg}; position:relative;"><img src="images/${id}" onerror="this.src='https://via.placeholder.com/200x200?text=Card'">${getDiamondHTML(u.stats, 1.6)}</div><div class="card-txt" style="height:140px; align-items: flex-start; padding: 18px; background: #0a0a0a;"><div style="color:${conf.color}; font-size:1.3rem; font-weight:900;">${u.name}</div><div style="font-size:0.9rem; color:#ccc; margin-top:8px; line-height:1.4;">${u.desc || "원정대의 핵심 전력입니다."}</div></div></div>`;
         } else {
             wrap.innerHTML = `<div class="card-base ${ownerClass}" style="border-color:${conf.color};"><div style="position:absolute; top:3px; right:3px; background:rgba(0,0,0,0.8); font-size:7px; padding:1px 3px; border-radius:3px; color:${conf.color}; font-weight:900; z-index:15; border: 0.5px solid ${conf.color};">CP ${conf.cp}</div><div class="card-img" style="height:105px; background: ${conf.bg}"><img src="images/${id}" onerror="this.src='https://via.placeholder.com/80x80?text=Card'">${getDiamondHTML(u.stats, 1)}</div><div class="card-txt" style="height:40px; background: #0a0a0a;"><div class="char-name" style="color:${conf.color}">${u.name}</div></div></div>`;
         }
         return wrap;
     }
 
-    // --- 원정대 모집 (등급순 정렬 복구) ---
+    function getDiamondHTML(stats, scale = 1) {
+        if(!stats) return "";
+        const ds = stats.map(s => s === 10 ? 'A' : s);
+        return `<div class="stat-diamond-container" style="transform: scale(${scale});"><div class="diamond-bg"></div><div class="stat-val v-top">${ds[0]}</div><div class="stat-val v-bottom">${ds[1]}</div><div class="stat-val v-left">${ds[2]}</div><div class="stat-val v-right">${ds[3]}</div></div>`;
+    }
+
     function renderDeckBuilding() {
         const grid = document.getElementById('deck-grid'); grid.innerHTML = "";
         myInventory.sort((a,b) => SETTINGS[a.id.split('_')[0]].rank - SETTINGS[b.id.split('_')[0]].rank);
@@ -258,7 +250,19 @@
         updateDeckStats();
     }
 
-    // --- 원본 배틀 로직 및 AI 반응 복구 ---
+    function startNewGame() {
+        if(gameState.isDeckFixed) startBattlePhase(); 
+        else { goToPhase('phase-deck'); renderDeckBuilding(); }
+    }
+
+    function confirmDeckAndStart() {
+        if(confirm("원정대를 확정하시겠습니까? 이후에는 멤버를 변경할 수 없습니다.")) {
+            gameState.isDeckFixed = true;
+            saveWinProgress();
+            startBattlePhase();
+        }
+    }
+
     function placeCard(idx) {
         if(gameState.turn !== 'player' || gameState.selectedHandIdx === null || gameState.grid[idx]) return;
         const originalCard = gameState.battleHand[gameState.selectedHandIdx];
@@ -273,7 +277,7 @@
 
     function enemyAction() {
         if(!window.BattleEngine) return;
-        const move = BattleEngine.getBestMove(gameState.grid, gameState.enemyDeck);
+        const move = BattleEngine.getBestMove(gameState.grid, gameState.enemyDeck, gameState.currentStage);
         if(!move) return;
         const originalCard = gameState.enemyDeck[move.handIdx];
         const cardToPlace = { ...JSON.parse(JSON.stringify(originalCard)), owner: 'enemy' };
@@ -291,7 +295,11 @@
             const e = score.enemy + gameState.enemyDeck.length;
             setTimeout(() => {
                 if(p > e) showWinModal();
-                else { alert("원정에 실패했습니다..."); location.reload(); }
+                else { 
+                    alert("원정에 실패했습니다. 덱이 초기화됩니다."); 
+                    gameState.isDeckFixed = false; gameState.currentStage = 1; gameState.playerDeck = [];
+                    saveWinProgress(); location.reload(); 
+                }
             }, 500);
             return true;
         }
@@ -301,31 +309,18 @@
     async function showWinModal() {
         const modal = document.getElementById('win-modal');
         const title = document.getElementById('win-title');
-        const desc = document.getElementById('win-desc');
         const btn = document.getElementById('win-next-btn');
         if (gameState.currentStage >= 10) {
-            title.innerText = "FINAL VICTORY!"; title.style.color = "var(--ssr-color)"; desc.innerText = "모든 원정을 끝냈습니다! 에너지가 회복되었습니다.";
-            btn.innerText = "메인으로"; btn.onclick = () => location.reload();
+            title.innerText = "FINAL VICTORY!";
+            btn.innerText = "완수 (종료)"; btn.onclick = () => { gameState.isDeckFixed = false; gameState.currentStage = 1; gameState.playerDeck = []; saveWinProgress(); location.reload(); };
             confetti({ particleCount: 200, spread: 70, origin: { y: 0.6 } });
         } else {
-            title.innerText = `STAGE ${gameState.currentStage} CLEAR!`; desc.innerText = "⚡️ 보상으로 에너지가 1 회복되었습니다.";
+            title.innerText = `STAGE ${gameState.currentStage} CLEAR!`;
             btn.onclick = async () => { gameState.currentStage++; await saveWinProgress(); closeModal('win-modal'); initBattle(); };
         }
         modal.style.display = 'flex';
     }
 
-    // --- 기타 원본 유틸리티 (v1.5 그대로) ---
-    function startNewGame() { goToPhase('phase-deck'); renderDeckBuilding(); }
-    function saveAndExit() { if(confirm("현재 진행 상황을 저장하고 나갈까요?")) { saveWinProgress(); location.reload(); } }
-    function closeModal(id) { document.getElementById(id).style.display = "none"; }
-    function openGuide() { document.getElementById('guide-modal').style.display = 'flex'; }
-    function goToPhase(id) { document.querySelectorAll('.game-phase').forEach(p => p.classList.remove('active')); document.getElementById(id).classList.add('active'); }
-    function updateDeckStats() {
-        const count = gameState.playerDeck.length;
-        const cost = gameState.playerDeck.reduce((sum, c) => sum + SETTINGS[c.id.split('_')[0]].cp, 0);
-        document.getElementById('deck-count').innerText = count; document.getElementById('deck-cost').innerText = 25 - cost;
-        document.getElementById('btn-to-battle').disabled = (count !== 5);
-    }
     function initBattle() {
         gameState.grid = Array(9).fill(null); gameState.turn = 'player';
         gameState.battleHand = JSON.parse(JSON.stringify(gameState.playerDeck)).map(c => ({...c, owner: 'player'}));
@@ -336,7 +331,29 @@
         });
         renderBattleBoard(); renderPlayerHand(); updateBattleUI();
     }
+
+    function updateBattleUI() {
+        let diffText = gameState.currentStage >= 8 ? "상" : (gameState.currentStage >= 4 ? "중" : "하");
+        document.getElementById('stage-display').innerText = `STAGE ${gameState.currentStage} [${diffText}]`;
+        const turnDisp = document.getElementById('turn-display');
+        turnDisp.innerText = (gameState.turn === 'player') ? "MY TURN" : "ENEMY TURN";
+        turnDisp.style.background = (gameState.turn === 'player') ? "var(--player-bg)" : "var(--enemy-bg)";
+    }
+
+    function updateDeckStats() {
+        const count = gameState.playerDeck.length;
+        const cost = gameState.playerDeck.reduce((sum, c) => sum + SETTINGS[c.id.split('_')[0]].cp, 0);
+        document.getElementById('deck-count').innerText = count;
+        document.getElementById('deck-cost').innerText = 25 - cost;
+        document.getElementById('btn-to-battle').disabled = (count !== 5);
+    }
+
+    function saveAndExit() { if(confirm("현재 진행 상황을 저장하고 나갈까요?")) { saveWinProgress(); location.reload(); } }
+    function closeModal(id) { document.getElementById(id).style.display = "none"; }
+    function openGuide() { document.getElementById('guide-modal').style.display = 'flex'; }
+    function goToPhase(id) { document.querySelectorAll('.game-phase').forEach(p => p.classList.remove('active')); document.getElementById(id).classList.add('active'); }
     function startBattlePhase() { initBattle(); goToPhase('phase-battle'); }
+
     function renderBattleBoard() {
         const board = document.getElementById('battle-grid'); board.innerHTML = "";
         gameState.grid.forEach((card, idx) => {
@@ -345,27 +362,20 @@
             else slot.onclick = () => placeCard(idx);
             board.appendChild(slot);
         });
-        updateScore();
+        const score = BattleEngine.getScore(gameState.grid);
+        document.getElementById('score-display').innerText = `${score.player + gameState.battleHand.length} : ${score.enemy + gameState.enemyDeck.length}`;
     }
+
     function renderPlayerHand() {
         const hand = document.getElementById('player-hand'); hand.innerHTML = "";
         gameState.battleHand.forEach((card, idx) => {
             const ui = createCardUI(card, card.id, 'player');
             if(gameState.selectedHandIdx === idx) ui.classList.add('selected-card');
-            ui.onclick = () => { gameState.selectedHandIdx = idx; renderPlayerHand(); };
+            ui.onclick = () => { if(gameState.turn === 'player') { gameState.selectedHandIdx = idx; renderPlayerHand(); } };
             hand.appendChild(ui);
         });
     }
-    function updateScore() {
-        const score = BattleEngine.getScore(gameState.grid);
-        document.getElementById('score-display').innerText = `${score.player + gameState.battleHand.length} : ${score.enemy + gameState.enemyDeck.length}`;
-    }
-    function updateBattleUI() {
-        document.getElementById('stage-display').innerText = `STAGE ${gameState.currentStage}`;
-        const turnDisp = document.getElementById('turn-display');
-        turnDisp.innerText = (gameState.turn === 'player') ? "MY TURN" : "ENEMY TURN";
-        turnDisp.style.background = (gameState.turn === 'player') ? "var(--player-bg)" : "var(--enemy-bg)";
-    }
+
     function openDeckModal(u, id) {
         const modal = document.getElementById('card-modal');
         document.getElementById('modal-content-area').innerHTML = "";
@@ -373,6 +383,7 @@
         const isSelected = gameState.playerDeck.findIndex(d => d.id === id) > -1;
         const btn = document.getElementById('modal-confirm');
         btn.innerText = isSelected ? "선발 제외" : "원정대 선발";
+        btn.disabled = gameState.isDeckFixed;
         btn.onclick = () => {
             if(isSelected) gameState.playerDeck = gameState.playerDeck.filter(d => d.id !== id);
             else {
