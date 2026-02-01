@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-    <title>VINGO EXPEDITION v1.6.1</title>
+    <title>VINGO EXPEDITION v1.6.2</title>
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
     <script src="card_data.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
@@ -27,7 +26,6 @@
         let myItems = [];
         let energy = { count: 30, last: null };
         let isGachaRunning = false;
-        let isResultPending = false; 
 
         async function handleAuth(type) {
             const id = document.getElementById('auth-id').value.trim();
@@ -81,7 +79,6 @@
         .card-container-wrapper { position: relative; width: 100%; max-width: 290px; aspect-ratio: 3 / 4.4; margin: 0 auto; perspective: 1500px; }
         .card-frame { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); border-radius: 20px; border: 4px solid #222; background: #0a0a0a; display: flex; align-items: center; justify-content: center; cursor: pointer; }
         .card-face { position: absolute; inset: 0; backface-visibility: hidden; border-radius: 16px; overflow: hidden; background: #000; }
-        .card-front { z-index: 2; } 
         .card-back { z-index: 1; transform: rotateY(180deg); display: flex; align-items: center; justify-content: center; background: #111; }
         .card-back img { width: 100%; height: 100%; object-fit: cover; }
         .card-clip { position: absolute; inset: 0; display: flex; flex-direction: column; border-radius: 16px; overflow: hidden; }
@@ -98,16 +95,9 @@
         .btn-draw-10 { background: linear-gradient(135deg, #e67e22, #f39c12); }
         .btn-sub { grid-column: span 2; background: #222; border: 1px solid #333; margin-top: 5px; }
 
-        #login-layer { position: fixed; inset: 0; background: #050505; z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; }
-        .auth-box { width: 100%; max-width: 320px; background: #111; padding: 25px; border-radius: 20px; border: 1px solid #222; }
-        .auth-box input { width: 100%; padding: 15px; margin-bottom: 12px; border-radius: 12px; border: 1px solid #333; background: #000; color: white; }
-        
         #multi-result-display { display:none; flex-wrap:nowrap; overflow-x:auto; gap:25px; width:100%; padding: 40px 25px; scroll-snap-type: x mandatory; }
         #detail-view { position: fixed; inset: 0; background: rgba(0,0,0,0.97); z-index: 2000; display: none; align-items: center; justify-content: center; perspective: 1500px; touch-action: none; }
-        #collection-modal { position:fixed; inset:0; background:#050505; display:none; flex-direction:column; z-index:1500; }
-        #collection-grid { display: grid; grid-template-columns: repeat(3, 1fr); column-gap: 10px; row-gap: 15px; padding: 15px; overflow-y: auto; flex:1; align-content: start; }
-        .coll-item-wrapper { position: relative; width: 100%; aspect-ratio: 3 / 4.4; }
-        #custom-msg { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,0.95); color: #000; padding: 10px 20px; border-radius: 20px; z-index: 20000; font-weight: bold; display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        #custom-msg { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,0.95); color: #000; padding: 10px 20px; border-radius: 20px; z-index: 20000; font-weight: bold; display: none; }
     </style>
 </head>
 <body>
@@ -120,8 +110,8 @@
     <div id="login-layer">
         <div class="auth-box">
             <h2 style="color:var(--ssr-color); text-align:center; margin-bottom:20px; font-style:italic;">VINGO EXPEDITION</h2>
-            <input type="text" id="auth-id" placeholder="아이디">
-            <input type="password" id="auth-pw" placeholder="비밀번호">
+            <input type="text" id="auth-id" placeholder="아이디" style="width:100%; padding:15px; margin-bottom:12px; border-radius:12px; border:1px solid #333; background:#000; color:white;">
+            <input type="password" id="auth-pw" placeholder="비밀번호" style="width:100%; padding:15px; margin-bottom:12px; border-radius:12px; border:1px solid #333; background:#000; color:white;">
             <button onclick="handleAuth('login')" style="background:var(--r-color); width:100%; border-radius:12px; margin-bottom:10px;">로그인</button>
             <button onclick="handleAuth('signup')" style="background:#333; width:100%; border-radius:12px;">회원가입</button>
         </div>
@@ -153,12 +143,10 @@
             <button id="btn-1" class="btn-draw" onclick="playGacha(1)">1회 가챠</button>
             <button id="btn-10" class="btn-draw-10" onclick="playGacha(10)">10회 가챠</button>
             <button class="btn-sub" style="background: linear-gradient(135deg, #4b0082, #6a0dad);" onclick="location.href='game.html'">⚔️ 원정(배틀) 시작</button>
-            <button id="btn-home" class="btn-sub" style="display:none; background:#444;" onclick="goHome()">메인으로</button>
+            <button id="btn-home" class="btn-sub" style="display:none; background:#444; grid-column: span 2;" onclick="goHome()">메인으로</button>
             <button id="btn-coll-open" class="btn-sub" onclick="openCollection()">도감 확인</button>
         </div>
     </div>
-
-    <div id="collection-modal"></div>
 
     <script>
         const RECHARGE_TIME = 20 * 60 * 1000;
@@ -214,18 +202,18 @@
             if (isGachaRunning) return;
             if (energy.count < count) { showMessage("에너지가 부족합니다!"); return; }
             
-            goHomeInternal(); 
-            isGachaRunning = isResultPending = true;
+            // [중요] 버튼 누르자마자 강제 리셋 (초기화)
+            isGachaRunning = true;
             toggleMainBtns(true);
+            goHomeInternal(); // 메인 UI 리셋
+            
+            // 화면에 남아있을지 모르는 모든 카드 요소 제거
+            document.getElementById('multi-result-display').innerHTML = "";
+            document.getElementById('multi-result-display').style.display = "none";
+            document.getElementById('main-card-wrapper').style.display = "block";
+            document.getElementById('slot-placeholder').style.display = "none";
 
-            if (count === 1) { 
-                document.getElementById('main-card-wrapper').style.display = "block"; 
-                document.getElementById('multi-result-display').style.display = "none"; 
-            } else { 
-                const d = document.getElementById('multi-result-display'); 
-                d.scrollLeft = 0; d.style.display = "none"; 
-            }
-
+            // 에너지 차감 및 저장
             energy.count -= count; 
             if (energy.count < MAX_ENERGY && !energy.last) energy.last = Date.now();
             
@@ -238,13 +226,9 @@
             updateUI(); 
             await save();
 
-            const mf = document.getElementById('main-card-frame'), 
-                  cl = document.getElementById('cut-in-layer'), 
-                  ph = document.getElementById('slot-placeholder');
-                  
-            ph.style.display = 'none'; 
+            const cl = document.getElementById('cut-in-layer');
             cl.style.display = "flex";
-            await new Promise(r => setTimeout(r, 2000));
+            await new Promise(r => setTimeout(r, 2000)); // 스캔
 
             const highest = results.reduce((a, b) => (gradeValue(a.grade) > gradeValue(b.grade)) ? a : b);
             
@@ -275,13 +259,12 @@
             if (count === 1) { 
                 const wrapper = document.getElementById('main-card-wrapper');
                 renderCard(wrapper, results[0], true);
-                mf.onclick = () => showDetail(results[0]);
+                document.getElementById('main-card-frame').onclick = () => showDetail(results[0]);
             } else { 
                 document.getElementById('main-card-wrapper').style.display = "none"; 
                 renderTen(results);
             }
 
-            isResultPending = false;
             isGachaRunning = false;
             toggleMainBtns(false); 
             document.getElementById('btn-home').style.display = "block";
@@ -295,7 +278,7 @@
             results.forEach(item => {
                 const w = document.createElement('div'); w.className = "card-container-wrapper";
                 w.style.flex = "0 0 250px"; w.style.scrollSnapAlign = "center";
-                w.innerHTML = `<div class="card-frame"><div class="card-face card-front"><div class="card-clip"></div></div><div class="card-face card-back"><img src="${BACK_IMG_URL}"></div></div>`;
+                w.innerHTML = `<div class="card-frame"><div class="card-face card-front"></div><div class="card-face card-back"><img src="${BACK_IMG_URL}"></div></div>`;
                 renderCard(w, item, false); w.onclick = () => showDetail(item); d.appendChild(w);
             });
         }
@@ -304,13 +287,13 @@
             const collectedCount = myItems.length, totalCount = pool.length;
             const rate = totalCount > 0 ? ((collectedCount / totalCount) * 100).toFixed(1) : 0;
             const modal = document.getElementById('collection-modal');
-            modal.innerHTML = `<div id="collection-header" style="padding:20px; display:flex; justify-content:space-between; background:#000; border-bottom:1px solid #222;"><div><h2 style="color:var(--ssr-color); font-size:1.1rem;">정예 도감 (${rate}%)</h2><p style="font-size:10px; color:#555;">수집: ${collectedCount}/${totalCount}</p></div><button onclick="document.getElementById('collection-modal').style.display='none'; document.body.classList.remove('lock-scroll');" style="background:#222; padding:5px 12px; border-radius:5px; color:#fff;">닫기</button></div><div id="collection-grid"></div><button onclick="resetData()" style="background:#500; color:#fff; padding:10px; width:100%;">데이터 초기화</button>`;
+            modal.innerHTML = `<div id="collection-header" style="padding:20px; display:flex; justify-content:space-between; background:#000; border-bottom:1px solid #222;"><div><h2 style="color:var(--ssr-color); font-size:1.1rem;">정예 도감 (${rate}%)</h2><p style="font-size:10px; color:#555;">수집: ${collectedCount}/${totalCount}</p></div><button onclick="document.getElementById('collection-modal').style.display='none'; document.body.classList.remove('lock-scroll');" style="background:#222; padding:5px 12px; border-radius:5px; color:#fff;">닫기</button></div><div id="collection-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); column-gap: 10px; row-gap: 15px; padding: 15px; overflow-y: auto; flex:1; align-content: start;"></div>`;
             const grid = modal.querySelector('#collection-grid');
             pool.forEach((item) => {
                 const f = myItems.find(i => i.id === item.id);
                 const w = document.createElement('div'); w.className = "coll-item-wrapper";
                 if (f) {
-                    w.innerHTML = `<div class="card-frame" style="width:100%; height:100%;"><div class="card-face card-front"><div class="card-clip"></div></div></div><div class="count-badge" style="position:absolute; top:-5px; right:-5px; background:#fff; color:#000; font-size:9px; padding:2px 5px; border-radius:4px; font-weight:900; z-index:10;">x${f.count}</div>`;
+                    w.innerHTML = `<div class="card-frame" style="width:100%; height:100%;"><div class="card-face card-front"></div></div><div class="count-badge" style="position:absolute; top:-5px; right:-5px; background:#fff; color:#000; font-size:9px; padding:2px 5px; border-radius:4px; font-weight:900; z-index:10; border:1px solid #000;">x${f.count}</div>`;
                     renderCard(w, item, false, false, true); w.onclick = () => showDetail(item);
                 } else { w.innerHTML = `<div style="width:100%; height:100%; background:#0a0a0a; border:2px dashed #333; border-radius:15px; display:flex; align-items:center; justify-content:center; color:#222; font-size:24px; font-weight:900;">?</div>`; }
                 grid.appendChild(w);
@@ -332,13 +315,21 @@
             view.onclick = (e) => { if(e.target === view) { cancelAnimationFrame(rafId); view.style.display = 'none'; document.body.classList.remove('lock-scroll'); } };
         }
 
-        function toggleMainBtns(b) { document.getElementById('btn-1').disabled = b; document.getElementById('btn-10').disabled = b; document.getElementById('btn-coll-open').disabled = b; if(document.getElementById('btn-home')) document.getElementById('btn-home').disabled = b; }
-        function goHomeInternal() { document.getElementById('main-card-wrapper').style.display = "block"; document.getElementById('multi-result-display').style.display = "none"; document.getElementById('btn-home').style.display = "none"; const frame = document.getElementById('main-card-frame'); frame.style.border = "4px solid #222"; frame.style.boxShadow = "none"; frame.classList.remove('float-effect'); frame.style.animation = ""; document.getElementById('slot-placeholder').style.display = 'flex'; frame.onclick = null; }
+        function toggleMainBtns(b) { document.getElementById('btn-1').disabled = b; document.getElementById('btn-10').disabled = b; document.getElementById('btn-coll-open').disabled = b; }
+        function goHomeInternal() { 
+            const frame = document.getElementById('main-card-frame'); 
+            frame.style.border = "4px solid #222"; 
+            frame.style.boxShadow = "none"; 
+            frame.classList.remove('float-effect'); 
+            frame.style.animation = ""; 
+            frame.onclick = null; 
+            document.getElementById('slot-placeholder').style.display = 'flex'; 
+            document.getElementById('btn-home').style.display = "none";
+        }
         function goHome() { goHomeInternal(); showMessage("메인 화면으로 돌아왔습니다."); }
         function updateUI() { document.getElementById('energy-display').innerText = `${energy.count} / ${MAX_ENERGY}`; }
         function updateEnergyOnLoad() { if (!energy.last) return; const g = Math.floor((Date.now() - energy.last) / RECHARGE_TIME); if (g > 0) { energy.count = Math.min(MAX_ENERGY, energy.count + g); energy.last = (energy.count >= MAX_ENERGY) ? null : energy.last + (g * RECHARGE_TIME); save(); } }
         function updateTimer() { const td = document.getElementById('timer-display'); if (energy.count >= MAX_ENERGY) { td.innerText = "(MAX)"; return; } if (!energy.last) energy.last = Date.now(); const el = Date.now() - energy.last; if (el >= RECHARGE_TIME) { energy.count++; energy.last = (energy.count >= MAX_ENERGY) ? null : Date.now(); save(); updateUI(); } if (energy.last) { const rm = RECHARGE_TIME - (el % RECHARGE_TIME); const m = Math.floor(rm/60000), s = Math.floor((rm%60000)/1000).toString().padStart(2,'0'); td.innerText = `(${m}:${s})`; } }
-        async function resetData() { if(confirm("정말 모든 데이터를 초기화하시겠습니까?")) { myItems = []; energy = { count: 30, last: null }; await save(); document.getElementById('collection-modal').style.display = 'none'; document.body.classList.remove('lock-scroll'); goHome(); updateUI(); showMessage("데이터가 초기화되었습니다."); } }
         function draw() { const total = pool.reduce((s, i) => s + i.chance, 0); let r = Math.random() * total, acc = 0; for (const i of pool) { acc += i.chance; if (r <= acc) return i; } return pool[0]; }
     </script>
 </body>
