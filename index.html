@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-    <title>VINGO EXPEDITION v1.6.2</title>
+    <title>VINGO EXPEDITION v1.6.4</title>
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
     <script src="card_data.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -27,6 +27,22 @@
         let energy = { count: 30, last: null };
         let isGachaRunning = false;
 
+        window.addEventListener('DOMContentLoaded', async () => {
+            const savedId = localStorage.getItem('vingo_user_id');
+            if (savedId) {
+                USER_ID = savedId;
+                const snapshot = await db.ref('users/' + USER_ID).once('value');
+                const userData = snapshot.val();
+                if (userData) {
+                    document.getElementById('login-layer').style.display = 'none';
+                    document.getElementById('main-container').style.display = 'block';
+                    myItems = Array.isArray(userData.inventory) ? userData.inventory : [];
+                    energy = userData.energy || { count: 30, last: Date.now() };
+                    updateEnergyOnLoad(); updateUI(); setInterval(updateTimer, 1000);
+                }
+            }
+        });
+
         async function handleAuth(type) {
             const id = document.getElementById('auth-id').value.trim();
             const pw = document.getElementById('auth-pw').value.trim();
@@ -49,7 +65,7 @@
                 } else { showMessage("정보가 일치하지 않습니다."); }
             }
         }
-        function handleLogout() { if(confirm("로그아웃 하시겠습니까?")) location.reload(); }
+        function handleLogout() { if(confirm("로그아웃 하시겠습니까?")) { localStorage.removeItem('vingo_user_id'); location.reload(); } }
         function showMessage(msg) { const m = document.getElementById('custom-msg'); m.innerText = msg; m.style.display = 'block'; setTimeout(() => { m.style.display = 'none'; }, 2000); }
         function showCutInMessage(msg, color) { const target = document.getElementById('cut-in-msg'); target.innerText = msg; target.style.color = color; target.style.textShadow = `0 0 15px ${color}, 0 0 30px ${color}`; target.style.display = 'flex'; setTimeout(() => { target.style.display = 'none'; }, 1500); }
     </script>
@@ -57,8 +73,11 @@
     <style>
         :root { --ex-color: #ff007f; --ssr-color: #ffdf00; --sr-color: #a335ee; --r-color: #0070dd; --bg-color: #050505; --scan-color: #00ff00; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; font-family: 'Pretendard', sans-serif !important; }
-        body { background-color: var(--bg-color); color: white; display: flex; flex-direction: column; align-items: center; min-height: 100svh; width: 100%; overflow-x: hidden; overscroll-behavior-y: contain; }
-        body.lock-scroll { overflow: hidden !important; touch-action: none; }
+        body, html { width: 100%; height: 100%; background-color: var(--bg-color); color: white; overflow-x: hidden; }
+        body { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+        #login-layer { position: fixed; inset: 0; background: #050505; z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; }
+        .auth-box { width: 100%; max-width: 320px; background: #111; padding: 25px; border-radius: 20px; border: 1px solid #222; }
 
         @keyframes shake { 0% { transform: translate(0, 0); } 25% { transform: translate(-3px, 3px); } 50% { transform: translate(3px, -3px); } 75% { transform: translate(-3px, -3px); } 100% { transform: translate(3px, 3px); } }
         @keyframes ex-shake { 0% { transform: translate(0, 0); } 10% { transform: translate(-8px, 4px); } 20% { transform: translate(8px, -4px); } 30% { transform: translate(-8px, -4px); } 100% { transform: translate(0, 0); } }
@@ -79,6 +98,7 @@
         .card-container-wrapper { position: relative; width: 100%; max-width: 290px; aspect-ratio: 3 / 4.4; margin: 0 auto; perspective: 1500px; }
         .card-frame { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); border-radius: 20px; border: 4px solid #222; background: #0a0a0a; display: flex; align-items: center; justify-content: center; cursor: pointer; }
         .card-face { position: absolute; inset: 0; backface-visibility: hidden; border-radius: 16px; overflow: hidden; background: #000; }
+        .card-front { z-index: 2; } 
         .card-back { z-index: 1; transform: rotateY(180deg); display: flex; align-items: center; justify-content: center; background: #111; }
         .card-back img { width: 100%; height: 100%; object-fit: cover; }
         .card-clip { position: absolute; inset: 0; display: flex; flex-direction: column; border-radius: 16px; overflow: hidden; }
@@ -97,6 +117,7 @@
 
         #multi-result-display { display:none; flex-wrap:nowrap; overflow-x:auto; gap:25px; width:100%; padding: 40px 25px; scroll-snap-type: x mandatory; }
         #detail-view { position: fixed; inset: 0; background: rgba(0,0,0,0.97); z-index: 2000; display: none; align-items: center; justify-content: center; perspective: 1500px; touch-action: none; }
+        #collection-modal { position:fixed; inset:0; background:#050505; display:none; flex-direction:column; z-index:1500; }
         #custom-msg { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,0.95); color: #000; padding: 10px 20px; border-radius: 20px; z-index: 20000; font-weight: bold; display: none; }
     </style>
 </head>
@@ -109,7 +130,7 @@
 
     <div id="login-layer">
         <div class="auth-box">
-            <h2 style="color:var(--ssr-color); text-align:center; margin-bottom:20px; font-style:italic;">VINGO EXPEDITION</h2>
+            <h2 style="color:var(--ssr-color); text-align:center; margin-bottom:20px; font-style:italic; font-size:1.8rem;">VINGO ONLINE</h2>
             <input type="text" id="auth-id" placeholder="아이디" style="width:100%; padding:15px; margin-bottom:12px; border-radius:12px; border:1px solid #333; background:#000; color:white;">
             <input type="password" id="auth-pw" placeholder="비밀번호" style="width:100%; padding:15px; margin-bottom:12px; border-radius:12px; border:1px solid #333; background:#000; color:white;">
             <button onclick="handleAuth('login')" style="background:var(--r-color); width:100%; border-radius:12px; margin-bottom:10px;">로그인</button>
@@ -135,6 +156,8 @@
                         <div class="scan-line"></div>
                         <div class="scan-text">SCANNING...</div>
                     </div>
+                    <div class="card-face card-front" id="render-target-front" style="display:none;"></div>
+                    <div class="card-face card-back" id="render-target-back" style="display:none;"><img src="images/card_back.webp"></div>
                 </div>
             </div>
         </div>
@@ -147,6 +170,8 @@
             <button id="btn-coll-open" class="btn-sub" onclick="openCollection()">도감 확인</button>
         </div>
     </div>
+
+    <div id="collection-modal"></div>
 
     <script>
         const RECHARGE_TIME = 20 * 60 * 1000;
@@ -161,59 +186,46 @@
 
         async function save() { if (!USER_ID) return; try { await db.ref('users/' + USER_ID).update({ inventory: myItems, energy: energy }); } catch (e) { console.error(e); } }
 
-        function renderCard(targetWrapper, item, isDraw, isDetail = false, isColl = false) {
+        // [수정] renderCard가 frame 내부 레이어를 파괴하지 않도록 변경
+        function renderCard(targetFrame, item, isHighEffect = false, isColl = false) {
             const set = SETTINGS[item.grade];
             const isHigh = item.grade === 'EX' || item.grade === 'SSR';
-            const frame = targetWrapper.querySelector('.card-frame');
             const info = CARD_DATA_DB[item.id] || { name: "???", desc: "데이터 없음" };
             
-            frame.className = "card-frame";
-            frame.style.animation = "";
-            frame.style.transform = "rotateY(0deg)";
-            frame.style.setProperty('--glow-c', set.color);
+            targetFrame.style.animation = "";
+            targetFrame.style.transform = "rotateY(0deg)";
+            targetFrame.style.setProperty('--glow-c', set.color);
 
-            if (!isDetail && isHigh) {
-                frame.classList.add('float-effect');
-                frame.style.animation = `float 3s ease-in-out infinite, glow-pulse 1.5s ease-in-out infinite alternate`;
-                frame.style.boxShadow = `0 0 20px ${set.color}`;
+            if (isHighEffect && isHigh) {
+                targetFrame.classList.add('float-effect');
+                targetFrame.style.animation = `float 3s ease-in-out infinite, glow-pulse 1.5s ease-in-out infinite alternate`;
+                targetFrame.style.boxShadow = `0 0 20px ${set.color}`;
             }
-            frame.style.border = `${isColl ? '2px' : '4px'} solid ${set.color}`;
+            targetFrame.style.border = `${isColl ? '2px' : '4px'} solid ${set.color}`;
 
-            frame.innerHTML = `
-                <div class="card-face card-front" style="position:absolute; inset:0; backface-visibility:hidden; z-index:2; border-radius:16px; overflow:hidden;">
-                    <div class="card-clip" style="height:100%; display:flex; flex-direction:column; background: #000;">
-                        <div style="height:70%; display:flex; align-items:center; justify-content:center; position:relative; background: radial-gradient(circle at center, ${set.color}22 0%, #050505 100%);">
-                            <div style="position:absolute; top:10px; left:10px; background:${set.color}; color:#000; font-size:10px; font-weight:900; padding:2px 8px; border-radius:4px; z-index:10;">${item.grade}</div>
-                            <img src="images/${item.id}" style="max-width:90%; max-height:90%; object-fit:contain; z-index:2;">
-                        </div>
-                        <div style="height:30%; background:#111; padding:15px; border-top:1px solid ${set.color}33;">
-                            <div style="font-size:1.2rem; font-weight:900; color:${set.color};">${info.name}</div>
-                            <p style="font-size:10px; color:#666; margin-top:5px; height:30px; overflow:hidden;">${info.desc}</p>
-                        </div>
+            // HTML 생성 (가챠 결과용/상세용/도감용 공용)
+            const html = `
+                <div class="card-clip" style="height:100%; display:flex; flex-direction:column; background: #000;">
+                    <div style="height:70%; display:flex; align-items:center; justify-content:center; position:relative; background: radial-gradient(circle at center, ${set.color}22 0%, #050505 100%);">
+                        <div style="position:absolute; top:10px; left:10px; background:${set.color}; color:#000; font-size:10px; font-weight:900; padding:2px 8px; border-radius:4px; z-index:10;">${item.grade}</div>
+                        <img src="images/${item.id}" style="max-width:90%; max-height:90%; object-fit:contain; z-index:2;">
                     </div>
-                </div>
-                <div class="card-face card-back" style="position:absolute; inset:0; backface-visibility:hidden; transform:rotateY(180deg); z-index:1;">
-                    <img src="${BACK_IMG_URL}" style="width:100%; height:100%; object-fit:cover; border-radius:16px;">
-                </div>
-            `;
+                    <div style="height:30%; background:#111; padding:15px; border-top:1px solid ${set.color}33;">
+                        <div style="font-size:1.2rem; font-weight:900; color:${set.color};">${info.name}</div>
+                        <p style="font-size:10px; color:#666; margin-top:5px; height:30px; overflow:hidden;">${info.desc}</p>
+                    </div>
+                </div>`;
+            return html;
         }
 
         async function playGacha(count) {
             if (isGachaRunning) return;
             if (energy.count < count) { showMessage("에너지가 부족합니다!"); return; }
             
-            // [중요] 버튼 누르자마자 강제 리셋 (초기화)
             isGachaRunning = true;
             toggleMainBtns(true);
-            goHomeInternal(); // 메인 UI 리셋
-            
-            // 화면에 남아있을지 모르는 모든 카드 요소 제거
-            document.getElementById('multi-result-display').innerHTML = "";
-            document.getElementById('multi-result-display').style.display = "none";
-            document.getElementById('main-card-wrapper').style.display = "block";
-            document.getElementById('slot-placeholder').style.display = "none";
+            goHomeInternal(); // UI 리셋 (버튼 누르자마자)
 
-            // 에너지 차감 및 저장
             energy.count -= count; 
             if (energy.count < MAX_ENERGY && !energy.last) energy.last = Date.now();
             
@@ -223,12 +235,11 @@
                 if (f) f.count++; else myItems.push({id: item.id, count: 1}); 
             });
             
-            updateUI(); 
-            await save();
+            updateUI(); await save();
 
             const cl = document.getElementById('cut-in-layer');
             cl.style.display = "flex";
-            await new Promise(r => setTimeout(r, 2000)); // 스캔
+            await new Promise(r => setTimeout(r, 2000)); // 스캔 연출
 
             const highest = results.reduce((a, b) => (gradeValue(a.grade) > gradeValue(b.grade)) ? a : b);
             
@@ -241,7 +252,6 @@
                 if (highest.grade === 'EX') {
                     document.getElementById('vfx-flash').style.display = "block"; 
                     setTimeout(()=>document.getElementById('vfx-flash').style.display="none", 300);
-                    document.getElementById('main-container').classList.remove('shake-effect');
                     document.getElementById('main-container').classList.add('ex-shake-effect');
                     document.getElementById('vfx-vortex-ex').style.display = "block";
                     showCutInMessage("⚠️ WARNING: EX UNKNOWN ⚠️", "var(--ex-color)");
@@ -251,15 +261,17 @@
                 }
                 document.getElementById('vfx-vortex-ssr').style.display = "none";
                 document.getElementById('main-container').classList.remove('shake-effect');
-                confetti({ particleCount: 200, spread: 80, origin: { y: 0.5 }, colors: [highest.grade === 'EX' ? '#ff007f' : '#ffdf00', '#ffffff'] });
+                confetti({ particleCount: 200, spread: 80, origin: { y: 0.5 } });
             }
 
             cl.style.display = "none";
 
             if (count === 1) { 
-                const wrapper = document.getElementById('main-card-wrapper');
-                renderCard(wrapper, results[0], true);
-                document.getElementById('main-card-frame').onclick = () => showDetail(results[0]);
+                const front = document.getElementById('render-target-front');
+                const frame = document.getElementById('main-card-frame');
+                front.innerHTML = renderCard(frame, results[0], true);
+                front.style.display = "block";
+                frame.onclick = () => showDetail(results[0]);
             } else { 
                 document.getElementById('main-card-wrapper').style.display = "none"; 
                 renderTen(results);
@@ -270,8 +282,6 @@
             document.getElementById('btn-home').style.display = "block";
         }
 
-        function gradeValue(g) { const v = {"EX":4, "SSR":3, "SR":2, "R":1}; return v[g] || 0; }
-
         function renderTen(results) {
             const d = document.getElementById('multi-result-display');
             d.innerHTML = ""; d.style.display = "flex"; d.scrollLeft = 0;
@@ -279,7 +289,10 @@
                 const w = document.createElement('div'); w.className = "card-container-wrapper";
                 w.style.flex = "0 0 250px"; w.style.scrollSnapAlign = "center";
                 w.innerHTML = `<div class="card-frame"><div class="card-face card-front"></div><div class="card-face card-back"><img src="${BACK_IMG_URL}"></div></div>`;
-                renderCard(w, item, false); w.onclick = () => showDetail(item); d.appendChild(w);
+                const frame = w.querySelector('.card-frame');
+                w.querySelector('.card-front').innerHTML = renderCard(frame, item, false);
+                w.onclick = () => showDetail(item);
+                d.appendChild(w);
             });
         }
 
@@ -287,15 +300,27 @@
             const collectedCount = myItems.length, totalCount = pool.length;
             const rate = totalCount > 0 ? ((collectedCount / totalCount) * 100).toFixed(1) : 0;
             const modal = document.getElementById('collection-modal');
-            modal.innerHTML = `<div id="collection-header" style="padding:20px; display:flex; justify-content:space-between; background:#000; border-bottom:1px solid #222;"><div><h2 style="color:var(--ssr-color); font-size:1.1rem;">정예 도감 (${rate}%)</h2><p style="font-size:10px; color:#555;">수집: ${collectedCount}/${totalCount}</p></div><button onclick="document.getElementById('collection-modal').style.display='none'; document.body.classList.remove('lock-scroll');" style="background:#222; padding:5px 12px; border-radius:5px; color:#fff;">닫기</button></div><div id="collection-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); column-gap: 10px; row-gap: 15px; padding: 15px; overflow-y: auto; flex:1; align-content: start;"></div>`;
+            
+            modal.innerHTML = `
+                <div id="collection-header" style="padding:20px; display:flex; justify-content:space-between; background:#000; border-bottom:1px solid #222;">
+                    <div><h2 style="color:var(--ssr-color); font-size:1.1rem;">정예 도감 (${rate}%)</h2><p style="font-size:10px; color:#555;">수집: ${collectedCount}/${totalCount}</p></div>
+                    <button onclick="document.getElementById('collection-modal').style.display='none'; document.body.classList.remove('lock-scroll');" style="background:#222; padding:5px 12px; border-radius:5px; color:#fff;">닫기</button>
+                </div>
+                <div id="collection-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); column-gap: 10px; row-gap: 15px; padding: 15px; overflow-y: auto; flex:1; align-content: start;"></div>
+                <button onclick="resetData()" style="background:#500; color:#fff; padding:10px; width:100%;">데이터 초기화</button>`;
+            
             const grid = modal.querySelector('#collection-grid');
             pool.forEach((item) => {
                 const f = myItems.find(i => i.id === item.id);
                 const w = document.createElement('div'); w.className = "coll-item-wrapper";
                 if (f) {
                     w.innerHTML = `<div class="card-frame" style="width:100%; height:100%;"><div class="card-face card-front"></div></div><div class="count-badge" style="position:absolute; top:-5px; right:-5px; background:#fff; color:#000; font-size:9px; padding:2px 5px; border-radius:4px; font-weight:900; z-index:10; border:1px solid #000;">x${f.count}</div>`;
-                    renderCard(w, item, false, false, true); w.onclick = () => showDetail(item);
-                } else { w.innerHTML = `<div style="width:100%; height:100%; background:#0a0a0a; border:2px dashed #333; border-radius:15px; display:flex; align-items:center; justify-content:center; color:#222; font-size:24px; font-weight:900;">?</div>`; }
+                    const frame = w.querySelector('.card-frame');
+                    w.querySelector('.card-front').innerHTML = renderCard(frame, item, false, true);
+                    w.onclick = () => showDetail(item);
+                } else { 
+                    w.innerHTML = `<div style="width:100%; height:100%; background:#0a0a0a; border:2px dashed #333; border-radius:15px; display:flex; align-items:center; justify-content:center; color:#222; font-size:24px; font-weight:900;">?</div>`; 
+                }
                 grid.appendChild(w);
             });
             modal.style.display = "flex"; document.body.classList.add('lock-scroll');
@@ -303,14 +328,17 @@
 
         function showDetail(item) {
             document.body.classList.add('lock-scroll');
+            const view = document.getElementById('detail-view');
             const target = document.getElementById('detail-card-target');
-            target.innerHTML = `<div class="card-container-wrapper" style="width:100%;"><div class="card-frame"></div></div>`;
-            renderCard(target.querySelector('.card-container-wrapper'), item, false, true); 
-            const card = target.querySelector('.card-frame'), view = document.getElementById('detail-view');
+            target.innerHTML = `<div class="card-container-wrapper" style="width:100%;"><div class="card-frame"><div class="card-face card-front"></div></div></div>`;
+            
+            const frame = target.querySelector('.card-frame');
+            target.querySelector('.card-front').innerHTML = renderCard(frame, item, false);
+            
             view.style.display = 'flex';
             let curX = 0, curY = 0, tarX = 0, tarY = 0, rafId = null;
-            const animate = () => { curX += (tarX - curX) * 0.1; curY += (tarY - curY) * 0.1; card.style.transform = `rotateY(${curY}deg) rotateX(${curX}deg) scale(1.05)`; rafId = requestAnimationFrame(animate); };
-            const handleMove = (e) => { const rect = card.getBoundingClientRect(); const cx = e.clientX || (e.touches && e.touches[0].clientX); const cy = e.clientY || (e.touches && e.touches[0].clientY); if (cx === undefined || cy === undefined) return; const x = cx - rect.left, y = cy - rect.top; tarY = ((x / rect.width) - 0.5) * 45; tarX = (0.5 - (y / rect.height)) * 45; };
+            const animate = () => { curX += (tarX - curX) * 0.1; curY += (tarY - curY) * 0.1; frame.style.transform = `rotateY(${curY}deg) rotateX(${curX}deg) scale(1.05)`; rafId = requestAnimationFrame(animate); };
+            const handleMove = (e) => { const rect = frame.getBoundingClientRect(); const cx = e.clientX || (e.touches && e.touches[0].clientX); const cy = e.clientY || (e.touches && e.touches[0].clientY); if (cx === undefined || cy === undefined) return; const x = cx - rect.left, y = cy - rect.top; tarY = ((x / rect.width) - 0.5) * 45; tarX = (0.5 - (y / rect.height)) * 45; };
             view.addEventListener('mousemove', handleMove); view.addEventListener('touchmove', handleMove, { passive: false }); rafId = requestAnimationFrame(animate);
             view.onclick = (e) => { if(e.target === view) { cancelAnimationFrame(rafId); view.style.display = 'none'; document.body.classList.remove('lock-scroll'); } };
         }
@@ -324,12 +352,17 @@
             frame.style.animation = ""; 
             frame.onclick = null; 
             document.getElementById('slot-placeholder').style.display = 'flex'; 
+            document.getElementById('render-target-front').style.display = 'none';
+            document.getElementById('render-target-back').style.display = 'none';
+            document.getElementById('main-card-wrapper').style.display = 'block';
+            document.getElementById('multi-result-display').style.display = 'none';
             document.getElementById('btn-home').style.display = "none";
         }
         function goHome() { goHomeInternal(); showMessage("메인 화면으로 돌아왔습니다."); }
         function updateUI() { document.getElementById('energy-display').innerText = `${energy.count} / ${MAX_ENERGY}`; }
         function updateEnergyOnLoad() { if (!energy.last) return; const g = Math.floor((Date.now() - energy.last) / RECHARGE_TIME); if (g > 0) { energy.count = Math.min(MAX_ENERGY, energy.count + g); energy.last = (energy.count >= MAX_ENERGY) ? null : energy.last + (g * RECHARGE_TIME); save(); } }
         function updateTimer() { const td = document.getElementById('timer-display'); if (energy.count >= MAX_ENERGY) { td.innerText = "(MAX)"; return; } if (!energy.last) energy.last = Date.now(); const el = Date.now() - energy.last; if (el >= RECHARGE_TIME) { energy.count++; energy.last = (energy.count >= MAX_ENERGY) ? null : Date.now(); save(); updateUI(); } if (energy.last) { const rm = RECHARGE_TIME - (el % RECHARGE_TIME); const m = Math.floor(rm/60000), s = Math.floor((rm%60000)/1000).toString().padStart(2,'0'); td.innerText = `(${m}:${s})`; } }
+        async function resetData() { if(confirm("정말 모든 데이터를 초기화하시겠습니까?")) { myItems = []; energy = { count: 30, last: null }; await save(); localStorage.removeItem('vingo_user_id'); location.reload(); } }
         function draw() { const total = pool.reduce((s, i) => s + i.chance, 0); let r = Math.random() * total, acc = 0; for (const i of pool) { acc += i.chance; if (r <= acc) return i; } return pool[0]; }
     </script>
 </body>
