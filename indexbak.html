@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-    <title>VINGO EXPEDITION v1.5</title>
+    <title>VINGO EXPEDITION v1.6</title>
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
     <script src="card_data.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -29,6 +29,24 @@
         let isGachaRunning = false;
         let isResultPending = false; 
 
+        // [추가] 자동 로그인 기능: 페이지 로드 시 스토리지 확인
+        window.addEventListener('DOMContentLoaded', async () => {
+            const savedId = localStorage.getItem('vingo_user_id');
+            if (savedId) {
+                const userRef = db.ref('users/' + savedId);
+                const snapshot = await userRef.once('value');
+                const userData = snapshot.val();
+                if (userData) {
+                    USER_ID = savedId;
+                    document.getElementById('login-layer').style.display = 'none';
+                    document.getElementById('main-container').style.display = 'block';
+                    myItems = Array.isArray(userData.inventory) ? userData.inventory : [];
+                    energy = userData.energy || { count: 30, last: Date.now() };
+                    updateEnergyOnLoad(); updateUI(); setInterval(updateTimer, 1000);
+                }
+            }
+        });
+
         async function handleAuth(type) {
             const id = document.getElementById('auth-id').value.trim();
             const pw = document.getElementById('auth-pw').value.trim();
@@ -42,6 +60,8 @@
             } else {
                 if (userData && userData.password === pw) {
                     USER_ID = id;
+                    // [추가] ID 공유를 위한 저장
+                    localStorage.setItem('vingo_user_id', id); 
                     document.getElementById('login-layer').style.display = 'none';
                     document.getElementById('main-container').style.display = 'block';
                     myItems = Array.isArray(userData.inventory) ? userData.inventory : [];
@@ -50,7 +70,8 @@
                 } else { showMessage("정보가 일치하지 않습니다."); }
             }
         }
-        function handleLogout() { if(confirm("로그아웃 하시겠습니까?")) location.reload(); }
+        // [수정] 로그아웃 시 공유 ID도 삭제
+        function handleLogout() { if(confirm("로그아웃 하시겠습니까?")) { localStorage.removeItem('vingo_user_id'); location.reload(); } }
         function showMessage(msg) { const m = document.getElementById('custom-msg'); m.innerText = msg; m.style.display = 'block'; setTimeout(() => { m.style.display = 'none'; }, 2000); }
         function showCutInMessage(msg, color) { const target = document.getElementById('cut-in-msg'); target.innerText = msg; target.style.color = color; target.style.textShadow = `0 0 15px ${color}, 0 0 30px ${color}`; target.style.display = 'flex'; setTimeout(() => { target.style.display = 'none'; }, 1500); }
     </script>
@@ -165,6 +186,7 @@
         <div class="btns">
             <button id="btn-1" class="btn-draw" onclick="playGacha(1)">1회 가챠</button>
             <button id="btn-10" class="btn-draw-10" onclick="playGacha(10)">10회 가챠</button>
+            <button class="btn-sub" style="background: linear-gradient(135deg, #4b0082, #ff007f);" onclick="location.href='game.html'">⚔️ 원정(배틀) 시작</button>
             <button id="btn-home" class="btn-sub" style="display:none; background:#444;" onclick="goHome()">메인으로</button>
             <button id="btn-coll-open" class="btn-sub" onclick="openCollection()">도감 확인</button>
         </div>
@@ -185,227 +207,64 @@
 
         async function save() { if (!USER_ID) return; try { await db.ref('users/' + USER_ID).update({ inventory: myItems, energy: energy }); } catch (e) { console.error(e); } }
 
-        // ... 앞부분 생략 (Firebase 설정 등은 동일) ...
-
-function renderCard(targetWrapper, item, isDraw, isDetail = false, isColl = false) {
-    const set = SETTINGS[item.grade];
-    const isHigh = item.grade === 'EX' || item.grade === 'SSR';
-    const frame = targetWrapper.querySelector('.card-frame');
-    const info = CARD_DATA_DB[item.id] || { name: "???", desc: "데이터 없음", attr: "노말" };
-    
-    // 1. 초기 상태 세팅
-    frame.className = "card-frame";
-    frame.style.animation = "";
-    frame.style.transform = "perspective(1000px) rotateX(0deg) rotateY(0deg)";
-    frame.style.setProperty('--glow-c', set.color);
-    frame.style.transformStyle = "preserve-3d";
-    frame.style.transition = "all 0.1s";
-
-    // 2. 가챠 결과(1회/10회) 및 도감 고등급 연출
-    if (!isDetail && isHigh) {
-        frame.classList.add('float-effect');
-        frame.style.animation = `float 3s ease-in-out infinite, glow-pulse 1.5s ease-in-out infinite alternate`;
-        frame.style.boxShadow = `0 0 20px ${set.color}`;
-    }
-    frame.style.border = `${isColl ? '2px' : '4px'} solid ${set.color}`;
-
-    // 3. 카드 레이어 구조 (요청하신 .overlay 로직 포함)
-    frame.innerHTML = `
-        <div class="card-face card-front" style="position:absolute; inset:0; backface-visibility:hidden; z-index:2; border-radius:16px; overflow:hidden;">
-            <div class="card-overlay" style="
-                position: absolute; inset: 0; z-index: 5; pointer-events: none;
-                background: linear-gradient(105deg, transparent 40%, rgba(255, 219, 112, 0.6) 45%, rgba(132, 50, 255, 0.4) 50%, transparent 54%);
-                background-size: 150% 150%; background-position: 100%;
-                filter: brightness(1.1) opacity(0); mix-blend-mode: color-dodge; transition: all 0.1s;
-            "></div>
+        function renderCard(targetWrapper, item, isDraw, isDetail = false, isColl = false) {
+            const set = SETTINGS[item.grade];
+            const isHigh = item.grade === 'EX' || item.grade === 'SSR';
+            const frame = targetWrapper.querySelector('.card-frame');
+            const info = CARD_DATA_DB[item.id] || { name: "???", desc: "데이터 없음", attr: "노말" };
             
-            <div class="card-clip" style="height:100%; display:flex; flex-direction:column; background: #000;">
-                <div style="height:70%; display:flex; align-items:center; justify-content:center; position:relative; background: radial-gradient(circle at center, ${set.color}22 0%, #050505 100%);">
-                    <div style="position:absolute; top:10px; left:10px; background:${set.color}; color:#000; font-size:10px; font-weight:900; padding:2px 8px; border-radius:4px; z-index:10;">${item.grade}</div>
-                    <img src="images/${item.id}" style="max-width:90%; max-height:90%; object-fit:contain; z-index:2;">
-                </div>
-                <div style="height:30%; background:#111; padding:15px; border-top:1px solid ${set.color}33;">
-                    <div style="font-size:1.2rem; font-weight:900; color:${set.color};">${info.name}</div>
-                    <p style="font-size:10px; color:#666; margin-top:5px; height:30px; overflow:hidden;">${info.desc}</p>
-                </div>
-            </div>
-        </div>
-        <div class="card-face card-back" style="position:absolute; inset:0; backface-visibility:hidden; transform:rotateY(180deg); z-index:1;">
-            <img src="${BACK_IMG_URL}" style="width:100%; height:100%; object-fit:cover; border-radius:16px;">
-        </div>
-    `;
-
-    // 4. 상세보기(isDetail) 인터랙션 적용
-    if (isDetail) {
-        const overlay = frame.querySelector('.card-overlay');
-        const view = document.getElementById('detail-view');
-
-        const updateInteraction = (e) => {
-            const rect = frame.getBoundingClientRect();
-            const clientX = e.clientX || (e.touches && e.touches[0].clientX);
-            const clientY = e.clientY || (e.touches && e.touches[0].clientY);
-            
-            // 프레임 내부 상대 좌표 계산
-            const x = clientX - rect.left;
-            const y = clientY - rect.top;
-
-            // 요청하신 로직 기반 + 뒷면까지 볼 수 있도록 범위 조절
-            // (화면 끝으로 갈수록 뒷면이 보이게 회전값을 확장)
-            const rotateY = -1/2 * x + (rect.width / 4); 
-            const rotateX = 4/30 * y - 20;
-
-            frame.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
-
-            if (isHigh && overlay) {
-                overlay.style.backgroundPosition = `${x/5 + y/5}%`;
-                overlay.style.filter = `opacity(${x / rect.width}) brightness(1.2)`;
-            }
-        };
-
-        const resetInteraction = () => {
-            frame.style.transition = "all 0.5s ease-out";
+            frame.className = "card-frame";
+            frame.style.animation = "";
             frame.style.transform = "perspective(1000px) rotateX(0deg) rotateY(0deg)";
-            if (overlay) overlay.style.filter = "opacity(0)";
-        };
+            frame.style.setProperty('--glow-c', set.color);
+            frame.style.transformStyle = "preserve-3d";
+            frame.style.transition = "all 0.1s";
 
-        // 이벤트 연결
-        view.addEventListener('mousemove', updateInteraction);
-        view.addEventListener('touchmove', updateInteraction, { passive: false });
-        view.addEventListener('mouseleave', resetInteraction);
-        view.addEventListener('touchend', resetInteraction);
-    }
+            if (!isDetail && isHigh) {
+                frame.classList.add('float-effect');
+                frame.style.animation = `float 3s ease-in-out infinite, glow-pulse 1.5s ease-in-out infinite alternate`;
+                frame.style.boxShadow = `0 0 20px ${set.color}`;
+            }
+            frame.style.border = `${isColl ? '2px' : '4px'} solid ${set.color}`;
 
-    // 5. 파티클 효과 복구
-    if (isHigh && (isDetail || isDraw)) {
-        createParticles(frame, set.color);
-    }
-}
-
-// showDetail 함수도 구조에 맞춰 간단히 정리
-function showDetail(item) {
-    document.body.classList.add('lock-scroll');
-    const target = document.getElementById('detail-card-target');
-    target.innerHTML = `<div class="card-container-wrapper" style="width:100%; perspective:2000px;"><div class="card-frame"></div></div>`;
-    
-    renderCard(target.querySelector('.card-container-wrapper'), item, false, true); 
-
-    const view = document.getElementById('detail-view');
-    view.style.display = 'flex';
-
-    view.onclick = (e) => {
-        if(e.target === view) {
-            view.style.display = 'none';
-            document.body.classList.remove('lock-scroll');
-            if(pTimer) clearInterval(pTimer);
-        }
-    };
-}
-
-function showDetail(item) {
-    document.body.classList.add('lock-scroll');
-    const target = document.getElementById('detail-card-target');
-    
-    target.innerHTML = `
-        <div class="card-container-wrapper" style="width:100%; perspective:2000px;">
-            <div class="card-frame" style="transform-style: preserve-3d;">
-                <div class="card-face card-front" style="backface-visibility: hidden; z-index: 2; position:absolute; inset:0;">
-                    <div class="card-clip"></div>
+            frame.innerHTML = `
+                <div class="card-face card-front" style="position:absolute; inset:0; backface-visibility:hidden; z-index:2; border-radius:16px; overflow:hidden;">
+                    <div class="card-clip" style="height:100%; display:flex; flex-direction:column; background: #000;">
+                        <div style="height:70%; display:flex; align-items:center; justify-content:center; position:relative; background: radial-gradient(circle at center, ${set.color}22 0%, #050505 100%);">
+                            <div style="position:absolute; top:10px; left:10px; background:${set.color}; color:#000; font-size:10px; font-weight:900; padding:2px 8px; border-radius:4px; z-index:10;">${item.grade}</div>
+                            <img src="images/${item.id}" style="max-width:90%; max-height:90%; object-fit:contain; z-index:2;">
+                        </div>
+                        <div style="height:30%; background:#111; padding:15px; border-top:1px solid ${set.color}33;">
+                            <div style="font-size:1.2rem; font-weight:900; color:${set.color};">${info.name}</div>
+                            <p style="font-size:10px; color:#666; margin-top:5px; height:30px; overflow:hidden;">${info.desc}</p>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-face card-back" style="backface-visibility: hidden; transform: rotateY(180deg); z-index: 1; position:absolute; inset:0;">
-                    <img src="${BACK_IMG_URL}" style="width:100%; height:100%; object-fit:cover;">
+                <div class="card-face card-back" style="position:absolute; inset:0; backface-visibility:hidden; transform:rotateY(180deg); z-index:1;">
+                    <img src="${BACK_IMG_URL}" style="width:100%; height:100%; object-fit:cover; border-radius:16px;">
                 </div>
-            </div>
-        </div>`;
-    
-    renderCard(target.querySelector('.card-container-wrapper'), item, false, true); 
+            `;
 
-    const view = document.getElementById('detail-view');
-    view.style.display = 'flex';
-
-    view.onclick = (e) => {
-        if(e.target === view) {
-            view.style.display = 'none';
-            document.body.classList.remove('lock-scroll');
-            window.onmousemove = window.onmouseup = window.ontouchmove = window.ontouchend = null;
-            if(pTimer) clearInterval(pTimer);
-        }
-    };
-}
-
-function showDetail(item) {
-    document.body.classList.add('lock-scroll');
-    const target = document.getElementById('detail-card-target');
-    
-    // 상세보기용 스켈레톤 생성 (앞면/뒷면 레이어 확실히 분리)
-    target.innerHTML = `
-        <div class="card-container-wrapper" style="width:100%; perspective:2000px;">
-            <div class="card-frame" style="transform-style: preserve-3d; transition: transform 0.1s;">
-                <div class="card-face card-front" style="backface-visibility: hidden; z-index: 2;">
-                    <div class="card-clip"></div>
-                </div>
-                <div class="card-face card-back" style="backface-visibility: hidden; transform: rotateY(180deg); z-index: 1;">
-                    <img src="${BACK_IMG_URL}" style="width:100%; height:100%; object-fit:cover;">
-                </div>
-            </div>
-        </div>`;
-    
-    renderCard(target.querySelector('.card-container-wrapper'), item, false, true); 
-
-    const view = document.getElementById('detail-view');
-    view.style.display = 'flex';
-
-    view.onclick = (e) => {
-        if(e.target === view) {
-            view.style.display = 'none';
-            document.body.classList.remove('lock-scroll');
-            // 이벤트 클린업
-            window.onmousemove = null; window.onmouseup = null;
-            window.ontouchmove = null; window.ontouchend = null;
-            if(pTimer) clearInterval(pTimer);
-        }
-    };
-}
-
-// [중요] showDetail 함수도 수정 (기존 틸트 로직 제거)
-function showDetail(item) {
-    document.body.classList.add('lock-scroll');
-    const target = document.getElementById('detail-card-target');
-    target.innerHTML = `
-        <div class="card-container-wrapper" style="width:100%;">
-            <div class="card-frame">
-                <div class="card-face card-front"><div class="card-clip"></div></div>
-                <div class="card-face card-back"><img src="${BACK_IMG_URL}"></div>
-            </div>
-        </div>`;
-    
-    // 상세보기 모드로 호출 (isDraw=false, isDetail=true)
-    renderCard(target.querySelector('.card-container-wrapper'), item, false, true); 
-
-    const view = document.getElementById('detail-view');
-    view.style.display = 'flex';
-
-    view.onclick = (e) => {
-        if(e.target === view) {
-            view.style.display = 'none';
-            document.body.classList.remove('lock-scroll');
-            // 이벤트 리스너 해제 (메모리 관리)
-            window.onmousemove = null; window.onmouseup = null;
-            window.ontouchmove = null; window.ontouchend = null;
-        }
-    };
-}
-
-        let pTimer = null;
-        function createParticles(target, color) {
-            if(pTimer) clearInterval(pTimer);
-            pTimer = setInterval(() => {
-                const p = document.createElement('div'); p.className = 'particle';
-                const size = Math.random() * 3 + 2;
-                p.style.width = p.style.height = `${size}px`; p.style.background = color;
-                p.style.left = `${Math.random() * 90 + 5}%`; p.style.bottom = '10%';
-                p.style.animationDuration = `${Math.random() * 1 + 1}s`;
-                target.appendChild(p); p.addEventListener('animationend', () => p.remove());
-            }, 150);
+            if (isDetail) {
+                const view = document.getElementById('detail-view');
+                const updateInteraction = (e) => {
+                    const rect = frame.getBoundingClientRect();
+                    const cx = e.clientX || (e.touches && e.touches[0].clientX);
+                    const cy = e.clientY || (e.touches && e.touches[0].clientY);
+                    const x = cx - rect.left, y = cy - rect.top;
+                    const ry = -1/2 * x + (rect.width / 4), rx = 4/30 * y - 20;
+                    frame.style.transform = `perspective(1000px) rotateX(${rx}deg) rotateY(${ry}deg)`;
+                };
+                const resetInteraction = () => {
+                    frame.style.transition = "all 0.5s ease-out";
+                    frame.style.transform = "perspective(1000px) rotateX(0deg) rotateY(0deg)";
+                };
+                view.addEventListener('mousemove', updateInteraction);
+                view.addEventListener('touchmove', updateInteraction, { passive: false });
+                view.addEventListener('mouseleave', resetInteraction);
+                view.addEventListener('touchend', resetInteraction);
+            }
+            if (isHigh && (isDetail || isDraw)) createParticles(frame, set.color);
         }
 
         async function playGacha(count) {
@@ -459,8 +318,20 @@ function showDetail(item) {
             document.getElementById('btn-home').style.display = "block";
         }
 
-        function gradeValue(g) { const v = {"EX":4, "SSR":3, "SR":2, "R":1}; return v[g] || 0; }
+        let pTimer = null;
+        function createParticles(target, color) {
+            if(pTimer) clearInterval(pTimer);
+            pTimer = setInterval(() => {
+                const p = document.createElement('div'); p.className = 'particle';
+                const size = Math.random() * 3 + 2;
+                p.style.width = p.style.height = `${size}px`; p.style.background = color;
+                p.style.left = `${Math.random() * 90 + 5}%`; p.style.bottom = '10%';
+                p.style.animationDuration = `${Math.random() * 1 + 1}s`;
+                target.appendChild(p); p.addEventListener('animationend', () => p.remove());
+            }, 150);
+        }
 
+        function gradeValue(g) { const v = {"EX":4, "SSR":3, "SR":2, "R":1}; return v[g] || 0; }
         function renderTen(results) {
             const d = document.getElementById('multi-result-display');
             d.innerHTML = ""; d.style.display = "flex"; d.scrollLeft = 0;
@@ -493,45 +364,11 @@ function showDetail(item) {
         function showDetail(item) {
             document.body.classList.add('lock-scroll');
             const target = document.getElementById('detail-card-target');
-            target.innerHTML = `<div class="card-container-wrapper" style="width:100%;"><div class="card-frame"><div class="card-face card-front"><div class="card-clip"></div></div></div></div>`;
+            target.innerHTML = `<div class="card-container-wrapper" style="width:100%;"><div class="card-frame"><div class="card-face card-front"><div class="card-clip"></div></div><div class="card-face card-back" style="transform:rotateY(180deg); position:absolute; inset:0; backface-visibility:hidden;"><img src="${BACK_IMG_URL}" style="width:100%; height:100%; object-fit:cover;"></div></div></div>`;
             renderCard(target.querySelector('.card-container-wrapper'), item, false, true); 
-            
-            const card = target.querySelector('.card-frame'), view = document.getElementById('detail-view');
+            const view = document.getElementById('detail-view');
             view.style.display = 'flex';
-
-            // 틸트 로테이션 복구 로직 (모바일 최적화)
-            let curX = 0, curY = 0, tarX = 0, tarY = 0;
-            let rafId = null;
-
-            const animate = () => {
-                curX += (tarX - curX) * 0.1;
-                curY += (tarY - curY) * 0.1;
-                card.style.transform = `rotateY(${curY}deg) rotateX(${curX}deg) scale(1.05)`;
-                rafId = requestAnimationFrame(animate);
-            };
-
-            const handleMove = (e) => {
-                const rect = card.getBoundingClientRect();
-                const cx = e.clientX || (e.touches && e.touches[0].clientX);
-                const cy = e.clientY || (e.touches && e.touches[0].clientY);
-                if (cx === undefined || cy === undefined) return;
-                const x = cx - rect.left, y = cy - rect.top;
-                tarY = ((x / rect.width) - 0.5) * 35; // Y축 회전 (좌우)
-                tarX = (0.5 - (y / rect.height)) * 35; // X축 회전 (상하)
-            };
-
-            view.addEventListener('mousemove', handleMove);
-            view.addEventListener('touchmove', handleMove, { passive: false });
-            rafId = requestAnimationFrame(animate);
-
-            view.onclick = (e) => { 
-                if(e.target === view) { 
-                    cancelAnimationFrame(rafId);
-                    view.style.display = 'none'; 
-                    document.body.classList.remove('lock-scroll'); 
-                    if(pTimer) clearInterval(pTimer); 
-                } 
-            };
+            view.onclick = (e) => { if(e.target === view) { view.style.display = 'none'; document.body.classList.remove('lock-scroll'); if(pTimer) clearInterval(pTimer); } };
         }
 
         function toggleMainBtns(b) { document.getElementById('btn-1').disabled = b; document.getElementById('btn-10').disabled = b; document.getElementById('btn-coll-open').disabled = b; if(document.getElementById('btn-home')) document.getElementById('btn-home').disabled = b; }
@@ -540,18 +377,8 @@ function showDetail(item) {
         function updateUI() { document.getElementById('energy-display').innerText = `${energy.count} / ${MAX_ENERGY}`; }
         function updateEnergyOnLoad() { if (!energy.last) return; const g = Math.floor((Date.now() - energy.last) / RECHARGE_TIME); if (g > 0) { energy.count = Math.min(MAX_ENERGY, energy.count + g); energy.last = (energy.count >= MAX_ENERGY) ? null : energy.last + (g * RECHARGE_TIME); save(); } }
         function updateTimer() { const td = document.getElementById('timer-display'); if (energy.count >= MAX_ENERGY) { td.innerText = "(MAX)"; return; } if (!energy.last) energy.last = Date.now(); const el = Date.now() - energy.last; if (el >= RECHARGE_TIME) { energy.count++; energy.last = (energy.count >= MAX_ENERGY) ? null : Date.now(); save(); updateUI(); } if (energy.last) { const rm = RECHARGE_TIME - (el % RECHARGE_TIME); const m = Math.floor(rm/60000), s = Math.floor((rm%60000)/1000).toString().padStart(2,'0'); td.innerText = `(${m}:${s})`; } }
-        async function resetData() { if(confirm("정말 모든 데이터를 초기화하시겠습니까?")) { myItems = []; energy = { count: 30, last: null }; await save(); document.getElementById('collection-modal').style.display = 'none'; document.body.classList.remove('lock-scroll'); goHome(); updateUI(); showMessage("데이터가 초기화되었습니다."); } }
+        async function resetData() { if(confirm("정말 모든 데이터를 초기화하시겠습니까?")) { myItems = []; energy = { count: 30, last: null }; await save(); localStorage.removeItem('vingo_user_id'); location.reload(); } }
         function draw() { const total = pool.reduce((s, i) => s + i.chance, 0); let r = Math.random() * total, acc = 0; for (const i of pool) { acc += i.chance; if (r <= acc) return i; } return pool[0]; }
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
