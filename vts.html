@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roguelike Card Battle</title>
+    <style>
+        :root {
+            --ex-color: #ff00ff;
+            --ssr-color: #ffcc00;
+            --sr-color: #a335ee;
+            --r-color: #0070dd;
+            --basic-color: #ffffff;
+        }
+
+        body {
+            background: #1a1a1a;
+            color: white;
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'apple sd gothic neo', sans-serif;
+        }
+
+        /* 게임 필드 영역 (카드가 사용되는 곳) */
+        #game-field {
+            position: relative;
+            width: 100%;
+            height: 70vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-bottom: 2px dashed #444;
+        }
+
+        .drop-zone-hint {
+            color: rgba(255, 255, 255, 0.2);
+            font-size: 2rem;
+            font-weight: bold;
+            pointer-events: none;
+        }
+
+        /* 하단 손패 영역 */
+        #hand {
+            position: fixed;
+            bottom: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            width: 100%;
+            height: 250px;
+            padding-bottom: 50px;
+            gap: -20px; /* 카드가 살짝 겹치게 */
+        }
+
+        .card-wrapper {
+            transition: transform 0.2s;
+            z-index: 10;
+        }
+
+        .card-wrapper:hover {
+            transform: translateY(-30px);
+            z-index: 100;
+        }
+
+        .card {
+            width: 140px;
+            height: 200px;
+            background-color: #333;
+            background-size: cover;
+            background-position: center;
+            border: 3px solid var(--basic-color);
+            border-radius: 12px;
+            position: relative;
+            cursor: grab;
+            touch-action: none;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+
+        /* 등급별 테두리 설정 */
+        .card[data-grade^="EX"] { border-color: var(--ex-color); box-shadow: 0 0 15px var(--ex-color); }
+        .card[data-grade^="SSR"] { border-color: var(--ssr-color); }
+        .card[data-grade^="SR"] { border-color: var(--sr-color); }
+        .card[data-grade^="R"] { border-color: var(--r-color); }
+
+        /* 카드 정보 오버레이 (간략화) */
+        .card-info {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            background: rgba(0,0,0,0.7);
+            border-bottom-left-radius: 9px;
+            border-bottom-right-radius: 9px;
+            font-size: 11px;
+            padding: 5px;
+            box-sizing: border-box;
+            pointer-events: none;
+        }
+
+        .card-cost {
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            background: #e74c3c;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            border: 2px solid white;
+        }
+
+        /* 투척 애니메이션 */
+        .card.thrown {
+            transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            transform: translateY(-100vh) scale(0.2) rotate(20deg) !important;
+            opacity: 0;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-field">
+    <div class="drop-zone-hint">여기로 드래그하여 카드 사용</div>
+</div>
+
+<div id="hand"></div>
+
+<script>
+    const ROGUELIKE_CARD_DB = {
+        "EX_오리지널.webp": { name: "오리지널", cost: 2, desc: "체력 50% 이하 데미지 2배." },
+        "EX_혁명단정모.webp": { name: "혁명단정모", cost: 1, desc: "혁명단 카드당 데미지 +4." },
+        "SSR_1차혁명단.webp": { name: "1차혁명단", cost: 2, desc: "자폭 데미지 15." },
+        "SSR_157룩.webp": { name: "157룩", cost: 1, desc: "3장 사용 시 2장 드로우." },
+        "SR_빈피.webp": { name: "빈피", cost: 1, desc: "50% 확률 회피." },
+        "R_편고.webp": { name: "편고", cost: 1, desc: "턴 종료 시 방어 5." },
+        "B_미소빈고.webp": { name: "미소 빈고", cost: 1, desc: "기본 몸통 박치기." }
+    };
+
+    const handContainer = document.getElementById('hand');
+    let draggedCard = null;
+    let startY = 0;
+    let startX = 0;
+
+    // 1. 초기 손패 생성 (DB에서 랜덤으로 5장)
+    function initHand() {
+        const fileNames = Object.keys(ROGUELIKE_CARD_DB);
+        for(let i=0; i<5; i++) {
+            const randomImg = fileNames[Math.floor(Math.random() * fileNames.length)];
+            createCard(randomImg);
+        }
+    }
+
+    function createCard(fileName) {
+        const data = ROGUELIKE_CARD_DB[fileName];
+        const wrapper = document.createElement('div');
+        wrapper.className = 'card-wrapper';
+        
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.dataset.grade = fileName.split('_')[0]; // EX, SSR 등급 추출
+        card.style.backgroundImage = `url('images/${fileName}')`;
+        
+        card.innerHTML = `
+            <div class="card-cost">${data.cost}</div>
+            <div class="card-info">
+                <strong>${data.name}</strong><br>${data.desc}
+            </div>
+        `;
+
+        card.onmousedown = dragStart;
+        card.ontouchstart = dragStart; // 모바일 대응
+
+        wrapper.appendChild(card);
+        handContainer.appendChild(wrapper);
+    }
+
+    // 2. 드래그 로직
+    function dragStart(e) {
+        draggedCard = e.currentTarget;
+        const clientX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
+        const clientY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
+        
+        startX = clientX;
+        startY = clientY;
+        
+        draggedCard.style.transition = 'none';
+        draggedCard.style.zIndex = '1000';
+
+        document.onmousemove = dragMove;
+        document.ontouchmove = dragMove;
+        document.onmouseup = dragEnd;
+        document.ontouchend = dragEnd;
+    }
+
+    function dragMove(e) {
+        if (!draggedCard) return;
+        
+        const clientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
+        const clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
+
+        const deltaX = clientX - startX;
+        const deltaY = clientY - startY;
+
+        // 위로 던질 때 살짝 기울어지는 연출
+        const rotation = deltaX * 0.1;
+        
+        // 너무 아래로 드래그 못하게 제한
+        const moveY = Math.min(deltaY, 100);
+
+        draggedCard.style.transform = `translate(${deltaX}px, ${moveY}px) rotate(${rotation}deg) scale(1.1)`;
+    }
+
+    function dragEnd(e) {
+        if (!draggedCard) return;
+
+        const clientY = e.type === 'touchend' ? e.changedTouches[0].clientY : e.clientY;
+        const deltaY = clientY - startY;
+
+        // 사용 판정: 위로 180px 이상 드래그했을 때
+        if (deltaY < -180) {
+            useCard(draggedCard);
+        } else {
+            // 제자리로 복귀
+            draggedCard.style.transition = 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+            draggedCard.style.transform = 'translate(0, 0) rotate(0deg) scale(1)';
+            draggedCard.style.zIndex = '10';
+        }
+
+        document.onmousemove = null;
+        document.onmouseup = null;
+        document.ontouchmove = null;
+        document.ontouchend = null;
+        draggedCard = null;
+    }
+
+    // 3. 카드 사용 처리
+    function useCard(card) {
+        card.classList.add('thrown');
+        
+        // 효과음이나 파티클을 여기에 추가할 수 있습니다.
+        console.log(`${card.dataset.grade} 등급 카드 사용됨!`);
+
+        setTimeout(() => {
+            const wrapper = card.closest('.card-wrapper');
+            wrapper.remove();
+            
+            // 카드를 썼으니 한 장 새로 뽑기 (테스트용)
+            const fileNames = Object.keys(ROGUELIKE_CARD_DB);
+            createCard(fileNames[Math.floor(Math.random() * fileNames.length)]);
+        }, 500);
+    }
+
+    initHand();
+</script>
+
+</body>
+</html>
