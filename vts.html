@@ -11,238 +11,217 @@
         }
 
         body {
-            background: radial-gradient(circle, #2c3e50, #000000);
+            background: #0f0f1a; /* 더 어두운 우주 느낌 */
             color: white; margin: 0; height: 100vh; overflow: hidden;
             font-family: 'apple sd gothic neo', sans-serif;
+            display: flex; flex-direction: column;
         }
 
-        /* --- 상단: 적 정보 --- */
-        #enemy-area {
-            height: 50vh; display: flex; flex-direction: column;
-            align-items: center; justify-content: center; position: relative;
+        /* --- 상단: 적 정보 (확실히 보이게 수정) --- */
+        #battle-field {
+            flex: 1; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            background: linear-gradient(to bottom, #1a1a2e, #16213e);
+            position: relative;
         }
 
         #enemy-sprite {
-            width: 200px; height: 280px;
+            width: 180px; height: 250px;
             background: url('images/EX_오리지널.webp') center/cover;
-            border: 4px solid #ff4d4d; border-radius: 15px;
-            box-shadow: 0 0 30px rgba(255, 77, 77, 0.5);
-            transition: transform 0.1s; /* 피격 애니메이션용 */
+            border: 5px solid #ff4d4d; border-radius: 20px;
+            box-shadow: 0 0 50px rgba(255, 77, 77, 0.3);
+            margin-bottom: 20px;
+            transition: transform 0.1s, filter 0.1s;
         }
 
-        .hp-container {
-            width: 300px; height: 25px; background: #444;
-            border-radius: 15px; margin-top: 20px; overflow: hidden; border: 2px solid #fff;
-        }
-        #enemy-hp-bar {
-            width: 100%; height: 100%; background: linear-gradient(to right, #ff4b2b, #ff416c);
-            transition: width 0.3s ease;
+        /* 피격 시 빨갛게 반짝임 */
+        #enemy-sprite.hit {
+            transform: scale(0.9) translateY(10px);
+            filter: brightness(1.5) sepia(1) saturate(5) hue-rotate(-50deg);
         }
 
-        /* --- 중앙: 알림 및 상태 --- */
-        #status-bar {
-            text-align: center; font-size: 1.5rem; font-weight: bold;
-            text-shadow: 2px 2px 4px #000;
+        .hp-ui { width: 300px; text-align: center; }
+        .hp-bar-bg {
+            width: 100%; height: 20px; background: #333;
+            border-radius: 10px; border: 2px solid #fff; overflow: hidden;
+        }
+        #enemy-hp-fill {
+            width: 100%; height: 100%; background: #ff4d4d;
+            transition: width 0.3s ease-out;
         }
 
-        /* --- 하단: 플레이어 손패 --- */
-        #hand {
-            position: fixed; bottom: -20px; left: 50%;
-            transform: translateX(-50%); display: flex;
-            justify-content: center; align-items: flex-end;
-            width: 100%; height: 250px; padding-bottom: 50px;
+        #energy-display {
+            margin-top: 15px; font-size: 1.5rem; color: #4db8ff;
+            font-weight: bold; text-shadow: 0 0 10px rgba(77, 184, 255, 0.5);
+        }
+
+        /* --- 하단: 손패 (부채꼴 정렬 효과 추가) --- */
+        #hand-container {
+            height: 280px; position: relative;
+            display: flex; justify-content: center; align-items: flex-end;
+            padding-bottom: 30px;
         }
 
         .card-wrapper {
-            transition: transform 0.3s ease; margin: 0 -15px;
+            position: absolute; bottom: 40px;
+            transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
 
         .card {
-            width: 140px; height: 200px; background-color: #333;
+            width: 140px; height: 200px; background-color: #222;
             background-size: cover; background-position: center;
             border: 3px solid var(--basic-color); border-radius: 12px;
-            position: relative; cursor: grab; touch-action: none;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            cursor: grab; touch-action: none;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            position: relative;
         }
 
-        /* 등급별 색상 */
-        .card[data-grade="EX"] { border-color: var(--ex-color); box-shadow: 0 0 15px var(--ex-color); }
+        .card[data-grade="EX"] { border-color: var(--ex-color); box-shadow: 0 0 20px var(--ex-color); }
         .card[data-grade="SSR"] { border-color: var(--ssr-color); }
-        .card[data-grade="SR"] { border-color: var(--sr-color); }
 
         .card-cost {
-            position: absolute; top: -10px; left: -10px;
-            background: #3498db; width: 30px; height: 30px;
+            position: absolute; top: -12px; left: -12px;
+            background: #007bff; width: 35px; height: 35px;
             border-radius: 50%; display: flex; justify-content: center;
             align-items: center; font-weight: bold; border: 2px solid white;
+            font-size: 1.2rem;
         }
 
-        .card-info {
-            position: absolute; bottom: 0; width: 100%;
-            background: rgba(0,0,0,0.8); padding: 8px; box-sizing: border-box;
-            font-size: 10px; border-bottom-left-radius: 9px; border-bottom-right-radius: 9px;
-        }
-
-        /* 투척 및 피격 효과 */
-        .card.thrown {
-            transition: all 0.4s ease-in;
-            transform: translateY(-100vh) scale(0) rotate(30deg) !important;
-            opacity: 0;
-        }
-
-        .shake { animation: shake 0.2s; }
-        @keyframes shake {
-            0% { transform: translateX(0); }
-            25% { transform: translateX(-10px); }
-            50% { transform: translateX(10px); }
-            100% { transform: translateX(0); }
+        /* 투척 애니메이션: 적 방향으로 날아감 */
+        .card.throwing {
+            transition: all 0.4s ease-in !important;
+            transform: translateY(-80vh) scale(0.2) rotate(720deg) !important;
+            opacity: 0; pointer-events: none;
         }
     </style>
 </head>
 <body>
 
-<div id="enemy-area">
+<div id="battle-field">
     <div id="enemy-sprite"></div>
-    <div class="hp-container">
-        <div id="enemy-hp-bar"></div>
+    <div class="hp-ui">
+        <div id="enemy-name">BOSS: 혁명단 시초</div>
+        <div class="hp-bar-bg"><div id="enemy-hp-fill"></div></div>
+        <div id="energy-display">⚡ ENERGY: 3 / 3</div>
     </div>
-    <div id="status-bar">👾 적 체력: 100 | ⚡ 에너지: 3/3</div>
 </div>
 
-<div id="hand"></div>
+<div id="hand-container"></div>
 
 <script>
     const ROGUELIKE_CARD_DB = {
-        "EX_오리지널.webp": { name: "오리지널", atk: 20, cost: 2, desc: "체력 50% 이하 데미지 2배." },
-        "EX_혁명단정모.webp": { name: "혁명단정모", atk: 12, cost: 1, desc: "손패 혁명단당 데미지 +4." },
-        "SSR_1차혁명단.webp": { name: "1차혁명단", atk: 15, cost: 2, desc: "내 체력을 5 깎고 전체 15뎀." },
-        "SSR_157룩.webp": { name: "157룩", atk: 4, cost: 1, desc: "3장 사용 시 2장 드로우." },
-        "SR_빈피.webp": { name: "빈피", atk: 7, cost: 1, desc: "50% 확률 회피." },
-        "SR_빈루토.webp": { name: "빈루토", atk: 4, cost: 1, desc: "동일 카드 1장 생성." },
-        "R_편고.webp": { name: "편고", atk: 5, cost: 1, desc: "턴 종료 시 방어력 5." }
+        "EX_오리지널.webp": { name: "오리지널", atk: 25, cost: 2, desc: "치명적인 일격" },
+        "SSR_1차혁명단.webp": { name: "1차혁명단", atk: 15, cost: 2, desc: "희생의 일격" },
+        "SR_빈피.webp": { name: "빈피", atk: 8, cost: 1, desc: "빠른 공격" },
+        "R_편고.webp": { name: "편고", atk: 5, cost: 1, desc: "안정적인 공격" },
+        "B_미소빈고.webp": { name: "미소 빈고", atk: 4, cost: 1, desc: "웃으며 때리기" }
     };
 
-    let playerEnergy = 3;
+    let energy = 3;
     let enemyHP = 100;
-    const maxEnemyHP = 100;
+    const maxHP = 100;
 
-    const handContainer = document.getElementById('hand');
-    const statusBar = document.getElementById('status-bar');
-    const enemySprite = document.getElementById('enemy-sprite');
-
-    // 1. 카드 생성 로직
-    function drawCards(count) {
+    function initHand() {
+        const container = document.getElementById('hand-container');
+        container.innerHTML = ''; // 초기화
         const keys = Object.keys(ROGUELIKE_CARD_DB);
-        for(let i=0; i<count; i++) {
-            const fileName = keys[Math.floor(Math.random() * keys.length)];
-            createCardUI(fileName);
+        for(let i=0; i<5; i++) {
+            const randomKey = keys[Math.floor(Math.random() * keys.length)];
+            addCard(randomKey, i);
         }
     }
 
-    function createCardUI(fileName) {
-        const data = ROGUELIKE_CARD_DB[fileName];
-        const grade = fileName.split('_')[0];
-        
+    function addCard(key, index) {
+        const data = ROGUELIKE_CARD_DB[key];
         const wrapper = document.createElement('div');
         wrapper.className = 'card-wrapper';
         
+        // 부채꼴 모양 정렬
+        const angle = (index - 2) * 10;
+        const xPos = (index - 2) * 130;
+        const yPos = Math.abs(index - 2) * 10;
+        wrapper.style.transform = `translateX(${xPos}px) translateY(${yPos}px) rotate(${angle}deg)`;
+
         const card = document.createElement('div');
         card.className = 'card';
-        card.dataset.grade = grade;
-        card.dataset.filename = fileName;
-        card.style.backgroundImage = `url('images/${fileName}')`;
-        card.innerHTML = `
-            <div class="card-cost">${data.cost}</div>
-            <div class="card-info"><b>${data.name}</b><br>${data.desc}</div>
-        `;
+        card.dataset.key = key;
+        card.dataset.grade = key.split('_')[0];
+        card.style.backgroundImage = `url('images/${key}')`;
+        card.innerHTML = `<div class="card-cost">${data.cost}</div>`;
 
-        card.onmousedown = dragStart;
-        card.ontouchstart = dragStart;
+        card.onmousedown = (e) => startDrag(e, card, wrapper);
+        card.ontouchstart = (e) => startDrag(e, card, wrapper);
 
         wrapper.appendChild(card);
-        handContainer.appendChild(wrapper);
+        document.getElementById('hand-container').appendChild(wrapper);
     }
 
-    // 2. 드래그 & 투척 로직
-    let draggedCard = null;
-    let startY = 0;
+    function startDrag(e, card, wrapper) {
+        let startY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
+        wrapper.style.zIndex = 1000;
+        card.style.transition = 'none';
 
-    function dragStart(e) {
-        draggedCard = e.currentTarget;
-        startY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
-        draggedCard.style.transition = 'none';
-        
-        document.onmousemove = dragMove;
-        document.ontouchmove = dragMove;
-        document.onmouseup = dragEnd;
-        document.ontouchend = dragEnd;
-    }
-
-    function dragMove(e) {
-        if (!draggedCard) return;
-        const currentY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
-        const deltaY = currentY - startY;
-        const moveY = Math.min(deltaY, 50); // 아래로는 조금만
-        draggedCard.style.transform = `translateY(${moveY}px) scale(1.1)`;
-    }
-
-    function dragEnd(e) {
-        if (!draggedCard) return;
-        const endY = e.type === 'touchend' ? e.changedTouches[0].clientY : e.clientY;
-        
-        // 위로 150px 이상 던졌을 때 사용
-        if (startY - endY > 150) {
-            useCard(draggedCard);
-        } else {
-            draggedCard.style.transition = 'transform 0.3s ease';
-            draggedCard.style.transform = 'translateY(0) scale(1)';
+        function move(e) {
+            let currentY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
+            let deltaY = currentY - startY;
+            if (deltaY > 0) deltaY = 0; // 아래로는 안 내려감
+            card.style.transform = `translateY(${deltaY}px) scale(1.1) rotate(0deg)`;
         }
 
-        document.onmousemove = null; document.onmouseup = null;
-        document.ontouchmove = null; document.ontouchend = null;
-        draggedCard = null;
+        function end(e) {
+            let endY = e.type === 'touchend' ? e.changedTouches[0].clientY : e.clientY;
+            if (startY - endY > 150) {
+                useCard(card, wrapper);
+            } else {
+                card.style.transition = 'transform 0.3s ease';
+                card.style.transform = '';
+                wrapper.style.zIndex = '';
+            }
+            window.removeEventListener('mousemove', move);
+            window.removeEventListener('mouseup', end);
+            window.removeEventListener('touchmove', move);
+            window.removeEventListener('touchend', end);
+        }
+
+        window.addEventListener('mousemove', move);
+        window.addEventListener('mouseup', end);
+        window.addEventListener('touchmove', move);
+        window.addEventListener('touchend', end);
     }
 
-    // 3. 게임 로직 (사용 및 데미지)
-    function useCard(card) {
-        const data = ROGUELIKE_CARD_DB[card.dataset.filename];
+    function useCard(card, wrapper) {
+        const data = ROGUELIKE_CARD_DB[card.dataset.key];
 
-        if (playerEnergy < data.cost) {
+        if (energy < data.cost) {
             alert("에너지가 부족합니다!");
-            card.style.transform = 'translateY(0)';
+            card.style.transform = '';
             return;
         }
 
-        // 상태 업데이트
-        playerEnergy -= data.cost;
-        enemyHP = Math.max(0, enemyHP - data.atk);
+        energy -= data.cost;
+        enemyHP -= data.atk;
+        if (enemyHP < 0) enemyHP = 0;
+
+        // 애니메이션
+        card.classList.add('throwing');
         
-        // 비주얼 효과
-        card.classList.add('thrown');
-        enemySprite.classList.add('shake');
-        setTimeout(() => enemySprite.classList.remove('shake'), 200);
-
-        updateUI();
-
-        // 카드 제거 및 드로우
         setTimeout(() => {
-            card.closest('.card-wrapper').remove();
-            if(enemyHP <= 0) {
-                alert("승리했습니다!");
-                location.reload();
-            } else {
-                drawCards(1); // 카드 보충
-            }
-        }, 400);
+            document.getElementById('enemy-sprite').classList.add('hit');
+            updateUI();
+            setTimeout(() => document.getElementById('enemy-sprite').classList.remove('hit'), 150);
+            
+            wrapper.remove();
+            addCard(Object.keys(ROGUELIKE_CARD_DB)[Math.floor(Math.random()*5)], 2); // 보충
+        }, 300);
     }
 
     function updateUI() {
-        statusBar.innerText = `👾 적 체력: ${enemyHP} | ⚡ 에너지: ${playerEnergy}/3`;
-        document.getElementById('enemy-hp-bar').style.width = `${(enemyHP/maxEnemyHP)*100}%`;
+        document.getElementById('enemy-hp-fill').style.width = (enemyHP / maxHP * 100) + "%";
+        document.getElementById('energy-display').innerText = `⚡ ENERGY: ${energy} / 3`;
+        if (enemyHP <= 0) alert("승리!");
     }
 
-    // 초기화
-    drawCards(5);
+    initHand();
     updateUI();
 </script>
 </body>
