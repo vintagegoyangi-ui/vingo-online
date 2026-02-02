@@ -3,145 +3,120 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Roguelike Card Battle - Core Engine</title>
+    <title>Roguelike Card Battle</title>
     <style>
-        :root {
-            --혁명단: #ff4d4d; --기만: #a335ee; --십다구: #0070dd; --노멀: #44bd32;
-        }
-        body { 
-            background: #05050a; color: white; margin: 0; height: 100vh; 
-            font-family: sans-serif; overflow: hidden; touch-action: none; 
-        }
+        :root { --혁명단: #ff4d4d; --기만: #a335ee; --십다구: #0070dd; --노말: #44bd32; }
+        body { background: #05050a; color: white; margin: 0; height: 100vh; font-family: 'Pretendard', sans-serif; overflow: hidden; touch-action: none; }
 
-        /* --- 상단 UI (스테이지, HP, 덱 정보) --- */
-        #top-ui { 
-            position: absolute; top: 10px; left: 10px; right: 10px; 
-            display: flex; justify-content: space-between; z-index: 10;
-            pointer-events: none;
-        }
-        .status-box { background: rgba(0,0,0,0.6); padding: 8px; border-radius: 5px; pointer-events: auto; }
-        .hp-bar-bg { width: 150px; height: 12px; background: #333; border-radius: 6px; overflow: hidden; margin-top: 5px; }
-        .hp-fill { height: 100%; transition: width 0.3s; }
+        /* --- UI 레이아웃 --- */
+        #enemy-header { position: absolute; top: 3%; width: 100%; text-align: center; z-index: 5; }
+        .hp-bar-large { width: 80%; max-width: 400px; height: 18px; background: #333; border: 2px solid #555; border-radius: 10px; margin: 5px auto; overflow: hidden; position: relative; }
+        .hp-text { position: absolute; width: 100%; text-align: center; font-size: 10px; line-height: 18px; font-weight: bold; }
 
-        /* --- 전투 필드 (보스) --- */
-        #battle-field { 
-            height: 65vh; display: flex; flex-direction: column; 
-            align-items: center; justify-content: center; position: relative; 
-        }
-        #boss-intent { color: #ffd700; font-weight: bold; margin-bottom: 15px; font-size: 1.1rem; text-shadow: 2px 2px 4px #000; }
+        #battle-field { height: 50vh; display: flex; align-items: center; justify-content: center; position: relative; }
         #boss-sprite { 
-            width: 180px; height: 220px; 
-            background: url('https://via.placeholder.com/180x220/222/fff?text=BOSS') center/cover;
-            border: 4px solid #fff; border-radius: 20px; box-shadow: 0 0 20px rgba(255,255,255,0.2);
+            width: 150px; height: 180px; border-radius: 15px; border: 3px solid #fff;
+            background: #222 url('https://via.placeholder.com/150x180/222/fff?text=BOSS') center/cover;
             transition: transform 0.1s, filter 0.1s;
         }
-        #boss-sprite.hit { transform: scale(0.9); filter: brightness(3); }
 
-        /* --- 카드 핸드 (스크롤 가능) --- */
-        #hand-container { 
-            position: fixed; bottom: 0; width: 100%; height: 35vh;
-            background: rgba(0,0,0,0.85); border-top: 2px solid #444;
-            display: flex; align-items: flex-end; padding-bottom: 20px;
-            overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch;
+        #player-status-line { 
+            position: absolute; bottom: 36vh; width: 100%; padding: 0 15px;
+            display: flex; justify-content: space-between; align-items: center; box-sizing: border-box;
         }
-        .card { 
-            width: 110px; height: 160px; flex-shrink: 0; margin: 0 8px;
-            background: #1a1a1a; border: 3px solid #fff; border-radius: 12px;
-            position: relative; transition: transform 0.1s; cursor: grab;
-            user-select: none;
-        }
-        .card-cost { position: absolute; top: -10px; left: -10px; width: 30px; height: 30px; background: #007bff; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; border: 2px solid #fff; z-index: 2; }
-        .card-img { width: 100%; height: 60%; background: #333; border-radius: 9px 9px 0 0; background-size: cover; }
-        .card-info { padding: 5px; font-size: 0.7rem; }
-        .card-ability { color: #55efc4; font-size: 0.65rem; display: block; margin-top: 3px; }
-
-        /* --- 시스템 UI --- */
+        .deck-info { background: rgba(255,255,255,0.1); padding: 5px 12px; border-radius: 8px; font-size: 0.9rem; border: 1px solid #444; }
         #turn-end-btn { 
-            position: fixed; right: 20px; bottom: 37vh; 
-            padding: 12px 24px; background: #ff4d4d; color: white; border: none; 
-            border-radius: 8px; font-weight: bold; cursor: pointer; z-index: 20;
+            padding: 10px 18px; background: #e74c3c; color: white; border: none; 
+            border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 0 #c0392b;
         }
-        #log-msg { position: absolute; top: 40%; width: 100%; text-align: center; font-size: 1.5rem; font-weight: bold; color: #fff; pointer-events: none; opacity: 0; transition: 0.5s; }
+
+        #hand-container { 
+            position: fixed; bottom: 0; width: 100%; height: 35vh; 
+            background: linear-gradient(to top, #111, #000); border-top: 1px solid #333;
+            display: flex; align-items: center; padding: 0 10px; overflow-x: auto;
+        }
+
+        /* --- 카드 디자인 --- */
+        .card { 
+            width: 120px; height: 175px; flex-shrink: 0; margin-right: 12px;
+            background: #1a1a1a; border: 3px solid #fff; border-radius: 12px;
+            position: relative; transition: transform 0.1s; overflow: hidden;
+        }
+        .card-img { width: 100%; height: 55%; background-size: cover; background-position: center; border-bottom: 2px solid #333; }
+        .card-cost { position: absolute; top: 5px; left: 5px; width: 24px; height: 24px; background: #007bff; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 14px; border: 1.5px solid #fff; z-index: 3; }
+        .card-attr-icon { position: absolute; top: 5px; right: 5px; font-size: 14px; z-index: 3; }
+        .card-info { padding: 6px; font-size: 0.75rem; background: #1a1a1a; }
+        .card-name { font-weight: bold; font-size: 0.85rem; display: block; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .card-stats { color: #ffeb3b; font-weight: bold; font-size: 0.7rem; }
+        .card-desc { font-size: 0.62rem; color: #ccc; display: block; margin-top: 4px; line-height: 1.2; height: 35px; overflow: hidden; }
+
+        .hp-fill { height: 100%; transition: width 0.3s; }
+        .throwing { transition: 0.4s ease-in !important; transform: translateY(-800px) scale(0.2) !important; opacity: 0; }
     </style>
 </head>
 <body>
 
-<div id="top-ui">
-    <div class="status-box">
-        <div>PLAYER HP</div>
-        <div class="hp-bar-bg"><div id="p-hp-fill" class="hp-fill" style="background: #2ecc71; width: 100%;"></div></div>
-        <div id="p-energy" style="margin-top:5px; color:#00d2ff; font-weight:bold;">⚡ 3 / 3</div>
+<script src="vts_card_db.js"></script>
+
+<div id="enemy-header">
+    <div id="boss-intent">준비...</div>
+    <div class="hp-bar-large">
+        <div id="e-hp-fill" class="hp-fill" style="background: #ff4d4d; width: 100%;"></div>
+        <div class="hp-text"><span id="e-hp-val">100</span> / 100</div>
     </div>
-    <div class="status-box" style="text-align: right;">
-        <div>NODE: <span id="node-info">1</span></div>
-        <div style="font-size: 0.8rem; color:#aaa;">덱: <span id="deck-count">0</span> | 무덤: <span id="grave-count">0</span></div>
-    </div>
+    <div id="boss-name" style="font-weight:bold;">BOSS</div>
 </div>
 
 <div id="battle-field">
-    <div id="log-msg"></div>
-    <div id="boss-intent">의도 분석 중...</div>
     <div id="boss-sprite"></div>
-    <div id="boss-name" style="margin-top:10px; font-weight:bold;">보스 이름</div>
-    <div class="hp-bar-bg" style="width: 250px;"><div id="e-hp-fill" class="hp-fill" style="background: #ff4d4d; width: 100%;"></div></div>
 </div>
 
-<button id="turn-end-btn" onclick="game.endTurn()">TURN END</button>
+<div id="player-status-line">
+    <div class="deck-info">🗂️ <span id="deck-count">0</span></div>
+    <div style="flex: 1; margin: 0 15px;">
+        <div style="font-size: 0.75rem; margin-bottom: 4px; display: flex; justify-content: space-between;">
+            <span>PLAYER HP</span> <span id="p-energy" style="color:#00d2ff; font-weight:bold;">⚡ 3 / 3</span>
+        </div>
+        <div class="hp-bar-large" style="width: 100%; height: 12px; margin: 0;">
+            <div id="p-hp-fill" class="hp-fill" style="background: #2ecc71; width: 100%;"></div>
+            <div class="hp-text"><span id="p-hp-val">50</span> / 50</div>
+        </div>
+    </div>
+    <div class="deck-info">💀 <span id="grave-count">0</span></div>
+    <button id="turn-end-btn" onclick="game.endTurn()">TURN END</button>
+</div>
+
 <div id="hand-container"></div>
 
 <script>
-    // --- 데이터 (외부 JS에서 관리할 내용들) ---
-    const CARD_POOL = [
-        { name: "혁명 일격", cost: 1, atk: 12, attr: "혁명단", ability: "[투지] 저체력 시 폭발" },
-        { name: "기만 연막", cost: 1, atk: 8, attr: "기만", ability: "[교란] 적 속성 교란" },
-        { name: "십덕 몰입", cost: 1, atk: 10, attr: "십다구", ability: "[몰입] 추가 드로우" },
-        { name: "정석 타격", cost: 2, atk: 18, attr: "노멀", ability: "[정석] 안정적인 데미지" }
-    ];
-
-    const BOSS_POOL = [
-        { name: "무한 방어자", hp: 100, attr: "노멀", ai: (b) => { b.defending = true; return "🛡️ 방어 태세 (피해 반감)"; } },
-        { name: "카멜레온", hp: 80, attr: "기만", ai: (b) => { 
-            const attrs = ["혁명단", "기만", "십다구", "노멀"];
-            b.attr = attrs[Math.floor(Math.random()*4)];
-            return `🌈 속성 변경: ${b.attr}`; 
-        }},
-        { name: "분노한 선봉대", hp: 120, attr: "혁명단", ai: (b) => { b.dmg = 12; return `🔥 돌격 준비 (12 DMG)`; } }
-    ];
-
-    // --- 게임 엔진 ---
     class CardGame {
         constructor() {
             this.pHP = 50; this.maxPHP = 50; this.energy = 3;
             this.deck = []; this.hand = []; this.grave = [];
-            this.node = 1; this.boss = null;
-            this.playThreshold = window.innerHeight * 0.55; // 화면 55% 위로 올리면 사용
+            this.boss = { name: "테스트 보스", hp: 100, curHp: 100 };
+            
+            // 데이터 확인 (card_db.js 로드 여부)
+            if (typeof ROGUELIKE_CARD_DB === 'undefined') {
+                console.error("card_db.js를 찾을 수 없습니다. 경로를 확인하세요.");
+                return;
+            }
         }
 
         init() {
-            // 1. 최초 10장 덱 구성
-            for(let i=0; i<10; i++) this.deck.push({...CARD_POOL[Math.floor(Math.random()*4)]});
-            this.spawnBoss();
-        }
-
-        spawnBoss() {
-            const data = BOSS_POOL[Math.floor(Math.random()*BOSS_POOL.length)];
-            this.boss = { ...data, curHp: data.hp, defending: false, dmg: 0 };
-            this.energy = 3;
+            // 외부 DB에서 카드 10장을 가져와 덱 생성
+            const keys = Object.keys(ROGUELIKE_CARD_DB);
+            for(let i=0; i<10; i++) {
+                const randomKey = keys[Math.floor(Math.random() * keys.length)];
+                // 파일명을 이미지 경로로 활용하기 위해 fileName 속성 추가
+                this.deck.push({ ...ROGUELIKE_CARD_DB[randomKey], fileName: randomKey });
+            }
             this.draw(5);
             this.updateUI();
-            this.setBossIntent();
-        }
-
-        setBossIntent() {
-            this.boss.defending = false; this.boss.dmg = 0;
-            const msg = this.boss.ai(this.boss);
-            document.getElementById('boss-intent').innerText = msg;
-            document.getElementById('boss-name').innerText = `${this.boss.name} [${this.boss.attr}]`;
         }
 
         draw(n) {
             for(let i=0; i<n; i++) {
-                if(this.deck.length === 0) {
+                if(this.deck.length === 0 && this.grave.length > 0) {
                     this.deck = [...this.grave].sort(() => Math.random() - 0.5);
                     this.grave = [];
                 }
@@ -158,12 +133,15 @@
                 const el = document.createElement('div');
                 el.className = 'card';
                 el.style.borderColor = `var(--${card.attr})`;
+                // images/ 경로 연동
                 el.innerHTML = `
                     <div class="card-cost">${card.cost}</div>
-                    <div class="card-img" style="background-color:#333;"></div>
+                    <div class="card-attr-icon">${card.icon}</div>
+                    <div class="card-img" style="background-image: url('images/${card.fileName}')"></div>
                     <div class="card-info">
-                        <b>${card.name}</b><br>공격: ${card.atk}
-                        <span class="card-ability">${card.ability}</span>
+                        <span class="card-name">${card.name}</span>
+                        <span class="card-stats">⚔️ ${card.atk} | 🛡️ ${card.def}</span>
+                        <span class="card-desc">${card.desc}</span>
                     </div>
                 `;
                 this.addDragLogic(el, idx);
@@ -172,86 +150,61 @@
         }
 
         addDragLogic(el, idx) {
-            let startY, moveY;
-            const onStart = (e) => {
+            let startY;
+            const startHandler = (e) => {
                 startY = e.touches ? e.touches[0].clientY : e.clientY;
                 el.style.zIndex = "100";
             };
-            const onMove = (e) => {
+            const moveHandler = (e) => {
                 if(!startY) return;
-                moveY = e.touches ? e.touches[0].clientY : e.clientY;
-                const dy = moveY - startY;
-                if(dy < 0) el.style.transform = `translateY(${dy}px) scale(1.1)`;
+                const nowY = e.touches ? e.touches[0].clientY : e.clientY;
+                const dy = nowY - startY;
+                if(dy < 0) el.style.transform = `translateY(${dy}px) scale(1.05)`;
             };
-            const onEnd = (e) => {
+            const endHandler = (e) => {
                 const endY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
-                if(startY - endY > 150) { // 특정 높이 이상 드래그 시 사용
-                    this.playCard(idx, el);
-                } else {
-                    el.style.transform = "";
-                    el.style.zIndex = "1";
-                }
+                if(startY - endY > 150) this.playCard(idx, el);
+                else { el.style.transform = ""; el.style.zIndex = "1"; }
                 startY = null;
             };
-            el.addEventListener('mousedown', onStart);
-            window.addEventListener('mousemove', onMove);
-            window.addEventListener('mouseup', onEnd);
-            el.addEventListener('touchstart', onStart);
-            window.addEventListener('touchmove', onMove);
-            window.addEventListener('touchend', onEnd);
+            el.addEventListener('mousedown', startHandler);
+            window.addEventListener('mousemove', moveHandler);
+            window.addEventListener('mouseup', endHandler);
+            el.addEventListener('touchstart', startHandler);
+            window.addEventListener('touchmove', moveHandler);
+            window.addEventListener('touchend', endHandler);
         }
 
         playCard(idx, el) {
             const card = this.hand[idx];
-            if(this.energy < card.cost) {
-                el.style.transform = "";
-                this.showLog("에너지가 부족합니다!");
-                return;
-            }
+            if(this.energy < card.cost) { el.style.transform = ""; return; }
 
             this.energy -= card.cost;
-            let dmg = card.atk;
-            if(this.boss.defending) dmg = Math.floor(dmg / 2);
+            this.boss.curHp -= card.atk;
             
-            this.boss.curHp -= dmg;
             el.classList.add('throwing');
-            
             setTimeout(() => {
-                document.getElementById('boss-sprite').classList.add('hit');
                 this.grave.push(this.hand.splice(idx, 1)[0]);
-                this.updateUI(); this.renderHand();
-                setTimeout(() => document.getElementById('boss-sprite').classList.remove('hit'), 100);
-                if(this.boss.curHp <= 0) { 
-                    this.showLog("VICTORY!"); 
-                    this.node++; 
-                    setTimeout(() => this.spawnBoss(), 1000); 
-                }
+                this.renderHand(); 
+                this.updateUI();
             }, 300);
         }
 
         endTurn() {
-            this.pHP -= this.boss.dmg;
-            this.showLog(this.boss.dmg > 0 ? `${this.boss.dmg} 데미지를 입었습니다!` : "방어턴 종료");
+            this.pHP -= 10;
             this.energy = 3;
             this.draw(2);
-            this.setBossIntent();
             this.updateUI();
-            if(this.pHP <= 0) { alert("Game Over"); location.reload(); }
         }
 
         updateUI() {
             document.getElementById('p-hp-fill').style.width = (this.pHP / this.maxPHP * 100) + "%";
-            document.getElementById('e-hp-fill').style.width = Math.max(0, (this.boss.curHp / this.boss.hp * 100)) + "%";
+            document.getElementById('p-hp-val').innerText = this.pHP;
+            document.getElementById('e-hp-fill').style.width = (this.boss.curHp / this.boss.hp * 100) + "%";
+            document.getElementById('e-hp-val').innerText = Math.max(0, this.boss.curHp);
             document.getElementById('p-energy').innerText = `⚡ ${this.energy} / 3`;
             document.getElementById('deck-count').innerText = this.deck.length;
             document.getElementById('grave-count').innerText = this.grave.length;
-            document.getElementById('node-info').innerText = this.node;
-        }
-
-        showLog(m) {
-            const l = document.getElementById('log-msg');
-            l.innerText = m; l.style.opacity = 1;
-            setTimeout(() => l.style.opacity = 0, 1500);
         }
     }
 
