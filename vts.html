@@ -3,226 +3,232 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Roguelike Card Battle Pro</title>
+    <title>Roguelike Card Battle - Attribute System</title>
     <style>
         :root {
-            --ex-color: #ff00ff; --ssr-color: #ffcc00; --sr-color: #a335ee;
-            --r-color: #0070dd; --basic-color: #ffffff;
+            --혁명단: #ff4d4d; --기만: #a335ee; --십다구: #0070dd; --노멀: #44bd32;
         }
 
         body {
-            background: #0f0f1a; /* 더 어두운 우주 느낌 */
-            color: white; margin: 0; height: 100vh; overflow: hidden;
+            background: #05050a; color: white; margin: 0; height: 100vh;
             font-family: 'apple sd gothic neo', sans-serif;
-            display: flex; flex-direction: column;
+            display: flex; flex-direction: column; overflow: hidden;
         }
 
-        /* --- 상단: 적 정보 (확실히 보이게 수정) --- */
+        /* --- 전투 구역 --- */
         #battle-field {
             flex: 1; display: flex; flex-direction: column;
             align-items: center; justify-content: center;
-            background: linear-gradient(to bottom, #1a1a2e, #16213e);
+            background: linear-gradient(to bottom, #1a1a2e, #0f0f1a);
             position: relative;
         }
 
         #enemy-sprite {
-            width: 180px; height: 250px;
-            background: url('images/EX_오리지널.webp') center/cover;
-            border: 5px solid #ff4d4d; border-radius: 20px;
-            box-shadow: 0 0 50px rgba(255, 77, 77, 0.3);
-            margin-bottom: 20px;
+            width: 150px; height: 200px;
+            background: #222 url('images/EX_오리지널.webp') center/cover;
+            border: 4px solid var(--노멀); border-radius: 15px;
             transition: transform 0.1s, filter 0.1s;
         }
+        #enemy-sprite.hit { transform: scale(0.9) translateY(10px); filter: brightness(2); }
 
-        /* 피격 시 빨갛게 반짝임 */
-        #enemy-sprite.hit {
-            transform: scale(0.9) translateY(10px);
-            filter: brightness(1.5) sepia(1) saturate(5) hue-rotate(-50deg);
+        #enemy-attribute {
+            padding: 5px 15px; border-radius: 20px; font-weight: bold; margin-bottom: 10px;
+            border: 2px solid white;
         }
 
-        .hp-ui { width: 300px; text-align: center; }
-        .hp-bar-bg {
-            width: 100%; height: 20px; background: #333;
-            border-radius: 10px; border: 2px solid #fff; overflow: hidden;
-        }
-        #enemy-hp-fill {
-            width: 100%; height: 100%; background: #ff4d4d;
-            transition: width 0.3s ease-out;
+        .hp-ui { width: 250px; text-align: center; margin-bottom: 10px; }
+        .hp-bar-bg { width: 100%; height: 15px; background: #333; border-radius: 10px; overflow: hidden; }
+        #enemy-hp-fill { width: 100%; height: 100%; background: #ff4d4d; transition: width 0.3s; }
+
+        /* --- 메시지 알림 (데미지 배율 표시) --- */
+        #log-message {
+            position: absolute; top: 20%; font-size: 1.5rem; font-weight: bold;
+            text-shadow: 2px 2px 10px #000; color: #ffeb3b; pointer-events: none; opacity: 0;
+            transition: opacity 0.5s;
         }
 
-        #energy-display {
-            margin-top: 15px; font-size: 1.5rem; color: #4db8ff;
-            font-weight: bold; text-shadow: 0 0 10px rgba(77, 184, 255, 0.5);
-        }
-
-        /* --- 하단: 손패 (부채꼴 정렬 효과 추가) --- */
-        #hand-container {
-            height: 280px; position: relative;
-            display: flex; justify-content: center; align-items: flex-end;
-            padding-bottom: 30px;
-        }
-
-        .card-wrapper {
-            position: absolute; bottom: 40px;
-            transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+        /* --- 하단: 카드 핸드 (스크롤) --- */
+        #hand-wrapper {
+            background: rgba(10, 10, 20, 0.95);
+            height: 250px; display: flex; align-items: center;
+            padding: 0 40px; overflow-x: auto; white-space: nowrap;
         }
 
         .card {
-            width: 140px; height: 200px; background-color: #222;
-            background-size: cover; background-position: center;
-            border: 3px solid var(--basic-color); border-radius: 12px;
-            cursor: grab; touch-action: none;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-            position: relative;
+            display: inline-block; width: 130px; height: 180px;
+            margin-right: 15px; border-radius: 10px; border: 3px solid #fff;
+            position: relative; cursor: grab; background-size: cover; background-position: center;
+            flex-shrink: 0; transition: transform 0.2s;
         }
+        .card:hover { transform: translateY(-30px); z-index: 10; }
 
-        .card[data-grade="EX"] { border-color: var(--ex-color); box-shadow: 0 0 20px var(--ex-color); }
-        .card[data-grade="SSR"] { border-color: var(--ssr-color); }
-
+        .card-attr {
+            position: absolute; top: 5px; right: 5px; padding: 2px 6px;
+            border-radius: 5px; font-size: 0.7rem; font-weight: bold; color: white;
+        }
         .card-cost {
-            position: absolute; top: -12px; left: -12px;
-            background: #007bff; width: 35px; height: 35px;
-            border-radius: 50%; display: flex; justify-content: center;
-            align-items: center; font-weight: bold; border: 2px solid white;
-            font-size: 1.2rem;
+            position: absolute; top: -10px; left: -10px; width: 30px; height: 30px;
+            background: #007bff; border-radius: 50%; display: flex;
+            justify-content: center; align-items: center; font-weight: bold; border: 2px solid white;
+        }
+        .card-info {
+            position: absolute; bottom: 0; width: 100%; background: rgba(0,0,0,0.8);
+            padding: 5px; font-size: 0.8rem; border-radius: 0 0 7px 7px;
         }
 
-        /* 투척 애니메이션: 적 방향으로 날아감 */
+        /* --- 버튼 및 UI --- */
+        #ui-layer {
+            position: absolute; bottom: 260px; width: 100%;
+            display: flex; justify-content: space-between; padding: 0 30px; box-sizing: border-box;
+        }
+        .ui-btn { background: #ff4d4d; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
+
         .card.throwing {
-            transition: all 0.4s ease-in !important;
-            transform: translateY(-80vh) scale(0.2) rotate(720deg) !important;
-            opacity: 0; pointer-events: none;
+            transition: all 0.4s ease-in; transform: translateY(-600px) scale(0) rotate(360deg) !important; opacity: 0;
         }
     </style>
 </head>
 <body>
 
 <div id="battle-field">
-    <div id="enemy-sprite"></div>
+    <div id="log-message">상성 우위! 1.5배!</div>
+    <div id="enemy-attribute">속성: 노멀</div>
     <div class="hp-ui">
-        <div id="enemy-name">BOSS: 혁명단 시초</div>
         <div class="hp-bar-bg"><div id="enemy-hp-fill"></div></div>
-        <div id="energy-display">⚡ ENERGY: 3 / 3</div>
     </div>
+    <div id="enemy-sprite"></div>
+    <div id="energy-display">⚡ ENERGY: 3 / 3</div>
 </div>
 
-<div id="hand-container"></div>
+<div id="ui-layer">
+    <div class="deck-info">🎴 Deck: <span id="deck-count">0</span> | Grave: <span id="grave-count">0</span></div>
+    <button id="turn-end-btn" class="ui-btn" onclick="endTurn()">TURN END</button>
+</div>
+
+<div id="hand-wrapper"></div>
 
 <script>
-    const ROGUELIKE_CARD_DB = {
-        "EX_오리지널.webp": { name: "오리지널", atk: 25, cost: 2, desc: "치명적인 일격" },
-        "SSR_1차혁명단.webp": { name: "1차혁명단", atk: 15, cost: 2, desc: "희생의 일격" },
-        "SR_빈피.webp": { name: "빈피", atk: 8, cost: 1, desc: "빠른 공격" },
-        "R_편고.webp": { name: "편고", atk: 5, cost: 1, desc: "안정적인 공격" },
-        "B_미소빈고.webp": { name: "미소 빈고", atk: 4, cost: 1, desc: "웃으며 때리기" }
+    // 1. 속성 상성표 정의
+    const RELATION = {
+        "혁명단": { strong: ["기만", "십다구"], weak: ["노멀"], mult: 1.5 },
+        "기만": { strong: ["노멀", "혁명단"], weak: ["십다구"], mult: 1.5 },
+        "십다구": { strong: ["노멀", "기만"], weak: ["혁명단"], mult: 1.5 },
+        "노멀": { strong: ["혁명단"], weak: ["기만", "십다구"], mult: 2.0 } // 노멀은 혁명단에 2배!
     };
 
-    let energy = 3;
-    let enemyHP = 100;
-    const maxHP = 100;
+    const CARD_POOL = [
+        { name: "오리지널", atk: 15, cost: 2, attr: "혁명단", img: "EX_오리지널.webp" },
+        { name: "혁명단 정모", atk: 10, cost: 1, attr: "혁명단", img: "EX_혁명단정모.webp" },
+        { name: "1차 혁명단", atk: 12, cost: 2, attr: "기만", img: "SSR_1차혁명단.webp" },
+        { name: "빈피", atk: 8, cost: 1, attr: "기만", img: "SR_빈피.webp" },
+        { name: "미소 빈고", atk: 7, cost: 1, attr: "십다구", img: "B_미소빈고.webp" },
+        { name: "편고", atk: 6, cost: 1, attr: "노멀", img: "R_편고.webp" }
+    ];
 
-    function initHand() {
-        const container = document.getElementById('hand-container');
-        container.innerHTML = ''; // 초기화
-        const keys = Object.keys(ROGUELIKE_CARD_DB);
-        for(let i=0; i<5; i++) {
-            const randomKey = keys[Math.floor(Math.random() * keys.length)];
-            addCard(randomKey, i);
-        }
+    let energy = 3, enemyHP = 100, maxHP = 100;
+    let currentEnemyAttr = "노멀";
+    let deck = [], hand = [], graveyard = [];
+
+    function initGame() {
+        for(let i=0; i<20; i++) deck.push({...CARD_POOL[Math.floor(Math.random()*CARD_POOL.length)]});
+        deck.sort(() => Math.random() - 0.5);
+        drawCards(5);
+        updateUI();
     }
 
-    function addCard(key, index) {
-        const data = ROGUELIKE_CARD_DB[key];
-        const wrapper = document.createElement('div');
-        wrapper.className = 'card-wrapper';
+    function drawCards(count) {
+        for(let i=0; i<count; i++) {
+            if(deck.length === 0) { deck = [...graveyard]; graveyard = []; deck.sort(() => Math.random() - 0.5); }
+            if(hand.length < 10) hand.push(deck.pop());
+        }
+        renderHand();
+    }
+
+    function renderHand() {
+        const container = document.getElementById('hand-wrapper');
+        container.innerHTML = '';
+        hand.forEach((card, i) => {
+            const el = document.createElement('div');
+            el.className = 'card';
+            el.style.backgroundImage = `url('images/${card.img}')`;
+            el.style.borderColor = `var(--${card.attr})`;
+            el.innerHTML = `
+                <div class="card-cost">${card.cost}</div>
+                <div class="card-attr" style="background:var(--${card.attr})">${card.attr}</div>
+                <div class="card-info"><b>${card.name}</b><br>ATK: ${card.atk}</div>
+            `;
+            el.onmousedown = (e) => startDrag(e, el, i);
+            container.appendChild(el);
+        });
+    }
+
+    function startDrag(e, el, i) {
+        let startY = e.clientY;
+        const move = (ev) => { if(ev.clientY - startY < 0) el.style.transform = `translateY(${ev.clientY - startY}px) scale(1.1)`; };
+        const end = (ev) => {
+            if(startY - ev.clientY > 100) useCard(i, el);
+            else el.style.transform = '';
+            window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', end);
+        };
+        window.addEventListener('mousemove', move); window.addEventListener('mouseup', end);
+    }
+
+    function useCard(i, el) {
+        const card = hand[i];
+        if(energy < card.cost) { alert("에너지 부족!"); el.style.transform = ''; return; }
+
+        // 상성 계산 로직
+        let finalDamage = card.atk;
+        let message = "";
+        if(RELATION[card.attr].strong.includes(currentEnemyAttr)) {
+            finalDamage = Math.floor(card.atk * RELATION[card.attr].mult);
+            message = `상성 우위! ${RELATION[card.attr].mult}배!`;
+        } else if(RELATION[card.attr].weak.includes(currentEnemyAttr)) {
+            finalDamage = Math.floor(card.atk * 0.7);
+            message = `상성 열세... 0.7배`;
+        }
+
+        energy -= card.cost;
+        enemyHP -= finalDamage;
         
-        // 부채꼴 모양 정렬
-        const angle = (index - 2) * 10;
-        const xPos = (index - 2) * 130;
-        const yPos = Math.abs(index - 2) * 10;
-        wrapper.style.transform = `translateX(${xPos}px) translateY(${yPos}px) rotate(${angle}deg)`;
-
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.dataset.key = key;
-        card.dataset.grade = key.split('_')[0];
-        card.style.backgroundImage = `url('images/${key}')`;
-        card.innerHTML = `<div class="card-cost">${data.cost}</div>`;
-
-        card.onmousedown = (e) => startDrag(e, card, wrapper);
-        card.ontouchstart = (e) => startDrag(e, card, wrapper);
-
-        wrapper.appendChild(card);
-        document.getElementById('hand-container').appendChild(wrapper);
-    }
-
-    function startDrag(e, card, wrapper) {
-        let startY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
-        wrapper.style.zIndex = 1000;
-        card.style.transition = 'none';
-
-        function move(e) {
-            let currentY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
-            let deltaY = currentY - startY;
-            if (deltaY > 0) deltaY = 0; // 아래로는 안 내려감
-            card.style.transform = `translateY(${deltaY}px) scale(1.1) rotate(0deg)`;
-        }
-
-        function end(e) {
-            let endY = e.type === 'touchend' ? e.changedTouches[0].clientY : e.clientY;
-            if (startY - endY > 150) {
-                useCard(card, wrapper);
-            } else {
-                card.style.transition = 'transform 0.3s ease';
-                card.style.transform = '';
-                wrapper.style.zIndex = '';
-            }
-            window.removeEventListener('mousemove', move);
-            window.removeEventListener('mouseup', end);
-            window.removeEventListener('touchmove', move);
-            window.removeEventListener('touchend', end);
-        }
-
-        window.addEventListener('mousemove', move);
-        window.addEventListener('mouseup', end);
-        window.addEventListener('touchmove', move);
-        window.addEventListener('touchend', end);
-    }
-
-    function useCard(card, wrapper) {
-        const data = ROGUELIKE_CARD_DB[card.dataset.key];
-
-        if (energy < data.cost) {
-            alert("에너지가 부족합니다!");
-            card.style.transform = '';
-            return;
-        }
-
-        energy -= data.cost;
-        enemyHP -= data.atk;
-        if (enemyHP < 0) enemyHP = 0;
-
-        // 애니메이션
-        card.classList.add('throwing');
-        
+        showLog(message);
+        el.classList.add('throwing');
         setTimeout(() => {
             document.getElementById('enemy-sprite').classList.add('hit');
-            updateUI();
+            graveyard.push(hand.splice(i, 1)[0]);
+            updateUI(); renderHand();
             setTimeout(() => document.getElementById('enemy-sprite').classList.remove('hit'), 150);
-            
-            wrapper.remove();
-            addCard(Object.keys(ROGUELIKE_CARD_DB)[Math.floor(Math.random()*5)], 2); // 보충
         }, 300);
     }
 
-    function updateUI() {
-        document.getElementById('enemy-hp-fill').style.width = (enemyHP / maxHP * 100) + "%";
-        document.getElementById('energy-display').innerText = `⚡ ENERGY: ${energy} / 3`;
-        if (enemyHP <= 0) alert("승리!");
+    function showLog(msg) {
+        if(!msg) return;
+        const log = document.getElementById('log-message');
+        log.innerText = msg; log.style.opacity = 1;
+        setTimeout(() => log.style.opacity = 0, 1000);
     }
 
-    initHand();
-    updateUI();
+    function endTurn() {
+        energy = 3;
+        // 턴 종료 시 적의 속성이 랜덤하게 바뀜 (전략성)
+        const attrs = Object.keys(RELATION);
+        currentEnemyAttr = attrs[Math.floor(Math.random() * attrs.length)];
+        drawCards(2);
+        updateUI();
+    }
+
+    function updateUI() {
+        document.getElementById('enemy-hp-fill').style.width = Math.max(0, enemyHP) + "%";
+        document.getElementById('energy-display').innerText = `⚡ ENERGY: ${energy} / 3`;
+        document.getElementById('deck-count').innerText = deck.length;
+        document.getElementById('grave-count').innerText = graveyard.length;
+        const eAttr = document.getElementById('enemy-attribute');
+        eAttr.innerText = `적 속성: ${currentEnemyAttr}`;
+        eAttr.style.backgroundColor = `var(--${currentEnemyAttr})`;
+        if(enemyHP <= 0) alert("승리!");
+    }
+
+    initGame();
 </script>
 </body>
 </html>
